@@ -188,6 +188,12 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 - Dôsledky: pool spojení, najviac niekoľko DB dotazov na stránku.
 
 ### Fáza 1 – Administrácia
+**Priebeh (2026-09-27):** hotový dátový model (migrácie 0002–0003), pravidlá členstva a oprávnení,
+generátor testovacích dát, prihlásenie cez Google, obrazovky: prehľad, členovia (vyhľadávanie, filtre),
+detail člena (zmeny stavu, ukončenie), aktivácie, čaká na rozhodnutie, skupiny.
+Zostáva: formuláre na pridanie/úpravu člena a skupiny, správa funkcií, správa administrátorov,
+nastavenia, certifikáty, dokumenty, šablóna a import zoznamu členov.
+
 - Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
   administrátori v aplikácii.
 - Skupiny, členovia, členstvá s históriou, primárna skupina, zľavnené členské, certifikáty.

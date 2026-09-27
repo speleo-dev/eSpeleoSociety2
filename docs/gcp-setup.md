@@ -187,11 +187,57 @@ unset ESS_DATABASE_URL
 Testovacie dáta sú zašifrované tými istými kľúčmi ako aplikácia, takže ich aplikácia vie prečítať.
 Pred ostrou prevádzkou bude treba samostatnú produkčnú databázu (a nové kľúče).
 
+## 13. Prihlásenie administrátorov cez Google
+
+**a) Adresa aplikácie** (v Cloud Shell):
+
+```bash
+REGION=europe-west3
+URL=$(gcloud run services describe ess --region $REGION --format='value(status.url)'); echo $URL
+```
+
+**b) Prihlasovacia obrazovka Google** – v konzole *Google Auth Platform* (menu *APIs & Services* →
+*OAuth consent screen*):
+1. *Branding*: názov aplikácie `eSpeleoSociety`, e-mail podpory (tvoj).
+2. *Audience*: typ **External**, stav nechaj **Testing** a do *Test users* pridaj Google účty oboch
+   hlavných systémových administrátorov. Kým je aplikácia v režime Testing, prihlásiť sa môžu len títo
+   používatelia – pri vývoji je to vítaná poistka navyše.
+3. *Data access*: netreba pridávať nič (aplikácia žiada len `openid`, `email`, `profile`).
+
+**c) OAuth klient** – *Clients* → *Create client*:
+- typ **Web application**, názov `eSS`,
+- *Authorized redirect URIs*: `<URL>/admin/auth/callback` (URL z kroku a),
+- po vytvorení skopíruj **Client ID**; **Client secret** ulož rovno do Secret Manageru:
+
+```bash
+read -s -p "Client secret: " CS; echo
+printf '%s' "$CS" | gcloud secrets create ess-google-client-secret --data-file=-; unset CS
+openssl rand -base64 48 | tr -d '\n' | gcloud secrets create ess-session-secret --data-file=-
+
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+for s in ess-google-client-secret ess-session-secret; do
+  gcloud secrets add-iam-policy-binding $s \
+    --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+**d) Nové nasadenie** (e-maily hlavných administrátorov oddeľ čiarkou; `^;^` hovorí gcloud, že
+premenné sú oddelené bodkočiarkou):
+
+```bash
+cd ~/eSpeleoSociety2 && git pull
+gcloud run deploy ess --source . --region $REGION --allow-unauthenticated --max-instances 2 \
+  --set-env-vars "^;^ESS_ENVIRONMENT=dev;ESS_PUBLIC_BASE_URL=$URL;ESS_GOOGLE_CLIENT_ID=<CLIENT_ID>;ESS_SUPER_ADMIN_EMAILS=<tvoj@gmail.com>,<kamarat@gmail.com>" \
+  --set-secrets ESS_DATABASE_URL=ess-database-url:latest,ESS_PII_KEYS=ess-pii-keys:latest,ESS_BLIND_INDEX_KEY=ess-blind-index-key:latest,ESS_GOOGLE_CLIENT_SECRET=ess-google-client-secret:latest,ESS_SESSION_SECRET=ess-session-secret:latest
+```
+
+Potom otvor `<URL>/admin` a prihlás sa. Ďalších administrátorov bude možné pridať v aplikácii.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
 - Vlastná doména `ess.sss.sk` namapovaná na Cloud Run.
-- OAuth klient pre prihlásenie adminov Google účtom.
 - Overovanie certifikátu DB servera (`sslmode=verify-full`), ak WebSupport poskytne CA certifikát.
   Test používa `sslmode=require`, ktorý spojenie šifruje, ale neoveruje identitu servera.
 - Ďalšie tajomstvá: Google Wallet účet, SMTP heslo pre `ess@sss.sk`.

@@ -1,16 +1,28 @@
 """FastAPI application entry point."""
 
-from pathlib import Path
+import logging
+import secrets
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
+from starlette.middleware.sessions import SessionMiddleware
 
 from ess.config import get_settings
+from ess.web import admin, auth
+from ess.web.templates import templates
 
-BASE_DIR = Path(__file__).parent
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+logger = logging.getLogger(__name__)
+
+
+def _session_secret() -> str:
+    settings = get_settings()
+    if settings.session_secret:
+        return settings.session_secret
+    if settings.environment == "prod":
+        raise RuntimeError("ESS_SESSION_SECRET must be set in production")
+    logger.warning("ESS_SESSION_SECRET is not set - using a random secret (sessions reset on restart)")
+    return secrets.token_urlsafe(48)
 
 
 def create_app() -> FastAPI:
@@ -22,6 +34,21 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json" if settings.environment != "prod" else None,
     )
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=_session_secret(),
+        session_cookie="ess_session",
+        max_age=settings.session_max_age_seconds,
+        same_site="lax",
+        # Cookie only over HTTPS whenever the app is served over HTTPS (Cloud Run, production).
+        https_only=settings.environment == "prod" or (settings.public_base_url or "").startswith("https://"),
+    )
+    app.include_router(auth.router)
+    app.include_router(admin.router)
+
+    @app.exception_handler(auth.LoginRequired)
+    async def _login_required(request: Request, exc: auth.LoginRequired):
+        return templates.TemplateResponse(request, "admin/login.html", {}, status_code=401)
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):

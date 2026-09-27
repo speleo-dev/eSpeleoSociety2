@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     # Comma-separated Google account e-mails of the main administrators.
     super_admin_emails: str = ""
 
+    # Google sign-in (OpenID Connect) for administrative access.
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    # Public URL of the app, e.g. https://ess-xxxx.run.app (used for the OAuth redirect URI).
+    public_base_url: str | None = None
+    # Secret for signing session cookies (random, at least 32 characters).
+    session_secret: str | None = None
+    session_max_age_seconds: int = 8 * 3600
+
     @field_validator("environment")
     @classmethod
     def _check_environment(cls, value: str) -> str:

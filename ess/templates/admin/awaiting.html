@@ -1,0 +1,25 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Čaká na rozhodnutie{% endblock %}
+{% block body %}
+<h1>Čaká na rozhodnutie predsedníctva</h1>
+<p class="muted">Členovia, ktorí ukončili členstvo vo všetkých skupinách. Zapíšte rozhodnutie predsedníctva.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Meno</th><th>Rozhodnutie</th></tr></thead>
+  <tbody>
+  {% for member_id, name in items %}
+    <tr><td><a href="/admin/members/{{ member_id }}">{{ name }}</a></td>
+      <td>
+        <form class="inline" method="post" action="/admin/members/{{ member_id }}/restore-unaffiliated">
+          {% include "admin/_csrf.html" %}<button class="primary">Zaradiť do „SSS – nezaradení“</button></form>
+        <form class="inline" method="post" action="/admin/members/{{ member_id }}/end-sss"
+              onsubmit="return confirm('Ukončiť členstvo v SSS?')">
+          {% include "admin/_csrf.html" %}
+          <input name="note" placeholder="Poznámka (napr. číslo uznesenia)" aria-label="Poznámka">
+          <button>Ukončiť členstvo v SSS</button></form>
+      </td></tr>
+  {% else %}
+    <tr><td colspan="2" class="muted">Nikto nečaká na rozhodnutie.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

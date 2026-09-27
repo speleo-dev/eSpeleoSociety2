@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{% block page_title %}Administrácia{% endblock %} – eSS{% endblock %}
+{% block header %}
+<header>
+  <a class="brand" href="/admin">eSS administrácia</a>
+  <nav>
+    <a href="/admin/members">Členovia</a>
+    <a href="/admin/clubs">Skupiny</a>
+    <a href="/admin/activations">Aktivácie</a>
+    <a href="/admin/awaiting">Čaká na rozhodnutie</a>
+  </nav>
+  <span class="muted">{{ admin.display_name }} ({{ admin.role|label }})</span>
+  <form class="inline" method="post" action="/admin/logout">
+    <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+    <button>Odhlásiť</button>
+  </form>
+</header>
+{% endblock %}
+{% block content %}
+  {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+  {% block body %}{% endblock %}
+{% endblock %}

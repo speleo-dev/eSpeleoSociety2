@@ -1,0 +1,40 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Členovia{% endblock %}
+{% block body %}
+<h1>Členovia <span class="muted">({{ total }})</span></h1>
+<form class="filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Meno, e-mail, číslo preukazu" aria-label="Hľadať">
+  <select name="club" aria-label="Skupina">
+    <option value="">Všetky skupiny</option>
+    {% for r in clubs %}<option value="{{ r.club.id }}" {% if club == r.club.id|string %}selected{% endif %}>{{ r.club.name }}</option>{% endfor %}
+  </select>
+  <select name="status" aria-label="Stav">
+    <option value="">Všetky stavy</option>
+    {% for s in statuses %}<option value="{{ s.value }}" {% if status == s.value %}selected{% endif %}>{{ s|label }}</option>{% endfor %}
+  </select>
+  <button>Filtrovať</button>
+</form>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Meno</th><th>Skupiny</th><th>E-mail</th><th>Stav v SSS</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="/admin/members/{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</a>
+        {% if r.data.reduced_fee %}<span class="chip" title="zľavnené členské">zľava</span>{% endif %}</td>
+      <td>{% for name, st, primary in r.clubs %}<span class="chip">{{ name }}{% if primary and r.clubs|length > 1 %} ★{% endif %} · {{ st|label }}</span>{% endfor %}</td>
+      <td>{{ r.data.email or "" }}</td>
+      <td>{{ r.sss_status|label }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">Žiadni členovia.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if pages > 1 %}
+<p>
+  {% if page > 1 %}<a href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}">← predchádzajúca</a>{% endif %}
+  strana {{ page }} / {{ pages }}
+  {% if page < pages %}<a href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}">ďalšia →</a>{% endif %}
+</p>
+{% endif %}
+{% endblock %}

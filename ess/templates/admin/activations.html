@@ -1,0 +1,19 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Aktivácie{% endblock %}
+{% block body %}
+<h1>Čaká na aktiváciu</h1>
+<p class="muted">Noví členovia a povýšení čakatelia navrhnutí predsedami skupín. Aktivujte až po doručení podkladov.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Meno</th><th>Skupina</th><th>Navrhnutý</th><th></th></tr></thead>
+  <tbody>
+  {% for i in items %}
+    <tr><td><a href="/admin/members/{{ i.member_id }}">{{ i.full_name }}</a></td><td>{{ i.club_name }}</td><td>{{ i.since|date }}</td>
+      <td><form class="inline" method="post" action="/admin/memberships/{{ i.membership_id }}/status">
+        {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="/admin/activations">
+        <input type="hidden" name="new_status" value="member"><button class="primary">Aktivovať</button></form></td></tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">Nič nečaká na aktiváciu.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

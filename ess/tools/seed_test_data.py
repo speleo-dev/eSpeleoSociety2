@@ -56,7 +56,7 @@ def _person(rng: random.Random, index: int) -> MemberData:
         phone=f"+421 9{rng.randint(0, 99):02d} {rng.randint(100, 999)} {rng.randint(100, 999)}"
         if rng.random() < 0.6 else None,
         card_number=str(1000 + index) if rng.random() < 0.5 else None,
-        member_since=date(rng.randint(1970, 2025), rng.randint(1, 12), 1),
+        member_since=date(rng.randint(min(max(1970, birth.year + 15), 2025), 2025), rng.randint(1, 12), 1),
     )
 
 

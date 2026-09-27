@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Prihlásenie zlyhalo – eSS{% endblock %}
+{% block content %}
+<h1>Prihlásenie zlyhalo</h1>
+{% if reason == "no_access" %}
+<p>Tento Google účet nemá prístup do administrácie. O prístup požiadajte systémového administrátora.</p>
+{% elif reason == "unverified" %}
+<p>E-mailová adresa Google účtu nie je overená.</p>
+{% else %}
+<p>Prihlásenie cez Google sa nepodarilo. Skúste to znova.</p>
+{% endif %}
+<p><a href="/admin/login">Skúsiť znova</a></p>
+{% endblock %}

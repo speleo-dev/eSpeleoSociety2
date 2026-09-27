@@ -140,5 +140,8 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/models.py` – ORM modely (`docs/data-model.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+- `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
+- `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `admin.py` (administrácia),
+  `templates.py` (Jinja2, slovenské popisy enumov). Každý POST formulár musí mať `csrf_token`.
 - `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie
 - `spikes/` – jednorazové technické testy (nie súčasť aplikácie)

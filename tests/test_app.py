@@ -25,8 +25,19 @@ def test_docs_hidden_in_production(monkeypatch):
     from ess.config import get_settings
 
     monkeypatch.setenv("ESS_ENVIRONMENT", "prod")
+    monkeypatch.setenv("ESS_SESSION_SECRET", "x" * 48)
     get_settings.cache_clear()
     assert TestClient(create_app()).get("/docs").status_code == 404
+
+
+def test_production_requires_session_secret(monkeypatch):
+    from ess.config import get_settings
+
+    monkeypatch.setenv("ESS_ENVIRONMENT", "prod")
+    monkeypatch.delenv("ESS_SESSION_SECRET", raising=False)
+    get_settings.cache_clear()
+    with pytest.raises(RuntimeError, match="ESS_SESSION_SECRET"):
+        create_app()
 
 
 @pytest.mark.db

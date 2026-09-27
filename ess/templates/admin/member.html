@@ -1,0 +1,77 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}{{ d.data.full_name() }}{% endblock %}
+{% block body %}
+{% set back = "/admin/members/" ~ d.member.id %}
+{% macro status_button(membership_id, target, text, primary=False) %}
+<form class="inline" method="post" action="/admin/memberships/{{ membership_id }}/status">
+  <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="back" value="{{ back }}">
+  <input type="hidden" name="new_status" value="{{ target.value }}">
+  <button {% if primary %}class="primary"{% endif %}>{{ text }}</button>
+</form>
+{% endmacro %}
+<h1>{{ d.data.full_name() }}</h1>
+<p><span class="chip">{{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">zľavnené členské</span>{% endif %}</p>
+<dl>
+  <dt>Dátum narodenia</dt><dd>{{ d.data.birth_date|date or "—" }}</dd>
+  <dt>E-mail</dt><dd>{{ d.data.email or "—" }}</dd>
+  <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
+  <dt>Bydlisko</dt><dd>{{ d.data.address or "—" }}</dd>
+  <dt>Číslo preukazu</dt><dd>{{ d.data.card_number or "—" }}</dd>
+  <dt>Člen SSS od</dt><dd>{{ d.data.member_since|date or "—" }}</dd>
+  {% if d.member.expelled_at %}<dt>Vylúčený</dt><dd>{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</dd>{% endif %}
+  {% if d.member.sss_ended_at %}<dt>Členstvo v SSS ukončené</dt><dd>{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</dd>{% endif %}
+</dl>
+
+<h2>Platné členstvá</h2>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Skupina</th><th>Stav</th><th>Od</th><th>Akcie</th></tr></thead>
+  <tbody>
+  {% for v in d.open_memberships %}{% set m = v.membership %}
+    <tr>
+      <td>{{ v.club_name }}{% if m.is_primary %} <span class="chip">primárna</span>{% endif %}</td>
+      <td data-label="Stav">{{ m.status|label }}</td>
+      <td data-label="Od">{{ m.valid_from|date }}</td>
+      <td>
+        {% if m.status in (S.CANDIDATE, S.PENDING_ACTIVATION) %}{{ status_button(m.id, S.MEMBER, "Aktivovať", True) }}{% endif %}
+        {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
+        {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
+        {% if m.status == S.SUSPENDED %}{{ status_button(m.id, S.MEMBER, "Obnoviť") }}{% endif %}
+        <form class="inline" method="post" action="/admin/memberships/{{ m.id }}/terminate"
+              onsubmit="return confirm('Ukončiť členstvo v tejto skupine?')">
+          {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
+          <button>Ukončiť v skupine</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">Žiadne platné členstvo.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if d.sss_status.value in ("awaiting_decision", "ended") %}
+<p>
+  <form class="inline" method="post" action="/admin/members/{{ d.member.id }}/restore-unaffiliated">
+    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
+    <button class="primary">Zaradiť do „SSS – nezaradení“</button>
+  </form>
+</p>
+{% endif %}
+
+{% if d.positions %}
+<h2>Funkcie</h2>
+<ul>{% for p in d.positions %}<li>{{ p.name }}{% if p.club_name %} ({{ p.club_name }}){% endif %}: {{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}</li>{% endfor %}</ul>
+{% endif %}
+
+<h2>História členstiev</h2>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Skupina</th><th>Stav</th><th>Od</th><th>Do</th><th>Dôvod ukončenia</th></tr></thead>
+  <tbody>
+  {% for v in d.history %}{% set m = v.membership %}
+    <tr><td>{{ v.club_name }}</td><td data-label="Stav">{{ m.status|label }}</td><td data-label="Od">{{ m.valid_from|date }}</td>
+        <td data-label="Do">{{ m.valid_to|date or "—" }}</td><td>{{ m.end_reason|label }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p class="muted">„Do“ je prvý deň, keď záznam už neplatí.</p>
+{% endblock %}
