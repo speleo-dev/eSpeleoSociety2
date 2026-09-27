@@ -153,11 +153,12 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 - Šifrovacia vrstva pre osobné údaje + blind index, auditný log.
 - Generátor testovacích dát.
 
-**Výsledky technického testu (2026-09-27):** spojenie Cloud Run → `eSpeleoSoc2` funguje, PostgreSQL 14.13.
-Otvorenie spojenia ~173 ms, dotaz ~17,5 ms (medián), max. 35 ms. PostgreSQL hlási spojenie bez SSL
-(pravdepodobne proxy pred DB) – overuje sa, či je šifrovaný aspoň úsek Cloud Run → WebSupport.
-Dôsledky pre návrh: pool spojení (spojenie sa neotvára pri každej požiadavke), najviac niekoľko DB dotazov
-na jednu stránku.
+**Výsledky technického testu (2026-09-27) – úspešný, R3 platí:**
+- Spojenie Cloud Run (europe-west3) → `eSpeleoSoc2` funguje, PostgreSQL 14.13.
+- Úsek Cloud Run → WebSupport je šifrovaný (TLS). WebSupport má pred DB proxy; úsek proxy → PostgreSQL
+  je vnútri ich privátnej siete a nešifrovaný (mimo našej kontroly, akceptované).
+- Otvorenie spojenia ~180 ms, dotaz ~18 ms (medián), max. ~39 ms.
+- Dôsledky: pool spojení, najviac niekoľko DB dotazov na stránku.
 
 ### Fáza 1 – Administrácia
 - Prihlásenie admina cez Google účet; hlavní admini z konfigurácie, ďalší admini a poverené osoby v aplikácii.

@@ -113,11 +113,67 @@ gcloud run services delete ess-db-probe --region $REGION
 
 Tajomstvo `ess-database-url` ponechaj, použije ho skutočná aplikácia.
 
-## Neskôr (po úspešnom teste)
+## 9. Šifrovacie kľúče pre osobné údaje
+
+Kľúče sa vygenerujú priamo v Cloud Shell a uložia do Secret Manageru. Na obrazovke sa nikdy nezobrazia.
+
+```bash
+printf 'k%s:%s' "$(date +%Y%m)" "$(openssl rand -base64 32)" \
+  | gcloud secrets create ess-pii-keys --data-file=-
+openssl rand -base64 32 | tr -d '\n' \
+  | gcloud secrets create ess-blind-index-key --data-file=-
+
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+for s in ess-pii-keys ess-blind-index-key; do
+  gcloud secrets add-iam-policy-binding $s \
+    --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+> **Dôležité:** ak sa kľúč `ess-pii-keys` stratí, osobné údaje v databáze už **nikto nerozšifruje**.
+> Secret Manager si ho pamätá, ale pre istotu si urob zálohu mimo Google (napr. správca hesiel).
+> Záloha sa robí iba raz, pred prvým uložením reálnych údajov:
+> `gcloud secrets versions access latest --secret=ess-pii-keys` a obsah ulož do správcu hesiel.
+> Rovnako `ess-blind-index-key`.
+
+## 10. Migrácia databázy
+
+Spúšťa sa z Cloud Shell. Pripojenie k DB sa vezme zo Secret Manageru a nikam sa neuloží.
+
+```bash
+cd ~/eSpeleoSociety2 && git pull
+python3 -m venv .venv && .venv/bin/pip install -q .
+ESS_DATABASE_URL="$(gcloud secrets versions access latest --secret=ess-database-url)" \
+  .venv/bin/alembic upgrade head
+```
+
+Očakávaný výstup končí riadkom `Running upgrade  -> 0001, Create audit_log table.`
+
+## 11. Nasadenie aplikácie
+
+```bash
+cd ~/eSpeleoSociety2
+REGION=europe-west3
+gcloud run deploy ess --source . --region $REGION \
+  --allow-unauthenticated \
+  --set-env-vars ESS_ENVIRONMENT=dev \
+  --set-secrets ESS_DATABASE_URL=ess-database-url:latest,ESS_PII_KEYS=ess-pii-keys:latest,ESS_BLIND_INDEX_KEY=ess-blind-index-key:latest \
+  --max-instances 2
+```
+
+`--allow-unauthenticated` znamená, že stránka je verejná. Zatiaľ obsahuje len úvodnú stránku
+„vo výstavbe“, takže to nevadí.
+
+Kontrola: gcloud vypíše `Service URL`. Otvor v prehliadači:
+- `<URL>/` – úvodná stránka,
+- `<URL>/readyz` – má vrátiť `{"status":"ok","database":"ok"}`.
+
+## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
 - Vlastná doména `ess.sss.sk` namapovaná na Cloud Run.
 - OAuth klient pre prihlásenie adminov Google účtom.
 - Overovanie certifikátu DB servera (`sslmode=verify-full`), ak WebSupport poskytne CA certifikát.
   Test používa `sslmode=require`, ktorý spojenie šifruje, ale neoveruje identitu servera.
-- Ďalšie tajomstvá: šifrovací kľúč osobných údajov, HMAC kľúč, podpisový kľúč eCP, Google Wallet účet, SMTP.
+- Ďalšie tajomstvá: Google Wallet účet, SMTP heslo pre `ess@sss.sk`.
