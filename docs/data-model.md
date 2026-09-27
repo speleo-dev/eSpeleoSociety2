@@ -12,16 +12,23 @@ Konvencie:
 
 ## Skupiny
 
-**`clubs`** – jaskyniarske (JS) a oblastné (OS) skupiny. Nie sú to osobné údaje, ukladajú sa čitateľne.
+**`clubs`** – skupiny SSS (jaskyniarske aj oblastné skupiny sa v IS nerozlišujú, líšia sa len názvom).
+Nie sú to osobné údaje, ukladajú sa čitateľne.
 
 | Stĺpec | Typ | Poznámka |
 |---|---|---|
 | `id` | uuid | |
 | `name` | text | celý názov, jedinečný |
 | `short_name` | text | skratka na preukaz |
-| `club_type` | `JS` / `OS` / `SSS` | `SSS` = predvolený klub pre nezaradených (práve jeden) |
+| `is_unaffiliated` | bool | predvolený klub **„SSS – nezaradení“** pre členov bez skupiny (práve jeden, viď nižšie) |
 | `uses_candidates` | bool | skupina používa čakateľský status |
 | `active` | bool | zaniknutá skupina sa nemaže, len deaktivuje |
+
+Klub **„SSS – nezaradení“**:
+- vytvorí ho migrácia; nedá sa zmazať ani deaktivovať,
+- nemá vlastného predsedu – spravuje ho predseda SSS a poverená osoba,
+- jeho členovia nemajú rovnaké práva ako členovia skupín (napr. nemajú zástupcu na valnom
+  zhromaždení); systém ho preto nepočíta medzi skupiny pri predsedníctve a podobných prehľadoch.
 
 ## Členovia
 
@@ -62,7 +69,7 @@ Pravidlá (kontroluje aplikácia a tam, kde sa dá, aj databáza):
 - Člen má najviac **jedno platné členstvo v danej skupine**.
 - Člen s aspoň jedným platným členstvom má **práve jedno primárne**.
 - Vylúčenému členovi sa nedá vytvoriť ani obnoviť členstvo.
-- Nezaradený člen má členstvo v klube `SSS`.
+- Nezaradený člen má členstvo v klube „SSS – nezaradení“.
 - Predseda skupiny môže vytvoriť `candidate` a `pending_activation`. Stav `member` nastavuje predseda SSS
   alebo poverená osoba (R14).
 
@@ -71,7 +78,7 @@ Pravidlá (kontroluje aplikácia a tam, kde sa dá, aj databáza):
 **`org_positions`** – číselník funkcií (napĺňa migrácia):
 `sss_chair` (predseda SSS), `sss_vice_chair` (podpredseda), `board_member` (člen výboru),
 `audit_chair` a `audit_member` (predseda a člen kontrolnej komisie), `club_chair` (predseda skupiny,
-viazaný na skupinu), `delegate` (poverená osoba SSS).
+viazaný na skupinu; nie pre klub „SSS – nezaradení“), `delegate` (poverená osoba SSS).
 
 **`position_holders`** – kto zastáva funkciu a kedy.
 
@@ -94,6 +101,7 @@ viazaný na skupinu), `delegate` (poverená osoba SSS).
 | Správa celého IS | hlavní admini (z konfigurácie), admini |
 | Aktivácia členov, oprava údajov členov | `sss_chair`, `delegate`, admini |
 | Správa vlastnej skupiny | `club_chair` danej skupiny |
+| Správa klubu „SSS – nezaradení“ | `sss_chair`, `delegate`, admini |
 
 ## Administrátori
 

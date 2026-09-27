@@ -18,7 +18,8 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
   všetkých skupín), kontrolná komisia. Všetci členovia orgánov sú členmi SSS.
 - **Skupina (club)** – jaskyniarska skupina (JS) alebo oblastná skupina (OS); samostatné občianske
   združenie v rámci SSS. Má predsedu.
-- **Predvolený klub „SSS“** – sem patria nezaradení členovia.
+- **Klub „SSS – nezaradení“** – predvolený klub pre členov bez skupiny; spravuje ho predseda SSS a poverená
+  osoba; jeho členovia nemajú zástupcu na valnom zhromaždení. JS a OS sa v IS nerozlišujú.
 - **Stav členstva v skupine** – `candidate` (čakateľ, nie plnohodnotný člen), `member`, `suspended`
   (neaktívny, pozastavené), `expelled` (vylúčený – hrubé porušenie kódexu, **nesmie sa znova stať
   členom SSS**), ukončené členstvo.

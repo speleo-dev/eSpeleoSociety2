@@ -92,7 +92,8 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
   (nastavenie skupiny).
 - Nový člen zadaný predsedom skupiny čaká na aktiváciu predsedom SSS alebo poverenou osobou (R14).
   Návrh: rovnako aj povýšenie čakateľa na člena.
-- Nezaradení členovia patria do predvoleného klubu „SSS“.
+- Nezaradení členovia patria do predvoleného klubu „SSS – nezaradení“ (spravuje ho predseda SSS
+  a poverená osoba; jeho členovia nemajú zástupcu na valnom zhromaždení).
 
 ## 5a. Overovacia stránka (po naskenovaní QR)
 
@@ -109,7 +110,7 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 - `members` – identita (šifrované osobné údaje + blind indexy), dátum narodenia, e-mail,
   príznak **`reduced_fee`** (zľavnené členské), stav vo vzťahu k SSS (aj `expelled`). Skutočne vyrubená
   suma sa ukladá pri členskom za daný rok, takže história zostáva zachovaná.
-- `clubs` – JS/OS, predvolený klub „SSS“, nastavenie „používa čakateľov“.
+- `clubs` – skupiny (JS a OS sa nerozlišujú), predvolený klub „SSS – nezaradení“, nastavenie „používa čakateľov“.
 - `memberships` – člen × skupina, stav (`candidate`, `pending_activation`, `member`, `suspended`,
   `terminated`, `expelled`), `is_primary`, `valid_from`, `valid_to`, kto a kedy aktivoval. História sa nemaže.
 - **Organizačná štruktúra:**
