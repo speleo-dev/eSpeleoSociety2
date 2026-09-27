@@ -38,11 +38,13 @@ Klub **„SSS – nezaradení“**:
 |---|---|---|
 | `id` | uuid | |
 | `first_name_enc`, `last_name_enc` | bytes | |
-| `title_before_enc`, `title_after_enc` | bytes | tituly (Ing., PhD.) – viď otázka 3 |
+| `title_before_enc`, `title_after_enc` | bytes | tituly (Ing., PhD.) – zobrazujú sa na eCP a kartičke |
+| `card_number_enc`, `card_number_bidx` | bytes | číslo papierového preukazu, voliteľné, dopĺňa sa ručne; jedinečné |
+| `member_since` | date | člen SSS od (pri importe z papierovej evidencie ručne); zobrazuje sa pri overení |
 | `birth_date_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP |
 | `email_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP |
 | `address_enc` | bytes | bydlisko, voliteľné |
-| `phone_enc` | bytes | voliteľné (kontakt predsedu na overovacej stránke) |
+| `phone_enc` | bytes | voliteľné; telefón predsedu skupiny a predsedu SSS sa zobrazuje na overovacej stránke |
 | `lookup_bidx` | bytes | HMAC(meno, priezvisko, rok narodenia) – vyhľadanie pri žiadosti o eCP |
 | `email_bidx` | bytes | HMAC(e-mail) – kontrola, že e-mail nepoužíva iný člen |
 | `reduced_fee` | bool | zľavnené členské (R13) |
@@ -70,6 +72,7 @@ Pravidlá (kontroluje aplikácia a tam, kde sa dá, aj databáza):
 - Člen s aspoň jedným platným členstvom má **práve jedno primárne**.
 - Vylúčenému členovi sa nedá vytvoriť ani obnoviť členstvo.
 - Nezaradený člen má členstvo v klube „SSS – nezaradení“.
+- Povýšenie čakateľa na člena tiež prechádza cez `pending_activation`.
 - Predseda skupiny môže vytvoriť `candidate` a `pending_activation`. Stav `member` nastavuje administrátor
   (R14).
 
@@ -155,10 +158,10 @@ Roly:
 
 1. ~~Prihlásenie predsedu SSS a poverených osôb~~ – vyriešené: administratívny prístup je oddelený
    od organizačnej štruktúry (Google účet, udeľuje systémový administrátor).
-2. **Evidenčné číslo člena.** Majú členovia SSS dnes číslo (napríklad číslo papierového preukazu),
-   ktoré treba zachovať a zobraziť na eCP? Ak nie, systém pridelí nové poradové číslo.
-3. **Tituly** (Ing., PhD.) – evidovať a zobraziť ich na eCP a kartičke?
-4. **Telefón** – evidovať? Hodil by sa ako kontakt na predsedu skupiny na overovacej stránke.
-5. **Overovacia stránka** (otázka z plánu): zobraziť len meno, fotku a skupinu?
-6. **Povýšenie čakateľa na člena** (otázka z plánu): má tiež čakať na aktiváciu administrátorom? (návrh: áno)
+2. ~~Evidenčné číslo~~ – voliteľné pole `card_number` (číslo papierového preukazu), dopĺňa sa ručne.
+3. ~~Tituly~~ – áno, evidujú sa a zobrazujú na eCP a kartičke.
+4. ~~Telefón~~ – áno, pri overení člena je žiaduci.
+5. ~~Overovacia stránka~~ – vyriešené, viď `docs/PLAN.md` sekcia 5a (jednorazový QR).
+6. ~~Povýšenie čakateľa na člena~~ – áno, vyžaduje aktiváciu administrátorom (doklady zvyčajne po
+   výročnej schôdzi skupiny).
 7. **Pozastavené členstvo** – môže ho predseda skupiny obnoviť sám, alebo to znova vyžaduje aktiváciu?

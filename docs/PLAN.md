@@ -70,6 +70,8 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   a odoberú automaticky podľa funkcie.
 - **R16** – Offline podpisovaný QR sa nerobí. QR v eCP aj na kartičke je odkaz na overovaciu stránku
   s nečitateľným a neuhádnuteľným tokenom.
+- **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
+  Denný limit overení na člena. Podrobnosti v sekcii 5a.
 - **R12** – E-mail systému: `ess@sss.sk`, doména `sss.sk` (aplikácia napr. na `ess.sss.sk`).
 
 ## 4. Architektúra
@@ -106,11 +108,23 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 
 - Výrazne: **„Člen Slovenskej speleologickej spoločnosti – jaskyniar“** (alebo výrazné upozornenie, ak
   členstvo nie je platné).
-- Osobné údaje člena: meno, fotka, skupina. Návrh: len minimum potrebné na overenie totožnosti
-  (stránku uvidí každý, kto naskenuje QR).
-- Stav zaplatenia členského na aktuálny rok.
-- Kontakty: predseda skupiny, predseda SSS (podľa aktuálnej organizačnej štruktúry).
+- To isté ako na preukaze: celé meno s titulmi, fotka, adresa bydliska, skupina, člen SSS od,
+  stav členského na aktuálny rok.
+- Kontakty: predseda skupiny a predseda SSS (meno, telefón) podľa aktuálnej organizačnej štruktúry.
 - Zoznam platných dokumentov (R11).
+
+**Jednorazový QR v eCP (R18):**
+- QR v eCP obsahuje odkaz s náhodným tokenom. Po overení sa token zneplatní, vygeneruje sa nový
+  a eCP v Google Wallet sa aktualizuje (nový QR).
+- Odfotený QR sa dá použiť najviac raz a fotka na overovacej stránke držiteľa usvedčí.
+- Denný limit overení na člena (hodnota sa určí podľa limitov Google Wallet API).
+- Návrh – ochranná lehota: použitý token platí ešte krátko (napr. 15 min). Dôvody: niektoré čítačky QR
+  otvoria odkaz samy na náhľad (a token by „minuli“ skôr než kontrolór) a telefón člena bez signálu
+  dostane nový QR až po pripojení.
+- **Kartička SSS (PDF)** je vytlačená, jej QR sa nedá pregenerovať. Návrh: kartička má vlastný opakovane
+  použiteľný token s denným limitom; pri strate sa kartička zneplatní a vystaví nová.
+- Súhlas s GDPR pri žiadosti o eCP musí výslovne uvádzať, že údaje (vrátane adresy) sa zobrazia
+  kontrolórovi po naskenovaní QR.
 
 ## 6. Dátový model (náčrt)
 

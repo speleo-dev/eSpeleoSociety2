@@ -40,7 +40,7 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 - **Certifikáty** – schopnosti člena: SRT1, SRT2, záchranár, hasič a ďalšie (s platnosťou).
 - **eCP** – elektronický jaskyniarsky preukaz v Google Wallet: preukaz, platobná linka na členské,
   notifikácie, vstup na portál, odkaz do národnej databázy jaskýň. QR vedie na online overovaciu
-  stránku (offline overenie sa nerieši).
+  stránku (offline overenie sa nerieši). QR je jednorazový – po overení sa pregeneruje (denný limit).
 - **Kartička SSS** – PDF na vytlačenie pre členov bez smartfónu; rovnaký QR ako eCP.
 - **Platobná referencia** – nečitateľný jedinečný kód; mapuje sa na člena alebo skupinu členov (hromadná
   platba predsedu) a rok. Každý rok nová.
