@@ -97,8 +97,21 @@ def _redirect_uri(request: Request) -> str:
     return str(request.url_for("admin_auth_callback"))
 
 
+def google_config_ok() -> bool:
+    """Catch the most common setup mistake (wrong value in ESS_GOOGLE_CLIENT_ID) before Google does."""
+    settings = get_settings()
+    client_id = (settings.google_client_id or "").strip()
+    return client_id.endswith(".apps.googleusercontent.com") and " " not in client_id and bool(
+        settings.google_client_secret
+    )
+
+
 @router.get("/login")
 async def admin_login(request: Request):
+    if not google_config_ok():
+        from ess.web.templates import templates
+
+        return templates.TemplateResponse(request, "admin/login_failed.html", {"reason": "config"}, status_code=500)
     return await _google().authorize_redirect(request, _redirect_uri(request), prompt="select_account")
 
 

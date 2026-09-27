@@ -33,6 +33,11 @@ class FakeGoogle:
 
 @pytest.fixture
 def google(monkeypatch):
+    from ess.config import get_settings
+
+    monkeypatch.setenv("ESS_GOOGLE_CLIENT_ID", "123-test.apps.googleusercontent.com")
+    monkeypatch.setenv("ESS_GOOGLE_CLIENT_SECRET", "test-secret")
+    get_settings.cache_clear()
     fake = FakeGoogle()
     monkeypatch.setattr(auth, "_google", lambda: fake)
     return fake
@@ -166,3 +171,13 @@ def test_labels_do_not_collide():
     assert label(MembershipStatus.MEMBER) == "člen"
     assert label(SssStatus.MEMBER) == "člen SSS"
     assert label(None) == ""
+
+
+def test_login_explains_bad_google_config(client, monkeypatch):
+    from ess.config import get_settings
+
+    monkeypatch.setenv("ESS_GOOGLE_CLIENT_ID", "<CLIENT_ID>")
+    monkeypatch.setenv("ESS_GOOGLE_CLIENT_SECRET", "x")
+    get_settings.cache_clear()
+    response = client.get("/admin/login", follow_redirects=False)
+    assert response.status_code == 500 and "ESS_GOOGLE_CLIENT_ID" in response.text

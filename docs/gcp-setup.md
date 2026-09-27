@@ -222,17 +222,37 @@ for s in ess-google-client-secret ess-session-secret; do
 done
 ```
 
-**d) Nové nasadenie** (e-maily hlavných administrátorov oddeľ čiarkou; `^;^` hovorí gcloud, že
-premenné sú oddelené bodkočiarkou):
+**d) Nové nasadenie.** Najprv si ulož hodnoty do premenných – `CLIENT_ID` je **Client ID** (nie secret),
+končí na `.apps.googleusercontent.com`; vkladaj ho bez úvodzoviek a bez znakov `< >`. E-maily hlavných
+administrátorov oddeľ čiarkou bez medzier:
+
+```bash
+CLIENT_ID=123456789012-xxxxxxxx.apps.googleusercontent.com
+ADMINS=tvoj@gmail.com,kamarat@gmail.com
+```
+
+Potom nasaď (`^;^` hovorí gcloud, že premenné sú oddelené bodkočiarkou):
 
 ```bash
 cd ~/eSpeleoSociety2 && git pull
 gcloud run deploy ess --source . --region $REGION --allow-unauthenticated --max-instances 2 \
-  --set-env-vars "^;^ESS_ENVIRONMENT=dev;ESS_PUBLIC_BASE_URL=$URL;ESS_GOOGLE_CLIENT_ID=<CLIENT_ID>;ESS_SUPER_ADMIN_EMAILS=<tvoj@gmail.com>,<kamarat@gmail.com>" \
+  --set-env-vars "^;^ESS_ENVIRONMENT=dev;ESS_PUBLIC_BASE_URL=$URL;ESS_GOOGLE_CLIENT_ID=$CLIENT_ID;ESS_SUPER_ADMIN_EMAILS=$ADMINS" \
   --set-secrets ESS_DATABASE_URL=ess-database-url:latest,ESS_PII_KEYS=ess-pii-keys:latest,ESS_BLIND_INDEX_KEY=ess-blind-index-key:latest,ESS_GOOGLE_CLIENT_SECRET=ess-google-client-secret:latest,ESS_SESSION_SECRET=ess-session-secret:latest
 ```
 
 Potom otvor `<URL>/admin` a prihlás sa. Ďalších administrátorov bude možné pridať v aplikácii.
+
+**Riešenie problémov:**
+- *„The OAuth client was not found“ / `invalid_client`* – zlá hodnota `ESS_GOOGLE_CLIENT_ID` (Google ho
+  nepozná). Over: `gcloud run services describe ess --region $REGION --format=yaml | grep -A1 GOOGLE_CLIENT_ID`
+  a oprav bez nového zostavenia: `gcloud run services update ess --region $REGION --update-env-vars ESS_GOOGLE_CLIENT_ID=$CLIENT_ID`.
+  Nový klient sa niekedy prejaví až o 5–10 minút.
+- *„redirect_uri_mismatch“* – adresa v *Authorized redirect URIs* sa musí presne zhodovať s
+  `<URL>/admin/auth/callback` (vrátane `https://`, bez lomky na konci).
+- *„Prihlásenie cez Google sa nepodarilo“* (po výbere účtu) – zlý Client Secret v `ess-google-client-secret`;
+  pridaj novú verziu: `printf '%s' "SECRET" | gcloud secrets versions add ess-google-client-secret --data-file=-`
+  a znova nasaď. Client Secret sa **nekóduje** (kódovanie sa týka len hesla k DB v kroku 5).
+- *„Tento Google účet nemá prístup“* – e-mail nie je v `ESS_SUPER_ADMIN_EMAILS` alebo nie je v *Test users*.
 
 ## Neskôr
 
