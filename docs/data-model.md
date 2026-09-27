@@ -26,7 +26,7 @@ Nie sú to osobné údaje, ukladajú sa čitateľne.
 
 Klub **„SSS – nezaradení“**:
 - vytvorí ho migrácia; nedá sa zmazať ani deaktivovať,
-- nemá vlastného predsedu – spravuje ho poverená osoba (rola `staff`) alebo systémový administrátor,
+- nemá vlastného predsedu – spravuje ho administrátor,
 - jeho členovia nemajú rovnaké práva ako členovia skupín (napr. nemajú zástupcu na valnom
   zhromaždení); systém ho preto nepočíta medzi skupiny pri predsedníctve a podobných prehľadoch.
 
@@ -70,8 +70,8 @@ Pravidlá (kontroluje aplikácia a tam, kde sa dá, aj databáza):
 - Člen s aspoň jedným platným členstvom má **práve jedno primárne**.
 - Vylúčenému členovi sa nedá vytvoriť ani obnoviť členstvo.
 - Nezaradený člen má členstvo v klube „SSS – nezaradení“.
-- Predseda skupiny môže vytvoriť `candidate` a `pending_activation`. Stav `member` nastavuje používateľ
-  s administratívnym prístupom (`staff` alebo `system_admin`) (R14).
+- Predseda skupiny môže vytvoriť `candidate` a `pending_activation`. Stav `member` nastavuje administrátor
+  (R14).
 
 ## Organizačná štruktúra
 
@@ -97,7 +97,9 @@ viazaný na skupinu; nie pre klub „SSS – nezaradení“).
   predsedu automaticky ukončí funkciu predchádzajúceho.
 - Predsedníctvo sa neukladá, zostaví sa z platných funkcií.
 - Z funkcie sa odvodzuje jediné oprávnenie: **predseda skupiny spravuje na portáli svoju skupinu**
-  (prihlásenie cez eCP). Po voľbách v skupine to teda platí automaticky.
+  (prihlásenie cez eCP).
+- **Zmenu predsedu skupiny zadáva len administrátor**, až po doručení dokumentov (zvyčajne z výročnej
+  schôdze skupiny). Dovtedy má oprávnenia starý predseda. Zmena sa týka len danej skupiny a dá sa vrátiť.
 - Funkcie slúžia aj na zobrazenie kontaktov (predseda skupiny a predseda SSS na overovacej stránke).
 - Budúcnosť (približne o 3,5 roka): dočasná rola **delegát** – osoba poverená skupinou na účasť
   a hlasovanie na valnom zhromaždení. Slovo „delegát“ sa preto inde v IS nepoužíva.
@@ -116,7 +118,7 @@ Nový predseda SSS dostane prístup až vtedy, keď mu ho udelí systémový adm
 | `display_name_enc` | bytes | meno na zobrazenie v administrácii |
 | `google_email_bidx` | bytes | HMAC(e-mail), na vyhľadanie pri prihlásení |
 | `google_email_enc` | bytes | na zobrazenie v zozname používateľov |
-| `role` | enum | `system_admin` / `staff` |
+| `role` | enum | `system_admin` / `admin` |
 | `active` | bool | odobratie prístupu = deaktivácia (história v audite zostáva) |
 | `granted_by`, `granted_at` | | kto a kedy prístup udelil |
 
@@ -124,14 +126,15 @@ Roly:
 - **`system_admin` – systémový administrátor:** všetko, vrátane udeľovania a odoberania prístupov
   a systémových nastavení. Dvaja hlavní systémoví administrátori sú v premennej `ESS_SUPER_ADMIN_EMAILS`
   a z aplikácie sa odobrať nedajú.
-- **`staff` – poverená osoba:** evidencia členov a skupín, aktivácia členov, opravy údajov, klub
+- **`admin` – administrátor** (jednotný názov pre predsedu SSS alebo poverenú osobu s povolením na
+  zmeny v IS; nemusí byť členom SSS): evidencia členov a skupín, aktivácia členov, opravy údajov, klub
   „SSS – nezaradení“, spracovanie žiadostí o eCP, nahrávanie bankových výpisov. Nemôže spravovať
   prístupy ani systémové nastavenia.
 
 | Oprávnenie | Kto ho má |
 |---|---|
 | Prístupy do administrácie, systémové nastavenia | `system_admin` |
-| Evidencia členov a skupín, aktivácia členov, klub „SSS – nezaradení“ | `staff`, `system_admin` |
+| Evidencia členov a skupín, aktivácia členov, klub „SSS – nezaradení“ | `admin`, `system_admin` |
 | Správa vlastnej skupiny na portáli | predseda skupiny (z funkcie `club_chair`) |
 
 ## Certifikáty
@@ -156,6 +159,5 @@ Roly:
 3. **Tituly** (Ing., PhD.) – evidovať a zobraziť ich na eCP a kartičke?
 4. **Telefón** – evidovať? Hodil by sa ako kontakt na predsedu skupiny na overovacej stránke.
 5. **Overovacia stránka** (otázka z plánu): zobraziť len meno, fotku a skupinu?
-6. **Povýšenie čakateľa na člena** (otázka z plánu): má tiež čakať na aktiváciu používateľom
-   s administratívnym prístupom? (návrh: áno)
+6. **Povýšenie čakateľa na člena** (otázka z plánu): má tiež čakať na aktiváciu administrátorom? (návrh: áno)
 7. **Pozastavené členstvo** – môže ho predseda skupiny obnoviť sám, alebo to znova vyžaduje aktiváciu?

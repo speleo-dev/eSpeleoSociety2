@@ -40,16 +40,18 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   overený e-mail → passkey na telefóne → ďalšie prihlásenia na jeden klik. Kódy jednorazové, krátkodobé.
 - **R6** – Prihlásenie administrátora: **Google účet** (OpenID Connect, rozsahy len `openid email profile`).
   Dvaja hlavní systémoví administrátori sú zadaní v konfigurácii servera (nedajú sa odobrať z aplikácie).
-  Ďalších systémových administrátorov a poverené osoby pridáva systémový administrátor v aplikácii podľa
+  Ďalších systémových administrátorov a administrátorov pridáva systémový administrátor v aplikácii podľa
   e-mailu Google účtu. Odporúčanie: zapnuté dvojfaktorové overenie na týchto Google účtoch.
 - **R17** – **Administratívny prístup je oddelený od organizačnej štruktúry.** Nie je viazaný na členstvo,
   eCP ani funkciu; udeľuje ho systémový administrátor. Roly: `system_admin` (systémový administrátor)
-  a `staff` (poverená osoba – nemusí byť členom SSS). Nový predseda SSS dostane prístup až po udelení.
-  Jediné oprávnenie odvodené z funkcie: predseda skupiny spravuje svoju skupinu na portáli.
+  a `admin` (**administrátor** – jednotný názov pre predsedu SSS alebo poverenú osobu s povolením na zmeny
+  v IS; nemusí byť členom SSS). Nový predseda SSS dostane prístup až po udelení.
+  Jediné oprávnenie odvodené z funkcie: predseda skupiny spravuje svoju skupinu na portáli. Zmenu predsedu
+  skupiny zadáva len administrátor po doručení dokumentov (zvyčajne z výročnej schôdze); dovtedy má
+  oprávnenia starý predseda.
   Slovo „delegát“ je vyhradené pre budúcu rolu na valnom zhromaždení.
 - **R7** – Bez platobnej brány. Platba bežným prevodom cez **PAYMe odkaz** (slovenský štandard PaymentLink,
-  parameter `PI` = referencia platiteľa). Bankový výpis (súbor z internetbankingu) nahráva používateľ
-  s administratívnym prístupom; referencia platiteľa je vo výpise.
+  parameter `PI` = referencia platiteľa). Bankový výpis (súbor z internetbankingu) nahráva administrátor; referencia platiteľa je vo výpise.
 - **R8** – Apple Wallet sa teraz nerieši.
 - **R9** – Stará DB sa nemigruje. Vytvorí sa generátor testovacích dát.
 - **R10** – Hlásenie vstupu do jaskyne je doplnková funkcia na 2–3 kliky. Po uplynutí času príde predsedovi
@@ -59,9 +61,9 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   Kto spravuje ktorú lokalitu, rieši NDBJ (národná databáza jaskýň), nie eSS.
 - **R13** – Zľavnené členské je **jeden príznak** člena (bez rozlíšenia ZTP/dôchodca). Automaticky sa nastaví
   členovi, ktorý v roku X dosiahne vek daný parametrom – zľava platí od roku X+1. Ručne ho môže nastaviť
-  admin/poverená osoba (napr. ZTP).
+  administrátor (napr. ZTP).
 - **R14** – Nový člen (nie čakateľ) zadaný predsedom skupiny nie je aktívny hneď; čaká na **aktiváciu
-  používateľom s administratívnym prístupom** (poverená osoba alebo systémový administrátor).
+  administrátorom**.
   Čakateľa predseda skupiny pridáva priamo.
 - **R15** – Organizačná štruktúra SSS je v dátovom modeli (predseda SSS, výbor, kontrolná komisia,
   predsedovia skupín). Po voľbách sa zadajú nové funkcie s dátumom a oprávnenia v systéme sa priradia
@@ -93,14 +95,12 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 - Parametre v nastaveniach: **výška členského** (teraz 15 €), **zľavnené členské**, **vek pre zľavu**
   (60 alebo 62 – parameter).
 - Zľavnené členské: jeden príznak člena (R13). Automatické nastavenie podľa veku beží pri otvorení nového
-  roka členského; ručné nastavenie (napr. ZTP) robí admin alebo poverená osoba.
+  roka členského; ručné nastavenie (napr. ZTP) robí administrátor.
 - **Čakateľ neplatí** a nie je plnohodnotným členom; niektoré skupiny čakateľský status nepoužívajú
   (nastavenie skupiny).
-- Nový člen zadaný predsedom skupiny čaká na aktiváciu poverenou osobou alebo systémovým
-  administrátorom (R14).
+- Nový člen zadaný predsedom skupiny čaká na aktiváciu administrátorom (R14).
   Návrh: rovnako aj povýšenie čakateľa na člena.
-- Nezaradení členovia patria do predvoleného klubu „SSS – nezaradení“ (spravuje ho poverená osoba
-  alebo systémový administrátor; jeho členovia nemajú zástupcu na valnom zhromaždení).
+- Nezaradení členovia patria do predvoleného klubu „SSS – nezaradení“ (spravuje ho administrátor; jeho členovia nemajú zástupcu na valnom zhromaždení).
 
 ## 5a. Overovacia stránka (po naskenovaní QR)
 
@@ -127,7 +127,7 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
     zadajú noví držitelia; starým sa funkcia ukončí dátumom.
   - Z funkcie sa odvodzuje len správa vlastnej skupiny predsedom skupiny; administratívny prístup je
     oddelený (R17). Predsedníctvo = predseda SSS + výbor + predsedovia skupín (odvodené, nie ukladané).
-- `admin_users` – Google účty s administratívnym prístupom, rola `system_admin` / `staff` (R17).
+- `admin_users` – Google účty s administratívnym prístupom, rola `system_admin` / `admin` (R17).
 - `fees` – členské za rok: člen, rok, vyrubená suma, či bola zľavnená, stav (nezaplatené/zaplatené).
 - `payment_references` – referencia platiteľa → rok + jeden alebo viac členov (hromadná platba predsedu).
   Referencia je **náhodný kód bez vnútorného významu** (napr. 12 znakov z abecedy A–Z a 2–7, bez
@@ -147,7 +147,7 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 - Reálne dáta sú v zlom stave (papier, Word, Excel). Niekto ich musí zjednotiť do **jedného zoznamu podľa
   šablóny** (vytvoríme vo fáze 1): meno, priezvisko, skupina, voliteľne bydlisko, e-mail, dátum narodenia.
 - Import prijme aj člena bez dátumu narodenia alebo e-mailu, ale taký člen **nemôže požiadať o eCP**, kým
-  mu údaje nedoplní predseda skupiny alebo poverená osoba.
+  mu údaje nedoplní predseda skupiny alebo administrátor.
 - Pre vývoj: generátor fiktívnych testovacích dát (slovenské mená, skupiny, členstvá, história, platby).
 
 ## 8. Fázy
@@ -170,10 +170,11 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 - Dôsledky: pool spojení, najviac niekoľko DB dotazov na stránku.
 
 ### Fáza 1 – Administrácia
-- Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší a poverené osoby v aplikácii.
+- Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
+  administrátori v aplikácii.
 - Skupiny, členovia, členstvá s históriou, primárna skupina, zľavnené členské, certifikáty.
 - Organizačná štruktúra a funkcie s obdobím; oprávnenia odvodené z funkcií.
-- Aktivácia nových členov (poverená osoba / systémový administrátor).
+- Aktivácia nových členov a zmena predsedov skupín (administrátor).
 - Šablóna a import zjednoteného zoznamu členov; generátor fiktívnych testovacích dát.
 - Návrh dátového modelu: `docs/data-model.md`.
 - Kontroly: vylúčený sa nesmie znova stať členom, práve jedna primárna skupina.
@@ -182,7 +183,7 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 - Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail (povinné) → overenie e-mailu
   („klikni sem“) → vyhľadanie člena. **Pokračovať sa dá len pri presnej zhode všetkých údajov.**
   Ak IS nemá dátum narodenia alebo e-mail, alebo sa e-mail nezhoduje, žiadosť sa zastaví s pokynom
-  kontaktovať predsedu skupiny alebo poverenú osobu SSS → fotka tváre + súhlasy (GDPR, notifikácie)
+  kontaktovať predsedu skupiny alebo administrátora SSS → fotka tváre + súhlasy (GDPR, notifikácie)
   + voľba PDF kartičky.
 - Obrazovka spracovania žiadostí: schváliť / zamietnuť s dôvodom (napr. nevyhovujúca fotka).
 - Vydanie: Google Wallet preukaz, PDF kartička, e-mail s odkazmi.
@@ -225,4 +226,4 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 3. V akom formáte exportuje banka SSS výpis (CSV, XML camt.053, …)? Treba vzorový výpis.
 4. Gmail druhého hlavného admina (zadá sa do konfigurácie, nie do repozitára).
 5. Aké osobné údaje presne zobraziť na overovacej stránke (návrh: meno, fotka, skupina)?
-6. Potrebuje aj povýšenie čakateľa na člena aktiváciu poverenou osobou? (návrh: áno)
+6. Potrebuje aj povýšenie čakateľa na člena aktiváciu administrátorom? (návrh: áno)
