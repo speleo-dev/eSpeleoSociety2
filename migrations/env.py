@@ -5,6 +5,7 @@ from logging.config import fileConfig
 from alembic import context
 
 import ess.audit  # noqa: F401  (registers models on Base.metadata)
+import ess.models  # noqa: F401
 from ess.db import Base, get_engine
 
 config = context.config

@@ -7,7 +7,7 @@ and names of changed fields.
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, String, func
+from sqlalchemy import BigInteger, DateTime, Index, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -26,6 +26,11 @@ class AuditLog(Base):
     entity_id: Mapped[str | None] = mapped_column(String(64))
     details: Mapped[dict | None] = mapped_column(JSONB)
     request_id: Mapped[str | None] = mapped_column(String(64))
+
+    __table_args__ = (
+        Index("ix_audit_log_entity", "entity_type", "entity_id"),
+        Index("ix_audit_log_occurred_at", "occurred_at"),
+    )
 
 
 def record(

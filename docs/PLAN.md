@@ -118,11 +118,12 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
   a eCP v Google Wallet sa aktualizuje (nový QR).
 - Odfotený QR sa dá použiť najviac raz a fotka na overovacej stránke držiteľa usvedčí.
 - Denný limit overení na člena (hodnota sa určí podľa limitov Google Wallet API).
-- Návrh – ochranná lehota: použitý token platí ešte krátko (napr. 15 min). Dôvody: niektoré čítačky QR
+- Ochranná lehota: použitý token platí ešte krátko (napr. 15 min). Dôvody: niektoré čítačky QR
   otvoria odkaz samy na náhľad (a token by „minuli“ skôr než kontrolór) a telefón člena bez signálu
   dostane nový QR až po pripojení.
-- **Kartička SSS (PDF)** je vytlačená, jej QR sa nedá pregenerovať. Návrh: kartička má vlastný opakovane
-  použiteľný token s denným limitom; pri strate sa kartička zneplatní a vystaví nová.
+- **Kartička SSS (PDF)** má vlastný kód (iný ako eCP), vydáva sa vždy na jeden kalendárny rok a kód platí
+  len pre daný rok. Overovacia stránka kartičky zobrazí len: **„Člen Slovenskej speleologickej spoločnosti“**
+  a **„Členské zaplatené na rok XXXX“** – žiadne ďalšie údaje.
 - Súhlas s GDPR pri žiadosti o eCP musí výslovne uvádzať, že údaje (vrátane adresy) sa zobrazia
   kontrolórovi po naskenovaní QR.
 

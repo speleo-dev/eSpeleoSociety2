@@ -41,7 +41,8 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 - **eCP** – elektronický jaskyniarsky preukaz v Google Wallet: preukaz, platobná linka na členské,
   notifikácie, vstup na portál, odkaz do národnej databázy jaskýň. QR vedie na online overovaciu
   stránku (offline overenie sa nerieši). QR je jednorazový – po overení sa pregeneruje (denný limit).
-- **Kartička SSS** – PDF na vytlačenie pre členov bez smartfónu; rovnaký QR ako eCP.
+- **Kartička SSS** – PDF na vytlačenie pre členov bez smartfónu; vydáva sa na jeden rok, má vlastný kód.
+  Overenie ukáže len „Člen Slovenskej speleologickej spoločnosti“ a „Členské zaplatené na rok XXXX“.
 - **Platobná referencia** – nečitateľný jedinečný kód; mapuje sa na člena alebo skupinu členov (hromadná
   platba predsedu) a rok. Každý rok nová.
 
@@ -120,7 +121,8 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"   # inštalácia
 .venv/bin/uvicorn ess.main:app --reload                      # lokálny server (http://127.0.0.1:8000)
 .venv/bin/pytest -q                                          # testy (DB testy sa bez DB preskočia)
 ESS_DATABASE_URL=... .venv/bin/alembic upgrade head          # migrácie DB
-.venv/bin/alembic revision -m "popis"                         # nová migrácia (písať ručne, nie autogenerate naslepo)
+.venv/bin/alembic revision -m "popis"                         # nová migrácia (autogenerate len ako návrh, vždy skontrolovať)
+.venv/bin/python -m ess.tools.seed_test_data                  # fiktívne testovacie dáta do PRÁZDNEJ dev DB
 ```
 
 DB testy: `ESS_TEST_DATABASE_URL` (prázdna testovacia DB, testy ju mažú!) a `ESS_DB_SSLMODE=disable` pre
@@ -130,6 +132,10 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 
 - `ess/main.py` – FastAPI aplikácia; `ess/config.py` – konfigurácia (premenné `ESS_*`)
 - `ess/db.py` – pool spojení, `Base` pre modely; `ess/audit.py` – auditný log
-- `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC)
+- `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC);
+  `ess/security/pii.py` – prístup ku kľúčom z konfigurácie
+- `ess/models.py` – ORM modely (`docs/data-model.md`)
+- `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
+  `positions`, `admin_access`, `settings`). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie
 - `spikes/` – jednorazové technické testy (nie súčasť aplikácie)

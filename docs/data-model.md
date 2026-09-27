@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: návrh (2026-09-27). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácia `0002`, 2026-09-27). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -9,6 +9,7 @@ Konvencie:
 - Stĺpce s koncovkou `_bidx` sú blind indexy (HMAC) na presné vyhľadanie.
 - Každá tabuľka má `created_at`, `updated_at`; každá zmena ide do `audit_log`.
 - História sa nemaže: zmena stavu = ukončenie platného záznamu (`valid_to`) + nový záznam.
+- `valid_to` je **prvý deň, keď záznam už neplatí** (pri zmene v ten istý deň: starý `valid_to` = nový `valid_from`).
 
 ## Skupiny
 
@@ -61,9 +62,10 @@ a zoraďujú v aplikácii. Pri približne 1 000 členoch to nie je problém.
 |---|---|---|
 | `id` | uuid | |
 | `member_id`, `club_id` | uuid | |
-| `status` | enum | `candidate`, `pending_activation`, `member`, `suspended`, `terminated` |
+| `status` | enum | `candidate`, `pending_activation`, `member`, `suspended` |
 | `is_primary` | bool | |
 | `valid_from`, `valid_to` | date | `valid_to` prázdne = platný záznam |
+| `end_reason` | enum | pri ukončenom zázname: `status_change`, `terminated` (ukončenie členstva), `expelled` |
 | `created_by`, `activated_by`, `activated_at` | | kto zadal, kto a kedy aktivoval |
 | `note` | text | bez osobných údajov |
 
@@ -75,6 +77,22 @@ Pravidlá (kontroluje aplikácia a tam, kde sa dá, aj databáza):
 - Povýšenie čakateľa na člena tiež prechádza cez `pending_activation`.
 - Predseda skupiny môže vytvoriť `candidate` a `pending_activation`. Stav `member` nastavuje administrátor
   (R14).
+- Ak sa ukončí primárne členstvo, primárnym sa automaticky stane najstaršie zostávajúce. Primárnu skupinu
+  inak mení administrátor.
+
+Povolené zmeny stavu:
+
+| Z → Do | Kto |
+|---|---|
+| čakateľ → navrhnutý člen (`pending_activation`) | predseda skupiny, administrátor |
+| navrhnutý člen → čakateľ (stiahnutie návrhu) | predseda skupiny, administrátor |
+| čakateľ / navrhnutý člen → člen (aktivácia) | administrátor |
+| člen → pozastavený | predseda skupiny, administrátor |
+| pozastavený → člen (obnovenie) | predseda skupiny, administrátor |
+| ukončenie členstva v skupine | predseda skupiny, administrátor |
+| vylúčenie zo SSS (na základe rozhodnutia valného zhromaždenia) | administrátor |
+
+Vylúčenie ukončí všetky členstvá a funkcie člena; vylúčenému sa už nedá vytvoriť ani obnoviť členstvo.
 
 ## Organizačná štruktúra
 
@@ -164,4 +182,13 @@ Roly:
 5. ~~Overovacia stránka~~ – vyriešené, viď `docs/PLAN.md` sekcia 5a (jednorazový QR).
 6. ~~Povýšenie čakateľa na člena~~ – áno, vyžaduje aktiváciu administrátorom (doklady zvyčajne po
    výročnej schôdzi skupiny).
-7. **Pozastavené členstvo** – môže ho predseda skupiny obnoviť sám, alebo to znova vyžaduje aktiváciu?
+7. ~~Pozastavené členstvo~~ – obnoví ho predseda skupiny sám; vylúčiť zo SSS môže len administrátor na
+   základe rozhodnutia valného zhromaždenia.
+
+## Otvorené otázky
+
+1. **Ukončenie členstva v skupine:** ak člen ukončí členstvo v jedinej skupine, zostáva členom SSS
+   (presunie sa do „SSS – nezaradení“), alebo končí aj v SSS? Zatiaľ systém nič automaticky nepresúva,
+   presun urobí administrátor.
+2. **Zľavnené členské – suma:** nastavenie `reduced_fee_amount` zatiaľ nemá hodnotu. Koľko je?
+3. **Vek pre zľavu:** predvolene 62 (parameter `reduced_fee_age`), over prosím.
