@@ -64,7 +64,7 @@ v konfigurácii servera, ďalších adminov a poverené osoby pridávajú v apli
 - Fotky tvárí: Google Cloud Storage (neverejný bucket, prístup cez krátkodobé podpísané URL).
 - Platby: bez platobnej brány; PAYMe odkaz (parameter `PI` = referencia platiteľa), párovanie
   z nahratého bankového výpisu. Referencia je náhodný alfanumerický kód bez vnútorného významu.
-- Verejné dokumenty sú len odkazy v nastaveniach, nie dáta v DB.
+- Dokumenty: tabuľka (názov, platnosť, odkaz), samotné súbory sú mimo eSS.
 - E-mail systému `ess@sss.sk`, doména `sss.sk`.
 - Rozpočet je 0 €: pri každej službe over bezplatný limit pri ~1 000 členoch.
 
