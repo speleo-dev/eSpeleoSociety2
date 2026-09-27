@@ -135,6 +135,7 @@ Roly:
 |---|---|
 | Prístupy do administrácie, systémové nastavenia | `system_admin` |
 | Evidencia členov a skupín, aktivácia členov, klub „SSS – nezaradení“ | `admin`, `system_admin` |
+| Zmena funkcií (predsedovia skupín, orgány SSS) | `admin`, `system_admin` |
 | Správa vlastnej skupiny na portáli | predseda skupiny (z funkcie `club_chair`) |
 
 ## Certifikáty
