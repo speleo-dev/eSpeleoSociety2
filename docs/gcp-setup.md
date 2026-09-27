@@ -169,6 +169,24 @@ Kontrola: gcloud vypíše `Service URL`. Otvor v prehliadači:
 - `<URL>/` – úvodná stránka,
 - `<URL>/readyz` – má vrátiť `{"status":"ok","database":"ok"}`.
 
+## 12. Aktualizácia DB a testovacie dáta (vývoj)
+
+Po každej novej migrácii zopakuj krok 10. Testovacie dáta sa dajú nahrať **len do prázdnej** databázy
+a len mimo produkcie (`ESS_ENVIRONMENT=prod` ich odmietne):
+
+```bash
+cd ~/eSpeleoSociety2 && git pull && .venv/bin/pip install -q .
+export ESS_DATABASE_URL="$(gcloud secrets versions access latest --secret=ess-database-url)"
+.venv/bin/alembic upgrade head
+ESS_PII_KEYS="$(gcloud secrets versions access latest --secret=ess-pii-keys)" \
+ESS_BLIND_INDEX_KEY="$(gcloud secrets versions access latest --secret=ess-blind-index-key)" \
+  .venv/bin/python -m ess.tools.seed_test_data
+unset ESS_DATABASE_URL
+```
+
+Testovacie dáta sú zašifrované tými istými kľúčmi ako aplikácia, takže ich aplikácia vie prečítať.
+Pred ostrou prevádzkou bude treba samostatnú produkčnú databázu (a nové kľúče).
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
