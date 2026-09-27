@@ -105,4 +105,24 @@ testovacích dát; nikdy nepracuj s reálnymi osobnými údajmi mimo produkcie.
 
 ## Príkazy
 
-_Doplní sa po vytvorení kostry projektu (fáza 0). Nastavenie Google Cloud: `docs/gcp-setup.md`._
+Nastavenie Google Cloud: `docs/gcp-setup.md`.
+
+```bash
+python -m venv .venv && .venv/bin/pip install -e ".[dev]"   # inštalácia
+.venv/bin/python -m ess.tools.generate_keys                  # nové šifrovacie kľúče (len do Secret Manager / .env)
+.venv/bin/uvicorn ess.main:app --reload                      # lokálny server (http://127.0.0.1:8000)
+.venv/bin/pytest -q                                          # testy (DB testy sa bez DB preskočia)
+ESS_DATABASE_URL=... .venv/bin/alembic upgrade head          # migrácie DB
+.venv/bin/alembic revision -m "popis"                         # nová migrácia (písať ručne, nie autogenerate naslepo)
+```
+
+DB testy: `ESS_TEST_DATABASE_URL` (prázdna testovacia DB, testy ju mažú!) a `ESS_DB_SSLMODE=disable` pre
+lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú databázu.
+
+## Štruktúra
+
+- `ess/main.py` – FastAPI aplikácia; `ess/config.py` – konfigurácia (premenné `ESS_*`)
+- `ess/db.py` – pool spojení, `Base` pre modely; `ess/audit.py` – auditný log
+- `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC)
+- `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie
+- `spikes/` – jednorazové technické testy (nie súčasť aplikácie)

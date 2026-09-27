@@ -10,3 +10,4 @@ secrets*
 .pytest_cache/
 .idea/
 .vscode/
+*.egg-info/

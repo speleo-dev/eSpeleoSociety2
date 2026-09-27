@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>eSpeleoSociety</h1>
+<p>Informačný systém Slovenskej speleologickej spoločnosti je vo výstavbe.</p>
+{% if environment != "prod" %}<p><small>Prostredie: {{ environment }}</small></p>{% endif %}
+{% endblock %}
