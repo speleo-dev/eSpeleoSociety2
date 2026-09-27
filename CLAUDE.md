@@ -25,11 +25,18 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 - **Predseda skupiny** je rola člena v skupine, nie samostatný stav; predseda je členom predsedníctva.
 - **Viacnásobné členstvo** – člen môže byť vo viacerých skupinách, práve **jedna je primárna**.
 - **História členstiev** sa nikdy nemaže; zmeny stavu sa ukladajú s dátumom platnosti.
-- **Zľava na členskom** – dôchodca, ZTP (evidovať dôvod a platnosť).
+- **Zľavnené členské** – jeden príznak člena. Automaticky od roku X+1 pre člena, ktorý v roku X dosiahne
+  vek z parametra; inak ručne (napr. ZTP).
+- **Aktivácia člena** – nového člena (nie čakateľa) zadaného predsedom skupiny musí aktivovať predseda SSS
+  alebo poverená osoba.
+- **Organizačná štruktúra** – funkcie (predseda SSS, výbor, kontrolná komisia, predsedovia skupín,
+  poverené osoby) s obdobím platnosti. Oprávnenia v systéme sa odvodzujú z platných funkcií.
+- **Dokumenty** – názov, platnosť, odkaz; zobrazujú sa na portáli a na overovacej stránke.
 - **Certifikáty** – schopnosti člena: SRT1, SRT2, záchranár, hasič a ďalšie (s platnosťou).
 - **eCP** – elektronický jaskyniarsky preukaz v Google Wallet: preukaz, platobná linka na členské,
-  notifikácie, vstup na portál, odkaz do národnej databázy jaskýň, overenie offline aj online.
-- **Kartička SSS** – PDF na vytlačenie pre členov bez smartfónu; overenie len cez QR (offline/online).
+  notifikácie, vstup na portál, odkaz do národnej databázy jaskýň. QR vedie na online overovaciu
+  stránku (offline overenie sa nerieši).
+- **Kartička SSS** – PDF na vytlačenie pre členov bez smartfónu; rovnaký QR ako eCP.
 - **Platobná referencia** – nečitateľný jedinečný kód; mapuje sa na člena alebo skupinu členov (hromadná
   platba predsedu) a rok. Každý rok nová.
 
@@ -79,7 +86,6 @@ Starý repozitár `speleo-dev/eSpeleoSociety` (PyQt desktop + priamy prístup do
 referencia. Kód z neho **nekopíruj naslepo** – prevezmi logiku, prepíš ju čisto a pokry testami.
 Užitočné moduly:
 
-- `ecp_qr.py` – podpisované offline QR (Ed25519, kanonický JSON), `docs/ecp-signing.md`
 - `wallet_pass.py` – Google Wallet generic object + JWT „Save to Wallet“ (Apple Wallet sa nerieši)
 - `ecp_card.py` – generovanie PDF kartičky
 - `face_detection.py`, `dialogs/portrait_crop_dialog.py` – detekcia a orez tváre
