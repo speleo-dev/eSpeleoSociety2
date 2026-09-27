@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: implementované (migrácia `0002`, 2026-09-27). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácie `0002`, `0003`, 2026-09-27). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -50,6 +50,7 @@ Klub **„SSS – nezaradení“**:
 | `email_bidx` | bytes | HMAC(e-mail) – kontrola, že e-mail nepoužíva iný člen |
 | `reduced_fee` | bool | zľavnené členské (R13) |
 | `expelled_at`, `expelled_reason` | date, text | vylúčenie zo SSS; potom sa nedá vytvoriť žiadne členstvo |
+| `sss_ended_at`, `sss_ended_note` | date, text | členstvo v SSS ukončené rozhodnutím predsedníctva (nie vylúčenie – dá sa obnoviť) |
 
 Dôsledok šifrovania: databáza nevie zoradiť ani vyhľadať podľa mena. Zoznamy sa preto dešifrujú
 a zoraďujú v aplikácii. Pri približne 1 000 členoch to nie je problém.
@@ -93,6 +94,22 @@ Povolené zmeny stavu:
 | vylúčenie zo SSS (na základe rozhodnutia valného zhromaždenia) | administrátor |
 
 Vylúčenie ukončí všetky členstvá a funkcie člena; vylúčenému sa už nedá vytvoriť ani obnoviť členstvo.
+
+## Členstvo v SSS
+
+Členstvo v SSS sa neukladá samostatne, odvodzuje sa zo skupín:
+
+| Stav | Kedy |
+|---|---|
+| člen SSS | má aspoň jedno platné členstvo v skupine (aj v „SSS – nezaradení“) |
+| čaká na rozhodnutie | ukončil členstvo v poslednej skupine; administrátor vidí zoznam takýchto členov |
+| členstvo v SSS ukončené | predsedníctvo rozhodlo (napr. už nechce byť jaskyniarom); **dá sa obnoviť** |
+| vylúčený | rozhodnutie valného zhromaždenia; **nedá sa obnoviť** |
+
+- Ukončenie členstva v skupine (na žiadosť člena alebo vylúčenie zo skupiny) platí **len pre skupinu**.
+- O tom, či zaniká aj členstvo v SSS, rozhodne predseda SSS alebo predsedníctvo; do IS to zapíše administrátor.
+- Ak sa člen obráti na predsedníctvo, administrátor ho zaradí do „SSS – nezaradení“ – aj vtedy, keď už
+  mal členstvo v SSS ukončené. Pri novom členstve sa ukončenie zruší (história zostáva v audite).
 
 ## Organizačná štruktúra
 
@@ -185,10 +202,9 @@ Roly:
 7. ~~Pozastavené členstvo~~ – obnoví ho predseda skupiny sám; vylúčiť zo SSS môže len administrátor na
    základe rozhodnutia valného zhromaždenia.
 
-## Otvorené otázky
+## Vyriešené otázky z implementácie
 
-1. **Ukončenie členstva v skupine:** ak člen ukončí členstvo v jedinej skupine, zostáva členom SSS
-   (presunie sa do „SSS – nezaradení“), alebo končí aj v SSS? Zatiaľ systém nič automaticky nepresúva,
-   presun urobí administrátor.
-2. **Zľavnené členské – suma:** nastavenie `reduced_fee_amount` zatiaľ nemá hodnotu. Koľko je?
-3. **Vek pre zľavu:** predvolene 62 (parameter `reduced_fee_age`), over prosím.
+1. Ukončenie členstva v skupine platí len pre skupinu; o členstve v SSS rozhoduje predsedníctvo
+   (viď sekcia Členstvo v SSS).
+2. Zľavnené členské: 7,00 € (`reduced_fee_amount`).
+3. Vek pre zľavu: 62 rokov (`reduced_fee_age`).

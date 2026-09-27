@@ -231,6 +231,8 @@ def test_settings(session):
     assert settings.get_setting(session, "fee_amount") == "15.00"
     with pytest.raises(PermissionDenied):
         settings.set_setting(session, ADMIN, "fee_amount", "20")
+    assert settings.get_setting(session, "reduced_fee_amount") == "7.00"
+    assert settings.get_setting(session, "reduced_fee_age") == "62"
     settings.set_setting(session, SYS_ADMIN, "reduced_fee_amount", "7.50")
     assert settings.get_setting(session, "reduced_fee_amount") == "7.50"
     with pytest.raises(DomainError, match="invalid_value"):
@@ -245,3 +247,43 @@ def test_age_reduced_fee(session):
     assert turned_62_in_2025.reduced_fee and not turns_62_in_2026.reduced_fee and not no_birth_date.reduced_fee
     assert members.apply_age_reduced_fee(session, SYSTEM, fee_year=2027, age=62) == 1
     assert turns_62_in_2026.reduced_fee
+
+
+# --- SSS membership after leaving clubs ----------------------------------------------------------
+
+def test_leaving_last_club_waits_for_presidium_decision(session):
+    club = _club(session, "JS A")
+    chair = _chair_of(session, club)
+    m = _active_member_in(session, club)
+    memberships.terminate(session, chair, _open(session, m.id)[0].id)
+    assert members.sss_status(session, m) == members.SssStatus.AWAITING_DECISION
+    assert [x.id for x in members.awaiting_decision(session)] == [m.id]
+
+    with pytest.raises(PermissionDenied):
+        members.end_sss_membership(session, chair, m.id, "Nechce byť jaskyniarom")
+    members.end_sss_membership(session, ADMIN, m.id, "Rozhodnutie predsedníctva")
+    assert members.sss_status(session, m) == members.SssStatus.ENDED
+    assert members.awaiting_decision(session) == []
+
+    # Later the member asks to be restored among the unaffiliated.
+    restored = members.restore_to_unaffiliated(session, ADMIN, m.id)
+    assert restored.status == S.MEMBER and restored.is_primary
+    assert members.sss_status(session, m) == members.SssStatus.MEMBER
+    assert m.sss_ended_at is None
+
+
+def test_ending_sss_membership_ends_clubs_and_positions(session):
+    club = _club(session, "JS A")
+    m = _active_member_in(session, club)
+    positions.assign_position(session, ADMIN, "board_member", m.id, valid_from=D0)
+    members.end_sss_membership(session, ADMIN, m.id, "", on=date(2026, 6, 1))
+    assert _open(session, m.id) == []
+    assert positions.current_holders(session, "board_member", on=date(2026, 6, 1)) == []
+
+
+def test_expelled_member_cannot_be_restored(session):
+    m = _active_member_in(session, _club(session, "JS A"))
+    members.expel_member(session, ADMIN, m.id, "Uznesenie VZ")
+    with pytest.raises(DomainError, match="member_expelled"):
+        members.restore_to_unaffiliated(session, ADMIN, m.id)
+    assert members.sss_status(session, m) == members.SssStatus.EXPELLED

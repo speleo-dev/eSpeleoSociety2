@@ -1,14 +1,15 @@
 """Members: encrypted personal data, lookup and expulsion."""
 
+import enum
 import uuid
 from dataclasses import dataclass, fields
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from ess import audit
-from ess.models import Member, Membership, MembershipEndReason, PositionHolder
+from ess.models import Club, Member, Membership, MembershipEndReason, MembershipStatus, PositionHolder
 from ess.security import pii
 from ess.services.access import Actor, DomainError, PermissionDenied, chaired_club_ids, require_admin
 
@@ -197,3 +198,84 @@ def apply_age_reduced_fee(session: Session, actor: Actor, fee_year: int, age: in
             audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.reduced_fee_auto",
                          entity_type="member", entity_id=str(member.id), details={"fee_year": fee_year})
     return count
+
+
+# --- SSS membership (as opposed to membership in a club) ------------------------------------------
+
+class SssStatus(str, enum.Enum):
+    MEMBER = "member"  # has at least one open club membership (incl. "SSS - nezaradení")
+    AWAITING_DECISION = "awaiting_decision"  # left all clubs; presidium decides about SSS membership
+    ENDED = "ended"  # SSS membership ended by decision; can be restored
+    EXPELLED = "expelled"  # expelled by the general assembly; cannot be restored
+    NEVER = "never"  # no membership at all yet
+
+
+def sss_status(session: Session, member: Member) -> SssStatus:
+    if member.expelled_at:
+        return SssStatus.EXPELLED
+    has_open = session.scalar(
+        select(exists().where(Membership.member_id == member.id, Membership.valid_to.is_(None)))
+    )
+    if has_open:
+        return SssStatus.MEMBER
+    if member.sss_ended_at:
+        return SssStatus.ENDED
+    had_any = session.scalar(select(exists().where(Membership.member_id == member.id)))
+    return SssStatus.AWAITING_DECISION if had_any else SssStatus.NEVER
+
+
+def awaiting_decision(session: Session) -> list[Member]:
+    """Members who left their last club and wait for the presidium's decision about SSS membership."""
+    open_exists = exists().where(Membership.member_id == Member.id, Membership.valid_to.is_(None))
+    any_exists = exists().where(Membership.member_id == Member.id)
+    return list(
+        session.scalars(
+            select(Member).where(
+                Member.expelled_at.is_(None), Member.sss_ended_at.is_(None), ~open_exists, any_exists
+            )
+        )
+    )
+
+
+def end_sss_membership(session: Session, actor: Actor, member_id: uuid.UUID, note: str, on: date | None = None) -> None:
+    """Record the presidium's decision that SSS membership ends (e.g. no longer wants to be a caver).
+
+    Not an expulsion: the member can later be restored. Any remaining club memberships and positions end too.
+    """
+    require_admin(actor)
+    on = on or date.today()
+    member = session.get(Member, member_id)
+    if member is None:
+        raise DomainError("member_not_found")
+    if member.expelled_at:
+        raise DomainError("member_expelled")
+    if member.sss_ended_at:
+        raise DomainError("sss_membership_already_ended")
+    for membership in session.scalars(
+        select(Membership).where(Membership.member_id == member_id, Membership.valid_to.is_(None))
+    ):
+        membership.valid_to = on
+        membership.end_reason = MembershipEndReason.TERMINATED
+        membership.is_primary = False
+    for holder in session.scalars(
+        select(PositionHolder).where(PositionHolder.member_id == member_id, PositionHolder.valid_to.is_(None))
+    ):
+        holder.valid_to = on
+    member.sss_ended_at = on
+    member.sss_ended_note = note.strip() or None
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.sss_end",
+                 entity_type="member", entity_id=str(member_id))
+
+
+def restore_to_unaffiliated(session: Session, actor: Actor, member_id: uuid.UUID, on: date | None = None) -> Membership:
+    """The member asked the presidium to be kept / restored as an unaffiliated SSS member."""
+    from ess.services import memberships  # avoid circular import
+
+    require_admin(actor)
+    member = session.get(Member, member_id)
+    if member is None:
+        raise DomainError("member_not_found")
+    if member.expelled_at:
+        raise DomainError("member_expelled")
+    unaffiliated = session.scalars(select(Club).where(Club.is_unaffiliated)).one()
+    return memberships.add_membership(session, actor, member_id, unaffiliated.id, MembershipStatus.MEMBER, on)

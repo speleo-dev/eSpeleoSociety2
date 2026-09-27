@@ -70,6 +70,9 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   a odoberú automaticky podľa funkcie.
 - **R16** – Offline podpisovaný QR sa nerobí. QR v eCP aj na kartičke je odkaz na overovaciu stránku
   s nečitateľným a neuhádnuteľným tokenom.
+- **R19** – Ukončenie členstva v skupine platí len pre skupinu. Ak člen nemá žiadnu skupinu, čaká na
+  rozhodnutie predsedníctva: členstvo v SSS zanikne (dá sa neskôr obnoviť), alebo sa presunie do
+  „SSS – nezaradení“. Zapisuje administrátor. Vylúčenie (valné zhromaždenie) je nevratné.
 - **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
   Denný limit overení na člena. Podrobnosti v sekcii 5a.
 - **R12** – E-mail systému: `ess@sss.sk`, doména `sss.sk` (aplikácia napr. na `ess.sss.sk`).
@@ -94,8 +97,8 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 ## 5. Pravidlá členstva a členského
 
 - Členské za **kalendárny rok** (1. 1. – 31. 12.), platí sa raz ročne.
-- Parametre v nastaveniach: **výška členského** (teraz 15 €), **zľavnené členské**, **vek pre zľavu**
-  (60 alebo 62 – parameter).
+- Parametre v nastaveniach: **výška členského** (teraz 15 €), **zľavnené členské** (teraz 7 €),
+  **vek pre zľavu** (62 rokov).
 - Zľavnené členské: jeden príznak člena (R13). Automatické nastavenie podľa veku beží pri otvorení nového
   roka členského; ručné nastavenie (napr. ZTP) robí administrátor.
 - **Čakateľ neplatí** a nie je plnohodnotným členom; niektoré skupiny čakateľský status nepoužívajú

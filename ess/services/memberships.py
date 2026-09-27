@@ -91,6 +91,13 @@ def add_membership(
     if any(m.club_id == club_id for m in current):
         raise DomainError("already_in_club")
 
+    if member.sss_ended_at:
+        # Rejoining SSS: the earlier decision stays in the audit log and membership history.
+        member.sss_ended_at = None
+        member.sss_ended_note = None
+        audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.sss_rejoin",
+                     entity_type="member", entity_id=str(member_id))
+
     membership = Membership(
         id=uuid.uuid4(),
         member_id=member_id,

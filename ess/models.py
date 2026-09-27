@@ -77,6 +77,9 @@ class Member(TimestampMixin, Base):
     reduced_fee: Mapped[bool] = mapped_column(Boolean, default=False)
     expelled_at: Mapped[date | None] = mapped_column(Date)
     expelled_reason: Mapped[str | None] = mapped_column(Text)
+    # SSS membership ended by decision of the presidium (not expulsion) - can be restored later.
+    sss_ended_at: Mapped[date | None] = mapped_column(Date)
+    sss_ended_note: Mapped[str | None] = mapped_column(Text)
 
     memberships: Mapped[list["Membership"]] = relationship(back_populates="member")
 

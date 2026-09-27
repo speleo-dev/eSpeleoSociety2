@@ -22,6 +22,9 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 - **Stav členstva v skupine** – `candidate` (čakateľ, nie plnohodnotný člen), `member`, `suspended`
   (neaktívny, pozastavené), `expelled` (vylúčený – hrubé porušenie kódexu, **nesmie sa znova stať
   členom SSS**), ukončené členstvo.
+- **Členstvo v SSS** sa odvodzuje zo skupín. Ukončenie členstva v skupine platí len pre skupinu; ak člen
+  nemá žiadnu skupinu, čaká na rozhodnutie predsedníctva (ukončenie členstva v SSS – obnoviteľné, alebo
+  presun do „SSS – nezaradení“). Vylúčenie valným zhromaždením je nevratné.
 - **Predseda skupiny** je rola člena v skupine, nie samostatný stav; predseda je členom predsedníctva.
 - **Viacnásobné členstvo** – člen môže byť vo viacerých skupinách, práve **jedna je primárna**.
 - **História členstiev** sa nikdy nemaže; zmeny stavu sa ukladajú s dátumom platnosti.
