@@ -132,7 +132,10 @@ async def admin_auth_callback(request: Request, session: Session = Depends(get_s
         # No personal data in the audit - only the fact that an unknown account tried to sign in.
         audit.record(session, actor_type="public", actor_id=None, action="admin.login_denied")
         session.commit()
-        return templates.TemplateResponse(request, "admin/login_failed.html", {"reason": "no_access"}, status_code=403)
+        # The e-mail is shown only to the person who just signed in with it (never logged).
+        return templates.TemplateResponse(
+            request, "admin/login_failed.html", {"reason": "no_access", "email": email}, status_code=403
+        )
     role, actor_id = resolved
     request.session.clear()
     request.session["admin_email"] = email

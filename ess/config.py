@@ -47,10 +47,6 @@ class Settings(BaseSettings):
             raise ValueError("ESS_ENVIRONMENT must be one of: dev, test, prod")
         return value
 
-    @property
-    def super_admins(self) -> frozenset[str]:
-        return frozenset(e.strip().lower() for e in self.super_admin_emails.split(",") if e.strip())
-
 
 @lru_cache
 def get_settings() -> Settings:

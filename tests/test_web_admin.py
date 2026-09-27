@@ -181,3 +181,19 @@ def test_login_explains_bad_google_config(client, monkeypatch):
     get_settings.cache_clear()
     response = client.get("/admin/login", follow_redirects=False)
     assert response.status_code == 500 and "ESS_GOOGLE_CLIENT_ID" in response.text
+
+
+def test_gmail_addresses_are_compared_canonically(client, google, monkeypatch):
+    from ess.config import get_settings
+    from ess.services.admin_access import normalize_email
+
+    assert normalize_email(" <Jan.Novak+ess@GoogleMail.com> ") == "jannovak@gmail.com"
+    assert normalize_email("Jan.Novak@sss.sk") == "jan.novak@sss.sk"
+    monkeypatch.setenv("ESS_SUPER_ADMIN_EMAILS", "<jannovak@gmail.com>, druhy@gmail.com")
+    get_settings.cache_clear()
+    assert login(client, google, email="Jan.Novak@gmail.com").headers["location"] == "/admin"
+
+
+def test_no_access_page_shows_signed_in_email(client, google):
+    response = login(client, google, email="stranger@example.org")
+    assert response.status_code == 403 and "stranger@example.org" in response.text

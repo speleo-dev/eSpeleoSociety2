@@ -3,7 +3,8 @@
 {% block content %}
 <h1>Prihlásenie zlyhalo</h1>
 {% if reason == "no_access" %}
-<p>Tento Google účet nemá prístup do administrácie. O prístup požiadajte systémového administrátora.</p>
+<p>Google účet <strong>{{ email }}</strong> nemá prístup do administrácie. O prístup požiadajte
+systémového administrátora.</p>
 {% elif reason == "config" %}
 <p>Prihlásenie cez Google nie je správne nastavené: premenná <code>ESS_GOOGLE_CLIENT_ID</code> musí končiť
 na <code>.apps.googleusercontent.com</code> a musí byť nastavený aj <code>ESS_GOOGLE_CLIENT_SECRET</code>.

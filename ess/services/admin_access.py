@@ -19,14 +19,31 @@ _CTX_NAME = "admin_users.display_name"
 _BIDX_EMAIL = "admin_users.google_email"
 
 
-def _normalize_email(email: str) -> str:
-    return email.strip().lower()
+def normalize_email(email: str) -> str:
+    """Canonical form for comparing Google account e-mails.
+
+    Gmail ignores dots and "+tags" in the local part and treats googlemail.com as gmail.com, so
+    "Jan.Novak+x@googlemail.com" and "jannovak@gmail.com" are the same account. Stray "<>" and spaces
+    from copy-pasted configuration are removed.
+    """
+    email = email.strip().strip("<>").strip().lower()
+    local, _, domain = email.partition("@")
+    if domain in ("gmail.com", "googlemail.com"):
+        local = local.split("+", 1)[0].replace(".", "")
+        domain = "gmail.com"
+    return f"{local}@{domain}" if domain else local
+
+
+def super_admin_emails() -> frozenset[str]:
+    """Main system administrators from ESS_SUPER_ADMIN_EMAILS, in canonical form."""
+    raw = get_settings().super_admin_emails
+    return frozenset(normalize_email(e) for e in raw.split(",") if e.strip())
 
 
 def resolve_role(session: Session, google_email: str) -> tuple[AdminRole, str] | None:
     """Return (role, actor id) for a verified Google e-mail, or None if it has no access."""
-    email = _normalize_email(google_email)
-    if email in get_settings().super_admins:
+    email = normalize_email(google_email)
+    if email in super_admin_emails():
         return AdminRole.SYSTEM_ADMIN, f"super:{pii.blind_index(_BIDX_EMAIL, email).hex()[:16]}"
     user = session.scalar(
         select(AdminUser).where(AdminUser.google_email_bidx == pii.blind_index(_BIDX_EMAIL, email))
@@ -38,10 +55,10 @@ def resolve_role(session: Session, google_email: str) -> tuple[AdminRole, str] |
 
 def grant_access(session: Session, actor: Actor, google_email: str, display_name: str, role: AdminRole) -> AdminUser:
     require_system_admin(actor)
-    email = _normalize_email(google_email)
+    email = normalize_email(google_email)
     if "@" not in email:
         raise DomainError("invalid_email")
-    if email in get_settings().super_admins:
+    if email in super_admin_emails():
         raise DomainError("super_admin_is_configured")
     index = pii.blind_index(_BIDX_EMAIL, email)
     user = session.scalar(select(AdminUser).where(AdminUser.google_email_bidx == index))
