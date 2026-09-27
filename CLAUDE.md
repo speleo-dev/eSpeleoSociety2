@@ -18,8 +18,8 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
   všetkých skupín), kontrolná komisia. Všetci členovia orgánov sú členmi SSS.
 - **Skupina (club)** – jaskyniarska skupina (JS) alebo oblastná skupina (OS); samostatné občianske
   združenie v rámci SSS. Má predsedu.
-- **Klub „SSS – nezaradení“** – predvolený klub pre členov bez skupiny; spravuje ho predseda SSS a poverená
-  osoba; jeho členovia nemajú zástupcu na valnom zhromaždení. JS a OS sa v IS nerozlišujú.
+- **Klub „SSS – nezaradení“** – predvolený klub pre členov bez skupiny; spravuje ho poverená osoba alebo
+  systémový administrátor; jeho členovia nemajú zástupcu na valnom zhromaždení. JS a OS sa v IS nerozlišujú.
 - **Stav členstva v skupine** – `candidate` (čakateľ, nie plnohodnotný člen), `member`, `suspended`
   (neaktívny, pozastavené), `expelled` (vylúčený – hrubé porušenie kódexu, **nesmie sa znova stať
   členom SSS**), ukončené členstvo.
@@ -28,10 +28,14 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 - **História členstiev** sa nikdy nemaže; zmeny stavu sa ukladajú s dátumom platnosti.
 - **Zľavnené členské** – jeden príznak člena. Automaticky od roku X+1 pre člena, ktorý v roku X dosiahne
   vek z parametra; inak ručne (napr. ZTP).
-- **Aktivácia člena** – nového člena (nie čakateľa) zadaného predsedom skupiny musí aktivovať predseda SSS
-  alebo poverená osoba.
-- **Organizačná štruktúra** – funkcie (predseda SSS, výbor, kontrolná komisia, predsedovia skupín,
-  poverené osoby) s obdobím platnosti. Oprávnenia v systéme sa odvodzujú z platných funkcií.
+- **Aktivácia člena** – nového člena (nie čakateľa) zadaného predsedom skupiny musí aktivovať používateľ
+  s administratívnym prístupom.
+- **Organizačná štruktúra** – funkcie (predseda SSS, výbor, kontrolná komisia, predsedovia skupín)
+  s obdobím platnosti. Z funkcie sa odvodzuje len správa vlastnej skupiny predsedom skupiny.
+- **Administratívny prístup je oddelený od organizačnej štruktúry** – nie je viazaný na členstvo, eCP ani
+  funkciu. Roly: `system_admin` (systémový administrátor) a `staff` (poverená osoba, nemusí byť členom SSS).
+  Udeľuje ich systémový administrátor.
+- **Delegát** – vyhradené slovo pre budúcu rolu na valnom zhromaždení; inak ho v IS nepoužívaj.
 - **Dokumenty** – názov, platnosť, odkaz; zobrazujú sa na portáli a na overovacej stránke.
 - **Certifikáty** – schopnosti člena: SRT1, SRT2, záchranár, hasič a ďalšie (s platnosťou).
 - **eCP** – elektronický jaskyniarsky preukaz v Google Wallet: preukaz, platobná linka na členské,
@@ -48,11 +52,12 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
 | Verejnosť | žiadosť o eCP, overovacia stránka eCP/kartičky |
 | Člen (s eCP) | len čítanie: novinky, vlastná identita, dokumenty, zaplatené členské, hlásenie vstupu do jaskyne, odkaz na národnú databázu jaskýň |
 | Predseda skupiny | + členovia vlastnej skupiny, pridanie čakateľa/člena, pozastavenie/ukončenie, hromadná platba |
-| Administrátor | všetko: vydávanie eCP, vzhľad eCP a kartičky, nastavenia, import, audit |
+| Poverená osoba (`staff`) | evidencia členov a skupín, aktivácia členov, žiadosti o eCP, bankové výpisy |
+| Systémový administrátor (`system_admin`) | všetko vrátane prístupov, vzhľadu eCP a kartičky a nastavení |
 
 Člen nemá na portál prístup, kým nemá schválený eCP. Člen a predseda sa prihlasujú cez eCP
-(+ overenie e-mailu, potom passkey). Admin sa prihlasuje Google účtom: dvaja hlavní admini sú
-v konfigurácii servera, ďalších adminov a poverené osoby pridávajú v aplikácii.
+(+ overenie e-mailu, potom passkey). Administratívny prístup = Google účet: dvaja hlavní systémoví
+administrátori sú v konfigurácii servera, ďalších a poverené osoby pridáva systémový administrátor v aplikácii.
 
 ## Architektúra (cieľ)
 
