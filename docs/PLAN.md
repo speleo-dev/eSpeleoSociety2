@@ -146,12 +146,13 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 
 Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 
-### Fáza 0 – Základ
+### Fáza 0 – Základ ✅ (dokončená 2026-09-27)
 - Google Cloud projekt, rozpočtové upozornenie, Cloud Run (návod: `docs/gcp-setup.md`).
 - Technický test: Cloud Run → WebSupport PostgreSQL cez SSL, zmerať oneskorenie.
 - Kostra projektu (FastAPI), CI (testy pri každom pushi), migrácie DB, konfigurácia cez premenné prostredia.
 - Šifrovacia vrstva pre osobné údaje + blind index, auditný log.
-- Generátor testovacích dát.
+- Aplikácia nasadená na Cloud Run (`ess`, europe-west3), `/readyz` vidí DB `eSpeleoSoc2`.
+- Generátor testovacích dát presunutý do fázy 1 (potrebuje dátový model).
 
 **Výsledky technického testu (2026-09-27) – úspešný, R3 platí:**
 - Spojenie Cloud Run (europe-west3) → `eSpeleoSoc2` funguje, PostgreSQL 14.13.
@@ -165,7 +166,8 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 - Skupiny, členovia, členstvá s históriou, primárna skupina, zľavnené členské, certifikáty.
 - Organizačná štruktúra a funkcie s obdobím; oprávnenia odvodené z funkcií.
 - Aktivácia nových členov (predseda SSS / poverená osoba).
-- Šablóna a import zjednoteného zoznamu členov.
+- Šablóna a import zjednoteného zoznamu členov; generátor fiktívnych testovacích dát.
+- Návrh dátového modelu: `docs/data-model.md`.
 - Kontroly: vylúčený sa nesmie znova stať členom, práve jedna primárna skupina.
 
 ### Fáza 2 – eCP a kartička
