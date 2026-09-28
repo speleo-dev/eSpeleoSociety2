@@ -1,4 +1,4 @@
-"""ORM models for phase 1 (administration). See docs/data-model.md.
+"""ORM models. See docs/data-model.md (phase 1) and docs/data-model-ecp.md (phase 2).
 
 Columns ending in `_enc` hold values encrypted by `ess.security.pii`; `_bidx` columns hold blind
 indexes. Never read or write them directly - use the helpers in `ess.services`.
@@ -257,7 +257,7 @@ class Document(TimestampMixin, Base):
 class TaskType(str, enum.Enum):
     MEMBER_ACTIVATION = "member_activation"  # new member / promoted candidate proposed by a club chair
     SSS_DECISION = "sss_decision"  # member left all clubs; presidium decides about SSS membership
-    # Future: ECP_ISSUE (eCP request to approve)
+    ECP_ISSUE = "ecp_issue"  # submitted eCP application waiting for approval
 
 
 class TaskStatus(str, enum.Enum):
@@ -305,4 +305,149 @@ class Task(Base):
             unique=True,
             postgresql_where=text("status = 'open' AND task_type = 'sss_decision'"),
         ),
+        Index(
+            "uq_tasks_open_ecp_issue",
+            "member_id",
+            unique=True,
+            postgresql_where=text("status = 'open' AND task_type = 'ecp_issue'"),
+        ),
+    )
+
+
+# --- phase 2: eCP and SSS card (docs/data-model-ecp.md) ---------------------------------------------------
+
+
+class EcpApplicationSource(str, enum.Enum):
+    PUBLIC = "public"  # existing member applies on the public page (R22)
+    CLUB_CHAIR = "club_chair"  # new member proposed by a club chair with "issue eCP" (R23)
+
+
+class EcpApplicationStatus(str, enum.Enum):
+    EMAIL_PENDING = "email_pending"
+    PHOTO_PENDING = "photo_pending"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
+class EcpApplication(TimestampMixin, Base):
+    """An application for an eCP. Personal data from the form are encrypted; they are copied to the
+    member only after approval. Status is stored as text (new states without altering an enum)."""
+
+    __tablename__ = "ecp_applications"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    source: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(16))
+    member_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("members.id"), index=True)
+    club_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clubs.id"))
+    first_name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    last_name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    birth_date_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    email_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    email_bidx: Mapped[bytes | None] = mapped_column(LargeBinary, index=True)  # rate limit per e-mail
+    card_number_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    member_since_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    photo_original: Mapped[str | None] = mapped_column(String(200))  # object name; deleted after decision
+    photo_cropped: Mapped[str | None] = mapped_column(String(200))
+    wants_wallet: Mapped[bool] = mapped_column(Boolean, default=True)
+    wants_card: Mapped[bool] = mapped_column(Boolean, default=False)
+    reject_reason: Mapped[str | None] = mapped_column(Text)  # shown to the applicant; no personal data
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_by: Mapped[str | None] = mapped_column(String(64))
+
+    __table_args__ = (
+        Index("ix_ecp_applications_status", "status"),
+        # At most one unfinished application per member.
+        Index("uq_ecp_applications_open", "member_id", unique=True,
+              postgresql_where=text("status IN ('email_pending', 'photo_pending', 'submitted')")),
+    )
+
+
+class OneTimeToken(Base):
+    """Single-use link token sent by e-mail. Only the SHA-256 hash is stored."""
+
+    __tablename__ = "one_time_tokens"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    purpose: Mapped[str] = mapped_column(String(32))  # email_verify, ecp_photo
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ecp_applications.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Consent(Base):
+    """Consent given or withdrawn (never deleted; the newest record per kind applies)."""
+
+    __tablename__ = "consents"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(32))  # gdpr_ecp, notifications
+    text_version: Mapped[str] = mapped_column(String(32))
+    granted: Mapped[bool] = mapped_column(Boolean)
+    source: Mapped[str] = mapped_column(String(32))  # application, paper_form
+    application_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ecp_applications.id"))
+    recorded_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EcpPassState(str, enum.Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"  # suspended in all clubs; restorable
+    REVOKED = "revoked"  # expelled or left SSS (R25); final
+
+
+class EcpPass(TimestampMixin, Base):
+    """eCP in Google Wallet."""
+
+    __tablename__ = "ecp_passes"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    application_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ecp_applications.id"))
+    wallet_object_id: Mapped[str] = mapped_column(String(120), unique=True)  # issuer.random, no personal data
+    state: Mapped[str] = mapped_column(String(16))
+    photo: Mapped[str | None] = mapped_column(String(200))  # object name in the media bucket
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index("uq_ecp_passes_current", "member_id", unique=True, postgresql_where=text("state <> 'revoked'")),
+    )
+
+
+class VerificationToken(Base):
+    """Token in the eCP QR code (R18). After first use it stays valid for a short grace period."""
+
+    __tablename__ = "verification_tokens"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    pass_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ecp_passes.id"), index=True)
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    first_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SssCard(Base):
+    """Printable SSS card (PDF) for one calendar year with its own code."""
+
+    __tablename__ = "sss_cards"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    year: Mapped[int]
+    code_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    issued_by: Mapped[str | None] = mapped_column(String(64))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index("uq_sss_cards_member_year", "member_id", "year", unique=True, postgresql_where=text("revoked_at IS NULL")),
     )

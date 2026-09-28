@@ -1,6 +1,6 @@
-# Dátový model – fáza 2: eCP a kartička (návrh na odsúhlasenie)
+# Dátový model – fáza 2: eCP a kartička
 
-Stav: návrh. Nadväzuje na `docs/data-model.md` (rovnaké konvencie: UUID, `_enc` šifrované, `_bidx` blind index,
+Stav: tabuľky implementované (migrácia `0008`, 2026-09-28), služby a obrazovky pribúdajú. Nadväzuje na `docs/data-model.md` (rovnaké konvencie: UUID, `_enc` šifrované, `_bidx` blind index,
 audit, história sa nemaže). Pravidlá: R18, R22–R26 v `docs/PLAN.md`.
 
 ## Tokeny v odkazoch
@@ -80,7 +80,17 @@ prihláška u predsedu). Odvolanie = nový záznam, nič sa nemaže.
 Denný limit nových QR na eCP je v nastaveniach. Token zrušeného eCP vedie na výstražnú stránku (R25).
 Kartička má jediný kód na rok (`sss_cards.code_hash`); ten sa nemení.
 
-## Otázky na odsúhlasenie
+## Nastavenia (menia systémoví administrátori v Nastaveniach)
 
-1. Porovnáva sa v žiadosti **celý dátum narodenia**, alebo len rok? Návrh: celý dátum (je aj na preukaze).
-2. Platnosť odkazu v e-maile: 24 hodín. Nedokončená žiadosť sa po 14 dňoch označí ako `expired`.
+| Kľúč | Predvolené | Význam |
+|---|---|---|
+| `ecp_link_valid_hours` | 24 | platnosť jednorazového odkazu v e-maile (hodín) |
+| `ecp_application_expiry_days` | 14 | nedokončená žiadosť prepadne (dní) |
+| `ecp_qr_grace_minutes` | 15 | použitý QR token platí ešte (minút) |
+| `ecp_qr_daily_limit` | 10 | najviac nových QR na eCP za deň |
+
+## Rozhodnuté
+
+- V žiadosti sa porovnáva **celý dátum narodenia**.
+- Lehoty sú nastaviteľné (tabuľka vyššie).
+- Počas stavu `submitted` je otvorená najviac jedna požiadavka `ecp_issue` na člena.

@@ -11,6 +11,13 @@
     <label>Vek pre zľavu (rokov)<input name="reduced_fee_age" inputmode="numeric" value="{{ values.reduced_fee_age }}"></label>
     <label>Mena<input name="fee_currency" value="{{ values.fee_currency }}"></label>
   </div>
+  <h2>eCP</h2>
+  <div class="grid">
+    <label>Platnosť odkazu v e-maile (hodín)<input name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}"></label>
+    <label>Nedokončená žiadosť prepadne po (dňoch)<input name="ecp_application_expiry_days" inputmode="numeric" value="{{ values.ecp_application_expiry_days }}"></label>
+    <label>Použitý QR platí ešte (minút)<input name="ecp_qr_grace_minutes" inputmode="numeric" value="{{ values.ecp_qr_grace_minutes }}"></label>
+    <label>Nových QR na eCP za deň (najviac)<input name="ecp_qr_daily_limit" inputmode="numeric" value="{{ values.ecp_qr_daily_limit }}"></label>
+  </div>
   <p><button class="primary">Uložiť</button></p>
 </form>
 <h2>Typy certifikátov</h2>
@@ -22,5 +29,11 @@
     <label>Názov<input name="name" required></label>
   </div>
   <p><button>Pridať typ</button></p>
+</form>
+<h2>E-mail</h2>
+<form method="post" action="/admin/settings/test-mail" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid"><label>Poslať testovací e-mail na adresu<input type="email" name="to" required></label></div>
+  <p><button>Odoslať</button></p>
 </form>
 {% endblock %}

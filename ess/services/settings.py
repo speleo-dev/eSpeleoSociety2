@@ -14,12 +14,29 @@ _KNOWN: dict[str, type] = {
     "reduced_fee_amount": Decimal,
     "reduced_fee_age": int,
     "fee_currency": str,
+    # eCP (phase 2): positive whole numbers
+    "ecp_link_valid_hours": int,  # validity of one-time links in e-mails
+    "ecp_application_expiry_days": int,  # unfinished application expires after
+    "ecp_qr_grace_minutes": int,  # a used QR token stays valid for
+    "ecp_qr_daily_limit": int,  # new QR codes per eCP and day
+}
+
+# Built-in defaults (also inserted by migration 0008).
+DEFAULTS = {
+    "ecp_link_valid_hours": "24",
+    "ecp_application_expiry_days": "14",
+    "ecp_qr_grace_minutes": "15",
+    "ecp_qr_daily_limit": "10",
 }
 
 
 def get_setting(session: Session, key: str) -> str | None:
     setting = session.get(Setting, key)
-    return setting.value if setting else None
+    return setting.value if setting else DEFAULTS.get(key)
+
+
+def get_int(session: Session, key: str) -> int:
+    return int(get_setting(session, key) or DEFAULTS[key])
 
 
 def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
@@ -32,6 +49,8 @@ def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
     except (InvalidOperation, ValueError):
         raise DomainError("invalid_value") from None
     if kind in (Decimal, int) and parsed < 0:
+        raise DomainError("invalid_value")
+    if key.startswith("ecp_") and parsed < 1:
         raise DomainError("invalid_value")
     setting = session.get(Setting, key)
     old = setting.value if setting else None

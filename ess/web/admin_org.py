@@ -8,7 +8,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
 
+from ess import audit
 from ess.images import MAX_UPLOAD_BYTES
+from ess.mail import Mail, Mailer, MailError, get_mailer
 from ess.models import AdminRole, Club, MembershipStatus
 from ess.services import admin_access, certificates, clubs, directory, documents, importing, settings
 from ess.services.access import DomainError, PermissionDenied
@@ -17,10 +19,12 @@ from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, error_text, forbidden, parse_date, render
 
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
+Mailer_ = Annotated[Mailer | None, Depends(get_mailer)]
 
 router = APIRouter(prefix="/admin")
 
-SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency")
+SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency",
+                "ecp_link_valid_hours", "ecp_application_expiry_days", "ecp_qr_grace_minutes", "ecp_qr_daily_limit")
 
 
 # --- clubs --------------------------------------------------------------------------------------------
@@ -159,6 +163,8 @@ async def settings_save(request: Request, admin: Admin, session: Db):
 
     def save():
         for key in SETTING_KEYS:
+            if key not in form:
+                continue
             new = str(form.get(key, "")).strip()
             if new != (settings.get_setting(session, key) or ""):
                 settings.set_setting(session, admin.actor, key, new)
@@ -173,6 +179,29 @@ def certificate_type_add(
     return act(request, session, "/admin/settings",
                lambda: certificates.add_certificate_type(session, admin.actor, code, name),
                "Typ certifikátu bol pridaný.")
+
+
+@router.post("/settings/test-mail", dependencies=[Depends(verify_csrf)])
+def test_mail(request: Request, admin: Admin, session: Db, mailer: Mailer_, to: Annotated[str, Form()] = ""):
+    """Send a test e-mail to check the SMTP configuration (system administrators only)."""
+    if not admin.is_system_admin:
+        return forbidden(request, admin, session)
+    to = to.strip()
+    if mailer is None:
+        text, kind = "Odosielanie e-mailov nie je nastavené (ESS_SMTP_PASSWORD).", "error"
+    elif "@" not in to or len(to) > 254 or any(c in to for c in "\r\n<>,;"):
+        text, kind = "Zadajte platnú e-mailovú adresu.", "error"
+    else:
+        try:
+            mailer.send(Mail(to=to, subject="eSS – testovací e-mail",
+                             text="Toto je testovací e-mail z informačného systému SSS (eSS). Odosielanie funguje."))
+            audit.record(session, actor_type=admin.actor.audit_type, actor_id=admin.actor.id, action="mail.test")
+            session.commit()
+            text, kind = "Testovací e-mail bol odoslaný.", "ok"
+        except MailError as exc:
+            text, kind = f"E-mail sa nepodarilo odoslať ({exc}).", "error"
+    request.session["flash"] = {"kind": kind, "text": text}
+    return RedirectResponse("/admin/settings", status_code=303)
 
 
 # --- documents ----------------------------------------------------------------------------------------

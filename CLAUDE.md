@@ -143,8 +143,9 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC);
   `ess/security/pii.py` – prístup ku kľúčom z konfigurácie
 - `ess/storage.py` – úložisko obrázkov (GCS, náhodné názvy; `MemoryMediaStore` pre testy); `ess/images.py` –
-  kontrola a prevod nahratých obrázkov (Pillow, len rastrové formáty, bez EXIF)
-- `ess/models.py` – ORM modely (`docs/data-model.md`)
+  kontrola a prevod nahratých obrázkov (Pillow, len rastrové formáty, bez EXIF); `ess/mail.py` – odosielanie
+  e-mailov cez SMTP WebSupportu (`MemoryMailer` pre testy; adresy nikdy do logov)
+- `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `certificates`, `documents`,
   `importing` – CSV import, návod `docs/import.md`). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
