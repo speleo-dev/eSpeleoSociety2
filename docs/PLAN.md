@@ -233,6 +233,9 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 - Google Wallet: existujúci účet vydavateľa (Issuer) a navrhnutý eCP (class) z pôvodného projektu sa dajú
   použiť – v novom projekte stačí servisný účet s rolou v Pay & Wallet Console (overiť pri nastavení).
   Návrh vzhľadu eCP a e-mailu z pôvodného projektu: `docs/reference/wallet/` (mapovanie premenných a otázky).
+  **Overené testom (28. 9. 2026, `spikes/wallet-probe`):** predvolený servisný účet Cloud Run číta triedu
+  `member`, vytvára objekty a podpisuje JWT cez IAM bez kľúča; obrázky z bucketu sú čitateľné podľa názvu,
+  zoznam objektov nie je verejný (403).
 - Nahrávanie log skupín a fotiek tvárí do Cloud Storage (fotky s náhodnými 64-znakovými názvami, R24).
 - Nový člen (R23): pri návrhu predsedu príznak „vydať eCP“ a potvrdenie súhlasu GDPR z papierovej prihlášky;
   po aktivácii dostane člen e-mail s odkazom na doplnenie fotky a overenie e-mailu → požiadavka „Vydanie eCP“.

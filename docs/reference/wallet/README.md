@@ -36,6 +36,5 @@ vzhľadu eCP pre fázu 2. Nová implementácia ich prepíše do vlastného kódu
 
 ## Zostáva
 
-- Prístup servisného účtu nového projektu v Pay & Wallet Console (`docs/gcp-setup.md`, krok 14).
 - Texty bez diakritiky („Platba clenskeho“) opraviť.
 - E-mail: v novej verzii Jinja2 s escapovaním namiesto `$premenných`.
