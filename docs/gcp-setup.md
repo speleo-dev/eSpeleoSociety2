@@ -343,10 +343,36 @@ gcloud storage rm "gs://ess-media-espeleosociety/probe/**"
 
 Testovací preukaz v Peňaženke Google môžeš po kontrole vzhľadu odstrániť.
 
+## 16. Odosielanie e-mailov z `ess@sss.sk` (WebSupport)
+
+Aplikácia posiela e-maily (overenie e-mailu, odkaz na eCP) cez SMTP server WebSupportu.
+
+**a)** V administrácii WebSupportu over, že schránka `ess@sss.sk` existuje, a nastav jej silné heslo.
+Pozri aj limit počtu odoslaných e-mailov za hodinu/deň pre túto schránku a pošli mi ho.
+
+**b)** Heslo ulož do Secret Manager (zadáva sa skryto, nezostane v histórii príkazov):
+
+```bash
+read -s -p "Heslo k ess@sss.sk: " PW; echo
+printf '%s' "$PW" | gcloud secrets create ess-smtp-password --data-file=-; unset PW
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+gcloud secrets add-iam-policy-binding ess-smtp-password \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+**c)** Pripojenie tajomstva k aplikácii (bez nového zostavenia):
+
+```bash
+gcloud run services update ess --region europe-west3 --update-secrets ESS_SMTP_PASSWORD=ess-smtp-password:latest
+```
+
+Server `smtp.websupport.sk`, port 465 (SSL) a používateľ `ess@sss.sk` sú predvolené v aplikácii.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
 - Vlastná doména `ess.sss.sk` namapovaná na Cloud Run.
 - Overovanie certifikátu DB servera (`sslmode=verify-full`), ak WebSupport poskytne CA certifikát.
   Test používa `sslmode=require`, ktorý spojenie šifruje, ale neoveruje identitu servera.
-- Ďalšie tajomstvá: SMTP heslo pre `ess@sss.sk` (Google Wallet kľúč nepotrebuje, krok 14).
+- Google Wallet nepotrebuje kľúč (krok 14), SMTP heslo je v kroku 16.

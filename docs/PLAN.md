@@ -86,7 +86,7 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   Denný limit overení na člena. Podrobnosti v sekcii 5a.
 - **R12** – E-mail systému: `ess@sss.sk`, doména `sss.sk` (aplikácia napr. na `ess.sss.sk`).
 - **R24** – eCP používa existujúci Google Wallet issuer `3388000000022877308` a triedu `member`
-  (`3388000000022877308.member`). ID nie sú tajné (konfigurácia `ESS_WALLET_ISSUER_ID`, `ESS_WALLET_CLASS`);
+  (`3388000000022877308.member`). ID nie sú tajné (predvolené v `ess/config.py`, premenné `ESS_WALLET_ISSUER_ID`, `ESS_WALLET_CLASS`);
   tajný je len kľúč servisného účtu. Návrh vzhľadu: `docs/reference/wallet/`.
   - „Identifikačné číslo“ na preukaze = **číslo preukazu** (`card_number`).
   - **Fotky tvárí** musí vedieť stiahnuť Google Wallet, preto sú objekty čitateľné cez verejnú URL
@@ -102,6 +102,11 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - **Vylúčenie alebo ukončenie členstva v SSS: eCP sa zruší úplne** (objekt v Google Wallet sa zneplatní
     a odstránia sa z neho údaje; API objekty nemaže). Jeho tokeny ďalej vedú na overovaciu stránku
     s výrazným upozornením, že nejde o člena SSS.
+- **R26** – Fotku pri žiadosti oreže žiadateľ v prehliadači; **administrátor ju pri schvaľovaní môže orezať
+  znova** z originálu (originál sa po rozhodnutí zmaže). Automatická kontrola tváre príde neskôr.
+  E-mail `ess@sss.sk` sa posiela cez SMTP WebSupportu (heslo v Secret Manager).
+  PDF kartička: žiadateľ si ju zvolí v žiadosti (príde e-mailom); členovi bez e-mailu ju vytlačí
+  administrátor alebo predseda skupiny z detailu člena. Návrh tabuliek: `docs/data-model-ecp.md`.
 
 ## 4. Architektúra
 

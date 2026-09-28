@@ -38,23 +38,25 @@ class Settings(BaseSettings):
     public_base_url: str | None = None
     # Secret for signing session cookies (random, at least 32 characters).
     session_secret: str | None = None
+    session_max_age_seconds: int = 8 * 3600
 
     # Google Wallet (eCP). IDs are not secret; the runtime service account signs and calls the API.
     wallet_issuer_id: str = "3388000000022877308"
     wallet_class: str = "member"
     # Cloud Storage bucket for face photos (random 64-char names) and SSS images.
     media_bucket: str | None = None
-    session_max_age_seconds: int = 8 * 3600
 
-    # Google Wallet (not secret). Full class id is "<issuer_id>.<class_suffix>".
-    wallet_issuer_id: str | None = None
-    wallet_class_suffix: str = "member"
+    # Outgoing e-mail (WebSupport SMTP for ess@sss.sk). Port 465 = implicit TLS, 587 = STARTTLS.
+    smtp_host: str = "smtp.websupport.sk"
+    smtp_port: int = 465
+    smtp_user: str = "ess@sss.sk"
+    smtp_password: str | None = None
+    mail_from: str = "Slovenská speleologická spoločnosť <ess@sss.sk>"
 
     @property
-    def wallet_class_id(self) -> str | None:
-        if not self.wallet_issuer_id:
-            return None
-        return f"{self.wallet_issuer_id}.{self.wallet_class_suffix}"
+    def wallet_class_id(self) -> str:
+        """Full Google Wallet class id, e.g. 3388000000022877308.member."""
+        return f"{self.wallet_issuer_id}.{self.wallet_class}"
 
     @field_validator("environment")
     @classmethod
