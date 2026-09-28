@@ -12,17 +12,19 @@ from sqlalchemy.orm import Session
 from ess.config import get_settings
 from ess.db import get_session
 from ess.images import MAX_UPLOAD_BYTES
-from ess.mail import Mail, Mailer, MailError, get_mailer
+from ess.mail import Mailer, get_mailer
 from ess.services import directory, ecp_applications
 from ess.services.access import DomainError
 from ess.services.ecp_applications import ApplicationForm
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import csrf_token
 from ess.web.common import parse_date
+from ess.web.mailing import render_mail, send
 from ess.web.templates import ERRORS, templates
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/ecp")
+verify_router = APIRouter()
 
 SESSION_KEY = "ecp_application"
 
@@ -39,23 +41,14 @@ def _page(request: Request, name: str, status_code: int = 200, **context):
                                       status_code=status_code)
 
 
-def _base_url(request: Request) -> str:
+def base_url(request: Request) -> str:
     return (get_settings().public_base_url or str(request.base_url)).rstrip("/")
 
 
 def _send_verification(request: Request, mailer: Mailer | None, pending: ecp_applications.VerificationMail):
-    link = f"{_base_url(request)}/ecp/email/{pending.token}"
-    context = {"first_name": pending.first_name, "link": link}
-    mail = Mail(to=pending.email, subject="Overenie e-mailu – žiadosť o eCP",
-                text=templates.get_template("email/verify_email.txt").render(context),
-                html=templates.get_template("email/verify_email.html").render(context))
-    if mailer is None:
-        log.warning("Verification e-mail not sent: mailer is not configured")
-        return
-    try:
-        mailer.send(mail)
-    except MailError:
-        pass  # already logged without the address; the applicant can apply again
+    link = f"{base_url(request)}/ecp/email/{pending.token}"
+    send(mailer, render_mail(pending.email, "Overenie e-mailu – žiadosť o eCP", "verify_email",
+                             first_name=pending.first_name, link=link))
 
 
 @router.get("/apply")
@@ -162,3 +155,9 @@ async def apply_photo_submit(request: Request, session: Session = Depends(get_se
 @router.get("/apply/done")
 def apply_done(request: Request):
     return _page(request, "public/apply_done.html")
+
+
+@verify_router.get("/v/{token}")
+def verification_page(request: Request, token: str):
+    """Target of the eCP QR code (R18). The full verification page (section 5a) comes next."""
+    return _page(request, "public/verify_placeholder.html")

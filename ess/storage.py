@@ -20,6 +20,9 @@ class MediaStore(Protocol):
     def delete(self, name: str) -> None:
         """Delete an object; a missing object is not an error."""
 
+    def get(self, name: str) -> bytes:
+        """Read an object (e.g. the original photo for re-cropping)."""
+
     def name_from_url(self, url: str | None) -> str | None:
         """Object name if the URL points into this store, otherwise None (e.g. the old bucket)."""
 
@@ -55,6 +58,9 @@ class GcsMediaStore(_UrlMixin):
         blob.upload_from_string(data, content_type=content_type)
         return self.url(name)
 
+    def get(self, name: str) -> bytes:
+        return self._bucket.blob(name).download_as_bytes()
+
     def delete(self, name: str) -> None:
         from google.api_core.exceptions import NotFound
 
@@ -74,6 +80,9 @@ class MemoryMediaStore(_UrlMixin):
     def put(self, name: str, data: bytes, content_type: str) -> str:
         self.objects[name] = (data, content_type)
         return self.url(name)
+
+    def get(self, name: str) -> bytes:
+        return self.objects[name][0]
 
     def delete(self, name: str) -> None:
         self.objects.pop(name, None)

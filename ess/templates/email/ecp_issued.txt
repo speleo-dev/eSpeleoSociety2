@@ -1,0 +1,11 @@
+Dobrý deň {{ member_name }}!
+
+Váš elektronický jaskyniarsky preukaz (eCP) je pripravený na pridanie do Peňaženky Google.
+Otvorte tento odkaz v telefóne s Androidom:
+
+{{ save_url }}
+
+Odkaz nikomu nepreposielajte – preukaz je určený len vám.
+
+S pozdravom,
+Slovenská speleologická spoločnosť

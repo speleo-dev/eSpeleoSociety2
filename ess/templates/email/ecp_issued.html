@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="sk">
+<head><meta charset="utf-8"><title>Váš preukaz je pripravený</title></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333333">
+  <div style="width:100%;max-width:600px;margin:0 auto;padding:20px;border:1px solid #dddddd;border-radius:5px;background-color:#ffffff">
+    <h2>Dobrý deň {{ member_name }}!</h2>
+    <p>Váš elektronický jaskyniarsky preukaz (eCP) je pripravený na pridanie do Peňaženky Google.</p>
+    <p>Kliknite na tlačidlo nižšie, aby ste ho pridali:</p>
+    <a href="{{ save_url }}"><img src="{{ badge_url }}" alt="Pridať do Peňaženky Google" height="48"></a>
+    <p style="margin-top:20px">Ak tlačidlo nefunguje, otvorte tento odkaz v telefóne s Androidom:</p>
+    <p style="word-break:break-all"><a href="{{ save_url }}">{{ save_url }}</a></p>
+    <p style="color:#777">Odkaz nikomu nepreposielajte – preukaz je určený len vám.</p>
+    <div style="margin-top:30px;font-size:0.8em;color:#777777;text-align:center">
+      <p>S pozdravom,<br>Slovenská speleologická spoločnosť</p>
+    </div>
+  </div>
+</body>
+</html>

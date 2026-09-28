@@ -61,3 +61,17 @@ def test_static_icons_and_logo_are_served():
     assert client.get("/static/icons/member.png").headers["content-type"] == "image/png"
     assert client.get("/static/logo-app.png").status_code == 200
     assert "/static/logo-sss.png" in client.get("/").text
+
+
+def test_error_messages_have_no_duplicate_keys():
+    import ast
+    import collections
+    from pathlib import Path
+
+    import ess.web.templates as module
+
+    tree = ast.parse(Path(module.__file__).read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            keys = [k.value for k in node.keys if isinstance(k, ast.Constant)]
+            assert [k for k, n in collections.Counter(keys).items() if n > 1] == []

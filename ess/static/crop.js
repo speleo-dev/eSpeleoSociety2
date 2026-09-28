@@ -1,4 +1,5 @@
 // Portrait crop for the eCP photo: a frame with the card ratio (220:300) that can be moved and resized.
+// Works with a file input (applicant) or with an existing image in data-src (administrator).
 // Sends the frame as fractions of the image (crop_x, crop_y, crop_w, crop_h); the server does the crop.
 (function () {
   const RATIO = 220 / 300;
@@ -7,7 +8,7 @@
   const img = document.getElementById("crop-img");
   const frame = document.getElementById("crop-frame");
   const size = document.getElementById("crop-size");
-  if (!input || !stage) return;
+  if (!stage) return;
   let box = { x: 0, y: 0, w: 0 }; // fractions of the displayed image
 
   function heightOf(w) { return (w * img.clientWidth / RATIO) / img.clientHeight; }
@@ -32,7 +33,11 @@
     box.w = maxW * 0.8; box.x = (1 - box.w) / 2; box.y = (1 - heightOf(box.w)) * 0.4;
     size.value = 80; render();
   }
-  input.addEventListener("change", () => {
+  if (img.dataset.src) {  // administrator re-crops an existing photo
+    img.onload = () => { stage.hidden = false; resetFrame(); };
+    img.src = img.dataset.src;
+  }
+  if (input) input.addEventListener("change", () => {
     const file = input.files[0];
     if (!file) return;
     img.onload = () => { stage.hidden = false; resetFrame(); };

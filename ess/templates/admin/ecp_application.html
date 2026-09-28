@@ -1,0 +1,61 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Žiadosť o eCP{% endblock %}
+{% block body %}
+<style>
+  #crop-stage { position:relative; max-width:28rem; touch-action:none; user-select:none; overflow:hidden; }
+  #crop-img { display:block; width:100%; }
+  #crop-frame { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; }
+  img.portrait { width:220px; height:300px; object-fit:cover; border:1px solid var(--line); }
+  td.diff { background:var(--err); }
+</style>
+{% set a = v.application %}
+<h1>Žiadosť o eCP – <a href="/admin/members/{{ v.member.id }}">{{ v.register.full_name() }}</a></h1>
+<p class="muted">Podaná {{ a.submitted_at|date }}{% if a.status != "submitted" %} · stav: {{ a.status }}{% endif %}</p>
+
+<div class="cards">
+  <div>
+    {% if portrait_url %}<img class="portrait" src="{{ portrait_url }}" alt="Fotka na preukaz">{% else %}<p class="muted">Bez fotky.</p>{% endif %}
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Žiadosť</th><th>Evidencia</th></tr></thead>
+    <tbody>
+      <tr><th>Meno</th><td>{{ v.first_name }} {{ v.last_name }}</td><td>{{ v.register.first_name }} {{ v.register.last_name }}</td></tr>
+      <tr><th>Dátum narodenia</th><td>{{ v.birth_date|date }}</td><td>{{ v.register.birth_date|date }}</td></tr>
+      <tr><th>E-mail</th><td>{{ v.email }}</td><td>{{ v.register.email or "—" }}</td></tr>
+      <tr><th>Číslo preukazu</th><td>{{ v.card_number }}</td>
+          <td {% if "card_number" in v.fills %}class="diff"{% endif %}>{{ v.register.card_number or "chýba – doplní sa zo žiadosti" }}</td></tr>
+      <tr><th>Člen SSS od</th><td>{{ v.member_since_year }}</td>
+          <td {% if "member_since" in v.fills %}class="diff"{% endif %}>{{ v.member.member_since.year if v.member.member_since else "chýba – doplní sa zo žiadosti" }}</td></tr>
+      <tr><th>Skupina</th><td colspan="2">{{ v.club_name }}</td></tr>
+      <tr><th>Kartička SSS</th><td colspan="2">{{ "áno" if a.wants_card else "nie" }}</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+{% if a.status == "submitted" %}
+<section class="box">
+  <form class="inline" method="post" action="/admin/ecp-applications/{{ a.id }}/approve">
+    {% include "admin/_csrf.html" %}<button class="primary">Schváliť a vydať eCP</button></form>
+  <form class="inline" method="post" action="/admin/ecp-applications/{{ a.id }}/reject">
+    {% include "admin/_csrf.html" %}
+    <input name="reason" required size="40" placeholder="Dôvod pre žiadateľa (napr. nevyhovujúca fotka)" aria-label="Dôvod zamietnutia">
+    <button>Zamietnuť</button></form>
+  <p class="muted">Pri schválení sa vytvorí preukaz v Google Wallet a žiadateľovi príde e-mail s tlačidlom na jeho pridanie.
+     Pri zamietnutí príde žiadateľovi e-mail s dôvodom a fotky sa zmažú.</p>
+</section>
+
+{% if original_url %}
+<details>
+  <summary>Orezať fotku znova</summary>
+  <form method="post" action="/admin/ecp-applications/{{ a.id }}/recrop" class="form">
+    {% include "admin/_csrf.html" %}
+    <div id="crop-stage" hidden><img id="crop-img" data-src="{{ original_url }}" alt="Pôvodná fotka"><div id="crop-frame"></div></div>
+    <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
+    {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
+    <p><button>Uložiť nový výrez</button></p>
+  </form>
+  <script src="/static/crop.js" defer></script>
+</details>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+Dobrý deň {{ first_name }},
+
+vašu žiadosť o elektronický jaskyniarsky preukaz (eCP) sme nemohli schváliť.
+
+Dôvod: {{ reason }}
+
+Po úprave môžete podať novú žiadosť: {{ apply_url }}
+Ak máte otázky, obráťte sa na predsedu svojej skupiny.
+
+S pozdravom
+Slovenská speleologická spoločnosť

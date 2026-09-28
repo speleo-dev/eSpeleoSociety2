@@ -41,7 +41,7 @@
             <input name="note" placeholder="Poznámka (napr. číslo uznesenia)" aria-label="Poznámka">
             <button>Ukončiť členstvo v SSS</button></form>
         {% elif t.task_type == T.ECP_ISSUE.value %}
-          <span class="muted">Posúdenie žiadosti sa pripravuje.</span>
+          <a href="/admin/ecp-applications/{{ t.context.application_id }}"><button class="primary">Posúdiť žiadosť</button></a>
         {% endif %}
       {% else %}
         {{ t.resolution|resolution_label }}{% if t.resolution_note %} – {{ t.resolution_note }}{% endif %}

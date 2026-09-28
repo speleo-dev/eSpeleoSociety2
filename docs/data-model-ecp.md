@@ -42,6 +42,10 @@ Hotové (krok 1): formulár `/ecp/apply`, presná zhoda (`ess/services/ecp_appli
 Hotové (krok 2): `/ecp/apply/photo` – fotka s orezom v prehliadači (`ess/static/crop.js`, pomer 220:300,
 bez JavaScriptu automatický výrez), súhlasy (verzia textu `2026-1`), voľba kartičky → stav `submitted`
 a požiadavka „Vydanie eCP“. Originál (`originals/`) a portrét 440×600 (`photos/`) majú 64-znakové náhodné názvy.
+Hotové (krok 3): posúdenie `/admin/ecp-applications/<id>` (porovnanie s evidenciou, nový výrez fotky, zamietnutie
+s dôvodom a e-mailom, schválenie). Schválenie doplní chýbajúce číslo preukazu a „člen od“, vytvorí `ecp_passes`,
+QR token a objekt v Google Wallet (`ess/wallet.py`) a pošle e-mail s tlačidlom „Pridať do Peňaženky Google“.
+Zostáva: overovacia stránka `/v/<token>`, jednorazový QR, kartička PDF, cesta nového člena (R23).
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.
