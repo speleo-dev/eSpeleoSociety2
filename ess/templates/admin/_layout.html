@@ -6,8 +6,7 @@
   <nav>
     <a href="/admin/members">Členovia</a>
     <a href="/admin/clubs">Skupiny</a>
-    <a href="/admin/activations">Aktivácie</a>
-    <a href="/admin/awaiting">Čaká na rozhodnutie</a>
+    <a href="/admin/tasks">Požiadavky{% if open_tasks %} <span class="chip">{{ open_tasks }}</span>{% endif %}</a>
   </nav>
   <span class="muted">{{ admin.display_name }} ({{ admin.role|label }})</span>
   <form class="inline" method="post" action="/admin/logout">

@@ -72,7 +72,11 @@ def data(migrated_db):
         ms = memberships.add_membership(session, SYSTEM, leaver.id, club.id, S.MEMBER, on=date(2026, 1, 1))
         memberships.terminate(session, SYSTEM, ms.id)
         session.commit()
-        return {"member_id": m.id, "pending_id": pending.id, "leaver_id": leaver.id}
+        from ess.models import Task
+
+        tasks = {t.task_type: t.id for t in session.scalars(select(Task))}
+        return {"member_id": m.id, "pending_id": pending.id, "leaver_id": leaver.id,
+                "activation_task": tasks["member_activation"], "decision_task": tasks["sss_decision"]}
 
 
 def test_admin_requires_login(client):
@@ -125,32 +129,6 @@ def test_member_list_detail_and_search(client, google, data):
     assert client.get(f"/admin/members/{uuid.uuid4()}").status_code == 200  # "not found" page
 
 
-def test_activation_requires_csrf_and_works(client, google, data, migrated_db):
-    login(client, google)
-    url = f"/admin/memberships/{data['pending_id']}/status"
-    assert client.post(url, data={"new_status": "member"}).status_code == 401
-    response = client.post(url, data={"new_status": "member", "csrf_token": csrf(client), "back": "/admin/activations"},
-                           follow_redirects=False)
-    assert response.headers["location"] == "/admin/activations"
-    page = client.get("/admin/activations")
-    assert "Stav členstva bol zmenený." in page.text and "Nič nečaká na aktiváciu." in page.text
-
-
-def test_invalid_action_shows_message(client, google, data):
-    login(client, google)
-    client.post(f"/admin/memberships/{data['pending_id']}/status",
-                data={"new_status": "suspended", "csrf_token": csrf(client)}, follow_redirects=False)
-    assert "Táto zmena stavu nie je povolená." in client.get("/admin").text
-
-
-def test_awaiting_decision_restore(client, google, data):
-    login(client, google)
-    assert "Zoskupiny" in client.get("/admin/awaiting").text
-    client.post(f"/admin/members/{data['leaver_id']}/restore-unaffiliated", data={"csrf_token": csrf(client)})
-    page = client.get("/admin/awaiting")
-    assert "Nikto nečaká na rozhodnutie." in page.text
-
-
 def test_clubs_page(client, google, data):
     login(client, google)
     page = client.get("/admin/clubs")
@@ -197,3 +175,48 @@ def test_gmail_addresses_are_compared_canonically(client, google, monkeypatch):
 def test_no_access_page_shows_signed_in_email(client, google):
     response = login(client, google, email="stranger@example.org")
     assert response.status_code == 403 and "stranger@example.org" in response.text
+
+
+
+def test_tasks_page_lists_both_kinds_and_activation_needs_csrf(client, google, data):
+    login(client, google)
+    page = client.get("/admin/tasks")
+    assert "Aktivácia člena" in page.text and "Rozhodnutie o členstve v SSS" in page.text
+    assert "Podhradská" in page.text and "Zoskupiny" in page.text
+    url = f"/admin/tasks/{data['activation_task']}/activate"
+    assert client.post(url).status_code == 401  # missing CSRF token
+    assert client.post(url, data={"csrf_token": csrf(client)}, follow_redirects=False).headers["location"] == "/admin/tasks"
+    page = client.get("/admin/tasks")
+    assert "Člen bol aktivovaný." in page.text and "Podhradská" not in page.text
+    done = client.get("/admin/tasks", params={"show": "done"})
+    assert "Podhradská" in done.text and "aktivovaný" in done.text
+
+
+def test_reject_activation_requires_reason(client, google, data):
+    login(client, google)
+    url = f"/admin/tasks/{data['activation_task']}/reject"
+    client.post(url, data={"csrf_token": csrf(client), "reason": " "}, follow_redirects=False)
+    assert "Uveďte dôvod." in client.get("/admin/tasks").text
+    client.post(url, data={"csrf_token": csrf(client), "reason": "Chýba prihláška"}, follow_redirects=False)
+    done = client.get("/admin/tasks", params={"show": "done"}).text
+    assert "zamietnuté – Chýba prihláška" in done
+
+
+def test_decision_keep_unaffiliated(client, google, data):
+    login(client, google)
+    client.post(f"/admin/tasks/{data['decision_task']}/keep-unaffiliated", data={"csrf_token": csrf(client)})
+    assert "Zoskupiny" not in client.get("/admin/tasks").text
+    assert "SSS – nezaradení" in client.get(f"/admin/members/{data['leaver_id']}").text
+
+
+def test_resolved_task_cannot_be_resolved_twice(client, google, data):
+    login(client, google)
+    url = f"/admin/tasks/{data['decision_task']}/end-sss"
+    client.post(url, data={"csrf_token": csrf(client), "note": "VZ 1/2026"}, follow_redirects=False)
+    client.post(url, data={"csrf_token": csrf(client)}, follow_redirects=False)
+    assert "Požiadavka už bola vybavená." in client.get("/admin/tasks").text
+
+
+def test_old_list_urls_redirect(client, google):
+    login(client, google)
+    assert client.get("/admin/activations", follow_redirects=False).headers["location"] == "/admin/tasks"

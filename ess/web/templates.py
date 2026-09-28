@@ -37,6 +37,8 @@ ERRORS = {
     "admin": "Na túto akciu nemáte oprávnenie.",
     "club_manager": "Na túto akciu nemáte oprávnenie.",
     "activation": "Aktivovať člena môže len administrátor.",
+    "task_not_open": "Požiadavka už bola vybavená.",
+    "reason_required": "Uveďte dôvod.",
 }
 
 
@@ -53,5 +55,43 @@ def fmt_date(value) -> str:
     return value.strftime("%d. %m. %Y") if value else ""
 
 
+TASK_LABELS = {
+    "member_activation": "Aktivácia člena",
+    "sss_decision": "Rozhodnutie o členstve v SSS",
+}
+
+RESOLUTION_LABELS = {
+    "activated": "aktivovaný",
+    "rejected": "zamietnuté",
+    "withdrawn": "návrh stiahnutý",
+    "terminated": "členstvo v skupine ukončené",
+    "rejoined": "zaradený do skupiny",
+    "sss_ended": "členstvo v SSS ukončené",
+    "expelled": "vylúčený zo SSS",
+}
+
+
+def task_label(task_type: str) -> str:
+    return TASK_LABELS.get(task_type, task_type)
+
+
+def resolution_label(resolution: str | None) -> str:
+    return RESOLUTION_LABELS.get(resolution or "", resolution or "")
+
+
+def task_description(task) -> str:
+    """One line saying what the administrator is asked to do."""
+    if task.task_type == "member_activation":
+        if (task.context or {}).get("from_status") == "candidate":
+            return "Predseda skupiny navrhuje povýšiť čakateľa na člena. Aktivujte po doručení podkladov."
+        return "Nový člen navrhnutý predsedom skupiny. Aktivujte po doručení podkladov."
+    if task.task_type == "sss_decision":
+        return "Ukončil členstvo vo všetkých skupinách. Zapíšte rozhodnutie predsedníctva."
+    return ""
+
+
 templates.env.filters["label"] = label
 templates.env.filters["date"] = fmt_date
+templates.env.filters["task_label"] = task_label
+templates.env.filters["resolution_label"] = resolution_label
+templates.env.filters["task_description"] = task_description

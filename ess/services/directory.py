@@ -183,15 +183,16 @@ def clubs_overview(session: Session) -> list[ClubRow]:
 
 
 def dashboard_counts(session: Session) -> dict[str, int]:
-    from ess.services.members import awaiting_decision
+    from ess.models import Task, TaskStatus
 
+    open_by_type = dict(
+        session.execute(
+            select(Task.task_type, func.count()).where(Task.status == TaskStatus.OPEN.value).group_by(Task.task_type)
+        ).all()
+    )
     return {
-        "pending_activations": session.scalar(
-            select(func.count()).select_from(Membership).where(
-                Membership.valid_to.is_(None), Membership.status == MembershipStatus.PENDING_ACTIVATION
-            )
-        ),
-        "awaiting_decision": len(awaiting_decision(session)),
+        "tasks_open": sum(open_by_type.values()),
+        "tasks_by_type": open_by_type,
         "sss_members": session.scalar(
             select(func.count(func.distinct(Membership.member_id))).where(Membership.valid_to.is_(None))
         ),

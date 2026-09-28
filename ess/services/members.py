@@ -179,6 +179,9 @@ def expel_member(session: Session, actor: Actor, member_id: uuid.UUID, reason: s
         holder.valid_to = on
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.expel",
                  entity_type="member", entity_id=str(member_id))
+    from ess.services import tasks
+
+    tasks.cancel_all_for_member(session, actor, member_id, "expelled")
 
 
 def apply_age_reduced_fee(session: Session, actor: Actor, fee_year: int, age: int) -> int:
@@ -265,6 +268,12 @@ def end_sss_membership(session: Session, actor: Actor, member_id: uuid.UUID, not
     member.sss_ended_note = note.strip() or None
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.sss_end",
                  entity_type="member", entity_id=str(member_id))
+    from ess.services import tasks
+    from ess.models import TaskStatus, TaskType
+
+    tasks.close_tasks(session, actor, TaskType.SSS_DECISION, TaskStatus.DONE, "sss_ended",
+                      member_id=member_id, note=note)
+    tasks.cancel_all_for_member(session, actor, member_id, "sss_ended")
 
 
 def restore_to_unaffiliated(session: Session, actor: Actor, member_id: uuid.UUID, on: date | None = None) -> Membership:

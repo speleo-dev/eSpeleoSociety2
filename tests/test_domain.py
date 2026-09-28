@@ -287,3 +287,80 @@ def test_expelled_member_cannot_be_restored(session):
     with pytest.raises(DomainError, match="member_expelled"):
         members.restore_to_unaffiliated(session, ADMIN, m.id)
     assert members.sss_status(session, m) == members.SssStatus.EXPELLED
+
+
+
+# --- tasks ("Požiadavky") -------------------------------------------------------------------------
+
+def _open_tasks(session, member_id):
+    from ess.models import Task
+
+    return sorted((t.task_type, t.status) for t in session.scalars(select(Task).where(Task.member_id == member_id)))
+
+
+def test_activation_task_lifecycle(session):
+    from ess.services import tasks as tasks_service
+
+    club = _club(session, "JS A")
+    chair = _chair_of(session, club)
+    new = memberships.add_new_member_to_club(session, chair, MemberData("Nový", "Člen"), club.id, S.PENDING_ACTIVATION)
+    assert _open_tasks(session, new.member_id) == [("member_activation", "open")]
+    task = tasks_service.list_tasks(session)[0].task
+    assert task.requested_by == chair.id and task.club_id == club.id
+    tasks_service.activate(session, ADMIN, task.id)
+    assert _open_tasks(session, new.member_id) == [("member_activation", "done")]
+    assert task.resolution == "activated" and task.resolved_by == ADMIN.id
+
+
+def test_activation_from_member_page_also_closes_task(session):
+    club = _club(session, "JS A")
+    m = _member(session)
+    pending = memberships.add_membership(session, ADMIN, m.id, club.id, S.PENDING_ACTIVATION)
+    memberships.activate(session, ADMIN, pending.id)
+    assert _open_tasks(session, m.id) == [("member_activation", "done")]
+
+
+def test_rejected_candidate_promotion_returns_to_candidate(session):
+    from ess.services import tasks as tasks_service
+
+    club = _club(session, "JS A")
+    chair = _chair_of(session, club)
+    cand = memberships.add_new_member_to_club(session, chair, MemberData("Čakateľ", "X"), club.id, S.CANDIDATE)
+    memberships.change_status(session, chair, cand.id, S.PENDING_ACTIVATION)
+    task = tasks_service.list_tasks(session)[0].task
+    assert task.context == {"from_status": "candidate"}
+    with pytest.raises(DomainError, match="reason_required"):
+        tasks_service.reject_activation(session, ADMIN, task.id, "")
+    tasks_service.reject_activation(session, ADMIN, task.id, "Neabsolvoval skúšku")
+    assert [m.status for m in _open(session, cand.member_id)] == [S.CANDIDATE]
+    assert (task.status, task.resolution, task.resolution_note) == ("rejected", "rejected", "Neabsolvoval skúšku")
+
+
+def test_rejected_new_member_proposal_ends_membership(session):
+    from ess.services import tasks as tasks_service
+
+    club = _club(session, "JS A")
+    chair = _chair_of(session, club)
+    new = memberships.add_new_member_to_club(session, chair, MemberData("Nový", "Y"), club.id, S.PENDING_ACTIVATION)
+    task = tasks_service.list_tasks(session)[0].task
+    tasks_service.reject_activation(session, ADMIN, task.id, "Nesplnené podmienky")
+    assert _open(session, new.member_id) == []
+    # A rejected proposal is not a member who left SSS - but the member has no club, so the presidium decides.
+    assert ("sss_decision", "open") in _open_tasks(session, new.member_id)
+
+
+def test_leaving_last_club_opens_decision_task_and_rejoin_closes_it(session):
+    a, b = _club(session, "JS A"), _club(session, "JS B")
+    m = _active_member_in(session, a)
+    memberships.terminate(session, ADMIN, _open(session, m.id)[0].id)
+    assert _open_tasks(session, m.id) == [("sss_decision", "open")]
+    memberships.add_membership(session, ADMIN, m.id, b.id, S.MEMBER)
+    assert _open_tasks(session, m.id) == [("sss_decision", "done")]
+
+
+def test_expulsion_cancels_open_tasks(session):
+    club = _club(session, "JS A")
+    m = _member(session)
+    memberships.add_membership(session, ADMIN, m.id, club.id, S.PENDING_ACTIVATION)
+    members.expel_member(session, ADMIN, m.id, "Uznesenie VZ")
+    assert _open_tasks(session, m.id) == [("member_activation", "cancelled")]

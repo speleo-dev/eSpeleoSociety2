@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: implementované (migrácie `0002`, `0003`, 2026-09-27). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácie `0002`–`0004`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -175,6 +175,32 @@ Roly:
 | Evidencia členov a skupín, aktivácia členov, klub „SSS – nezaradení“ | `admin`, `system_admin` |
 | Zmena funkcií (predsedovia skupín, orgány SSS) | `admin`, `system_admin` |
 | Správa vlastnej skupiny na portáli | predseda skupiny (z funkcie `club_chair`) |
+
+## Požiadavky
+
+Všetko, čo čaká na administrátora, je v jednom zozname **„Požiadavky“** (tabuľka `tasks`). Požiadavky
+vznikajú a uzatvárajú sa automaticky v tej istej transakcii ako zmena, ktorej sa týkajú – zoznam preto
+vždy zodpovedá dátam, aj keď administrátor vybaví vec inde (napr. aktivuje člena v jeho detaile).
+
+| Stĺpec | Typ | Poznámka |
+|---|---|---|
+| `id` | uuid | |
+| `task_type` | text | typ požiadavky (viď nižšie); text namiesto DB enumu, aby sa dali pridávať nové typy |
+| `status` | text | `open`, `done`, `rejected`, `cancelled` (vec sa medzitým zmenila, napr. vylúčenie) |
+| `member_id`, `membership_id`, `club_id` | uuid | čoho sa požiadavka týka |
+| `context` | jsonb | doplňujúce údaje bez osobných údajov, napr. `{"from_status": "candidate"}` |
+| `requested_by`, `created_at` | | kto a kedy požiadavku vyvolal (napr. predseda skupiny) |
+| `resolved_by`, `resolved_at`, `resolution`, `resolution_note` | | kto, kedy a ako ju vybavil (napr. dôvod zamietnutia) |
+
+Typy požiadaviek:
+
+| Typ | Vzniká | Akcie |
+|---|---|---|
+| Aktivácia člena (`member_activation`) | predseda navrhne nového člena alebo povýšenie čakateľa | aktivovať / zamietnuť s dôvodom (čakateľ zostane čakateľom, návrh nového člena sa ukončí) |
+| Rozhodnutie o členstve v SSS (`sss_decision`) | člen ukončil členstvo vo všetkých skupinách | zaradiť do „SSS – nezaradení“ / ukončiť členstvo v SSS |
+| Vydanie eCP (fáza 2) | žiadosť o eCP | schváliť / zamietnuť (napr. nevyhovujúca fotka) |
+
+V jednom čase môže byť otvorená najviac jedna aktivácia na členstvo a jedno rozhodnutie na člena.
 
 ## Certifikáty
 

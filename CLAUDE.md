@@ -38,6 +38,8 @@ Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). 
   nemusí byť členom SSS) a **systémový administrátor** (`system_admin`). Udeľuje ich systémový administrátor.
 - **Zmena predsedu skupiny** – zadáva ju len administrátor, až po doručení dokumentov (zvyčajne z výročnej
   schôdze skupiny). Dovtedy má oprávnenia starý predseda.
+- **Požiadavky** – jeden zoznam všetkého, čo čaká na administrátora (aktivácia člena, rozhodnutie o členstve
+  v SSS, neskôr vydanie eCP). V kóde `tasks`; otvárajú a zatvárajú ich služby v tej istej transakcii ako zmenu.
 - **Delegát** – vyhradené slovo pre budúcu rolu na valnom zhromaždení; inak ho v IS nepoužívaj.
 - **Dokumenty** – názov, platnosť, odkaz; zobrazujú sa na portáli a na overovacej stránke.
 - **Certifikáty** – schopnosti člena: SRT1, SRT2, záchranár, hasič a ďalšie (s platnosťou).
@@ -139,7 +141,7 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
   `ess/security/pii.py` – prístup ku kľúčom z konfigurácie
 - `ess/models.py` – ORM modely (`docs/data-model.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
-  `positions`, `admin_access`, `settings`). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `positions`, `admin_access`, `settings`, `tasks` – požiadavky). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
 - `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `admin.py` (administrácia),
   `templates.py` (Jinja2, slovenské popisy enumov). Každý POST formulár musí mať `csrf_token`.

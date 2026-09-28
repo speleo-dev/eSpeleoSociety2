@@ -17,7 +17,7 @@ from sqlalchemy import func, select
 
 from ess.config import get_settings
 from ess.db import get_sessionmaker
-from ess.models import CertificateType, Club, Document, Member, MemberCertificate, MembershipStatus as S
+from ess.models import CertificateType, Club, Document, Member, MemberCertificate, Membership, MembershipStatus as S
 from ess.services import members, memberships, positions
 from ess.services.access import SYSTEM
 from ess.services.members import MemberData
@@ -131,6 +131,17 @@ def seed(member_count: int, rng_seed: int) -> None:
     expelled = rng.sample([m for m, _ in created if m.id not in holders], k=2)
     for member in expelled:
         members.expel_member(session, SYSTEM, member.id, "Testovacie vylúčenie (fiktívne uznesenie VZ)", on=start)
+
+    # A few chairs propose promoting candidates; a few members leave their only club.
+    for membership in session.scalars(
+        select(Membership).where(Membership.valid_to.is_(None), Membership.status == S.CANDIDATE)
+    ).all()[:4]:
+        memberships.change_status(session, SYSTEM, membership.id, S.PENDING_ACTIVATION, on=start)
+    leavers = [m for m, _ in created if m.id not in holders and m not in expelled]
+    for member in rng.sample(leavers, k=min(3, len(leavers))):
+        open_ms = memberships.open_memberships(session, member.id)
+        if len(open_ms) == 1:
+            memberships.terminate(session, SYSTEM, open_ms[0].id, on=start)
 
     members.apply_age_reduced_fee(session, SYSTEM, fee_year=2026, age=62)
 

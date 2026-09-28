@@ -73,6 +73,8 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R19** – Ukončenie členstva v skupine platí len pre skupinu. Ak člen nemá žiadnu skupinu, čaká na
   rozhodnutie predsedníctva: členstvo v SSS zanikne (dá sa neskôr obnoviť), alebo sa presunie do
   „SSS – nezaradení“. Zapisuje administrátor. Vylúčenie (valné zhromaždenie) je nevratné.
+- **R20** – Všetko, čo čaká na administrátora (aktivácie, rozhodnutia o členstve v SSS, neskôr žiadosti
+  o eCP), je v jednom zozname **„Požiadavky“** s popisom a tlačidlami v každom riadku (tabuľka `tasks`).
 - **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
   Denný limit overení na člena. Podrobnosti v sekcii 5a.
 - **R12** – E-mail systému: `ess@sss.sk`, doména `sss.sk` (aplikácia napr. na `ess.sss.sk`).
@@ -190,7 +192,8 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 ### Fáza 1 – Administrácia
 **Priebeh (2026-09-27):** hotový dátový model (migrácie 0002–0003), pravidlá členstva a oprávnení,
 generátor testovacích dát, prihlásenie cez Google, obrazovky: prehľad, členovia (vyhľadávanie, filtre),
-detail člena (zmeny stavu, ukončenie), aktivácie, čaká na rozhodnutie, skupiny.
+detail člena (zmeny stavu, ukončenie), zoznam požiadaviek (aktivácia so zamietnutím, rozhodnutie o
+členstve v SSS), skupiny.
 Zostáva: formuláre na pridanie/úpravu člena a skupiny, správa funkcií, správa administrátorov,
 nastavenia, certifikáty, dokumenty, šablóna a import zoznamu členov.
 

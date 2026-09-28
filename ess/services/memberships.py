@@ -11,8 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess import audit
-from ess.models import Club, Member, Membership, MembershipEndReason, MembershipStatus
+from ess.models import Club, Member, Membership, MembershipEndReason, MembershipStatus, TaskStatus, TaskType
 from ess.services import members as members_service
+from ess.services import tasks
 from ess.services.access import Actor, DomainError, PermissionDenied, require_admin, require_club_manager
 
 S = MembershipStatus
@@ -113,6 +114,10 @@ def add_membership(
     session.add(membership)
     session.flush()
     _audit(session, actor, "membership.add", membership, status=status.value)
+    # Back in a club: the presidium no longer needs to decide about SSS membership.
+    tasks.close_tasks(session, actor, TaskType.SSS_DECISION, TaskStatus.DONE, "rejoined", member_id=member_id)
+    if status == S.PENDING_ACTIVATION:
+        tasks.open_task(session, actor, TaskType.MEMBER_ACTIVATION, member_id, membership.id, club_id)
     return membership
 
 
@@ -137,7 +142,12 @@ def change_status(
     membership_id: uuid.UUID,
     new_status: MembershipStatus,
     on: date | None = None,
+    _task_resolution: tuple[str, str] | None = None,
 ) -> Membership:
+    """Change the status of an open membership (closes the record and opens a new one).
+
+    `_task_resolution` = (resolution, note) is used by the task list to record a rejection.
+    """
     on = on or date.today()
     current = session.get(Membership, membership_id)
     if current is None or current.valid_to is not None:
@@ -175,6 +185,20 @@ def change_status(
     session.add(new)
     session.flush()
     _audit(session, actor, "membership.status", new, old_status=current.status.value, new_status=new_status.value)
+
+    if current.status == S.PENDING_ACTIVATION:
+        if new_status == S.MEMBER:
+            tasks.close_tasks(session, actor, TaskType.MEMBER_ACTIVATION, TaskStatus.DONE, "activated",
+                              membership_id=current.id)
+        elif _task_resolution:
+            tasks.close_tasks(session, actor, TaskType.MEMBER_ACTIVATION, TaskStatus.REJECTED, _task_resolution[0],
+                              membership_id=current.id, note=_task_resolution[1])
+        else:
+            tasks.close_tasks(session, actor, TaskType.MEMBER_ACTIVATION, TaskStatus.CANCELLED, "withdrawn",
+                              membership_id=current.id)
+    if new_status == S.PENDING_ACTIVATION:
+        tasks.open_task(session, actor, TaskType.MEMBER_ACTIVATION, new.member_id, new.id, new.club_id,
+                        context={"from_status": current.status.value})
     return new
 
 
@@ -184,8 +208,18 @@ def activate(session: Session, actor: Actor, membership_id: uuid.UUID, on: date 
     return change_status(session, actor, membership_id, S.MEMBER, on)
 
 
-def terminate(session: Session, actor: Actor, membership_id: uuid.UUID, on: date | None = None) -> None:
-    """End a membership in a club. If it was primary, the oldest remaining membership becomes primary."""
+def terminate(
+    session: Session,
+    actor: Actor,
+    membership_id: uuid.UUID,
+    on: date | None = None,
+    _task_resolution: tuple[str, str] | None = None,
+) -> None:
+    """End a membership in a club (applies to this club only).
+
+    If it was primary, the oldest remaining membership becomes primary. If no club membership remains,
+    a task asks the presidium to decide about SSS membership.
+    """
     on = on or date.today()
     membership = session.get(Membership, membership_id)
     if membership is None or membership.valid_to is not None:
@@ -199,12 +233,22 @@ def terminate(session: Session, actor: Actor, membership_id: uuid.UUID, on: date
     session.flush()
     _audit(session, actor, "membership.terminate", membership)
 
-    if was_primary:
-        remaining = open_memberships(session, membership.member_id)
-        if remaining:
-            remaining[0].is_primary = True
-            session.flush()
-            _audit(session, actor, "membership.primary_auto", remaining[0])
+    if membership.status == S.PENDING_ACTIVATION:
+        if _task_resolution:
+            tasks.close_tasks(session, actor, TaskType.MEMBER_ACTIVATION, TaskStatus.REJECTED, _task_resolution[0],
+                              membership_id=membership.id, note=_task_resolution[1])
+        else:
+            tasks.close_tasks(session, actor, TaskType.MEMBER_ACTIVATION, TaskStatus.CANCELLED, "terminated",
+                              membership_id=membership.id)
+
+    remaining = open_memberships(session, membership.member_id)
+    if was_primary and remaining:
+        remaining[0].is_primary = True
+        session.flush()
+        _audit(session, actor, "membership.primary_auto", remaining[0])
+    member = _get_member(session, membership.member_id)
+    if not remaining and not member.expelled_at and not member.sss_ended_at:
+        tasks.open_task(session, actor, TaskType.SSS_DECISION, membership.member_id, club_id=membership.club_id)
 
 
 def set_primary(session: Session, actor: Actor, membership_id: uuid.UUID) -> None:

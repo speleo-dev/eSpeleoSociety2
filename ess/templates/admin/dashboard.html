@@ -3,8 +3,8 @@
 {% block body %}
 <h1>Prehľad</h1>
 <div class="cards">
-  <a class="card" href="/admin/activations"><div class="num">{{ counts.pending_activations }}</div>čaká na aktiváciu</a>
-  <a class="card" href="/admin/awaiting"><div class="num">{{ counts.awaiting_decision }}</div>čaká na rozhodnutie predsedníctva</a>
+  <a class="card" href="/admin/tasks"><div class="num">{{ counts.tasks_open }}</div>čakajúcich požiadaviek
+    {% for t, n in counts.tasks_by_type.items() %}<div class="muted">{{ t|task_label }}: {{ n }}</div>{% endfor %}</a>
   <a class="card" href="/admin/members"><div class="num">{{ counts.sss_members }}</div>členov SSS</a>
   <a class="card" href="/admin/clubs"><div class="num">{{ counts.clubs }}</div>skupín</a>
 </div>

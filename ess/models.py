@@ -22,7 +22,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ess.db import Base
@@ -247,3 +247,57 @@ class Document(TimestampMixin, Base):
     url: Mapped[str] = mapped_column(String(1000))
     valid_until: Mapped[date | None] = mapped_column(Date)
     sort_order: Mapped[int] = mapped_column(default=0)
+
+
+class TaskType(str, enum.Enum):
+    MEMBER_ACTIVATION = "member_activation"  # new member / promoted candidate proposed by a club chair
+    SSS_DECISION = "sss_decision"  # member left all clubs; presidium decides about SSS membership
+    # Future: ECP_ISSUE (eCP request to approve)
+
+
+class TaskStatus(str, enum.Enum):
+    OPEN = "open"
+    DONE = "done"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"  # the subject changed so the task no longer applies
+
+
+class Task(Base):
+    """A request waiting for an administrator ("Požiadavky").
+
+    Tasks are opened and closed by the services in the same transaction as the change they belong to,
+    so the list always matches the data. Types and statuses are stored as text to allow new types
+    without altering a database enum.
+    """
+
+    __tablename__ = "tasks"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    task_type: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16), default=TaskStatus.OPEN.value)
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    membership_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("memberships.id"))
+    club_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clubs.id"))
+    context: Mapped[dict | None] = mapped_column(JSONB)  # e.g. {"from_status": "candidate"}; no personal data
+    requested_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolved_by: Mapped[str | None] = mapped_column(String(64))
+    resolution: Mapped[str | None] = mapped_column(String(32))  # e.g. activated, rejected, restored, sss_ended
+    resolution_note: Mapped[str | None] = mapped_column(Text)
+
+    __table_args__ = (
+        Index("ix_tasks_open", "status", "task_type"),
+        Index(
+            "uq_tasks_open_activation",
+            "membership_id",
+            unique=True,
+            postgresql_where=text("status = 'open' AND task_type = 'member_activation'"),
+        ),
+        Index(
+            "uq_tasks_open_sss_decision",
+            "member_id",
+            unique=True,
+            postgresql_where=text("status = 'open' AND task_type = 'sss_decision'"),
+        ),
+    )

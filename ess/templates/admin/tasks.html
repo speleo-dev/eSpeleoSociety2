@@ -1,0 +1,52 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Požiadavky{% endblock %}
+{% block body %}
+<h1>Požiadavky</h1>
+<form class="filters" method="get">
+  <select name="show" aria-label="Zobraziť">
+    <option value="open" {% if show == "open" %}selected{% endif %}>Čakajúce požiadavky</option>
+    <option value="done" {% if show == "done" %}selected{% endif %}>Vybavené (posledných 200)</option>
+  </select>
+  <select name="type" aria-label="Typ">
+    <option value="">Všetky typy</option>
+    {% for t in T %}<option value="{{ t.value }}" {% if type == t.value %}selected{% endif %}>{{ t.value|task_label }}</option>{% endfor %}
+  </select>
+  <button>Zobraziť</button>
+</form>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Požiadavka</th><th>Člen</th><th>Skupina</th><th>{% if show == "open" %}Od{% else %}Vybavené{% endif %}</th><th>{% if show == "open" %}Akcia{% else %}Výsledok{% endif %}</th></tr></thead>
+  <tbody>
+  {% for r in rows %}{% set t = r.task %}
+    <tr>
+      <td><strong>{{ t.task_type|task_label }}</strong><br><span class="muted">{{ t|task_description }}</span></td>
+      <td data-label="Člen"><a href="/admin/members/{{ t.member_id }}">{{ r.full_name }}</a></td>
+      <td data-label="Skupina">{{ r.club_name or "" }}</td>
+      <td data-label="{% if show == 'open' %}Od{% else %}Vybavené{% endif %}">{{ (t.created_at if show == "open" else t.resolved_at)|date }}</td>
+      <td>
+      {% if show == "open" %}
+        {% if t.task_type == T.MEMBER_ACTIVATION.value %}
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/activate">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="primary">Aktivovať</button></form>
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/reject">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <input name="reason" required placeholder="Dôvod zamietnutia" aria-label="Dôvod zamietnutia">
+            <button>Zamietnuť</button></form>
+        {% elif t.task_type == T.SSS_DECISION.value %}
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/keep-unaffiliated">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="primary">Zaradiť do „SSS – nezaradení“</button></form>
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/end-sss" onsubmit="return confirm('Ukončiť členstvo v SSS?')">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <input name="note" placeholder="Poznámka (napr. číslo uznesenia)" aria-label="Poznámka">
+            <button>Ukončiť členstvo v SSS</button></form>
+        {% endif %}
+      {% else %}
+        {{ t.resolution|resolution_label }}{% if t.resolution_note %} – {{ t.resolution_note }}{% endif %}
+      {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">{% if show == "open" %}Žiadne čakajúce požiadavky.{% else %}Zatiaľ nič nebolo vybavené.{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}
