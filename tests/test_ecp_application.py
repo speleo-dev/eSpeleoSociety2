@@ -197,7 +197,7 @@ def test_web_application_flow(web):
     assert "Skontrolujte si e-mail" in client.get("/ecp/apply/sent").text
     response = client.get(token_path, follow_redirects=False)
     assert response.headers["location"] == "/ecp/apply/photo"
-    assert "E-mail je overený" in client.get("/ecp/apply/photo").text
+    assert "E-mail je overený" in client.get("/ecp/apply/photo").text  # photo step
     assert client.get(token_path).status_code == 410  # used link
 
 
@@ -215,3 +215,73 @@ def test_web_validation_and_csrf(web):
     assert response.status_code == 400 and "Zadajte rok" in response.text and 'value="1234"' in response.text
     assert client.post("/ecp/apply", data={"first_name": "x"}).status_code == 400
     assert client.get("/ecp/apply/photo").status_code == 410  # no verified application in this session
+
+
+# --- step 3: photo and consents ------------------------------------------------------------------------
+
+def _verified(session):
+    club_id = _club(session)
+    member_id = _member(session, club_id)
+    mail = apps.start_public(session, _form(club_id))
+    return apps.verify_email(session, mail.token), member_id
+
+
+def _photo() -> bytes:
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (600, 800), "gray").save(out, format="JPEG")
+    return out.getvalue()
+
+
+def test_submit_photo_opens_task_and_records_consents(session):
+    from ess.models import Consent, Task
+    from ess.storage import MemoryMediaStore
+
+    app, member_id = _verified(session)
+    store = MemoryMediaStore()
+    upload = apps.submit_photo(session, app.id, _photo(), None, True, False, True, store)
+    assert app.status == "submitted" and app.wants_card and app.submitted_at
+    assert sorted(store.objects) == sorted(upload.objects) and len(upload.objects) == 2
+    assert all(len(n.split("/")[1]) == 64 + len(".jpg") for n in upload.objects)
+    task = session.scalar(select(Task).where(Task.task_type == "ecp_issue"))
+    assert task.member_id == member_id and task.context == {"application_id": str(app.id)}
+    consents = {c.kind: c.granted for c in session.scalars(select(Consent))}
+    assert consents == {"gdpr_ecp": True, "notifications": False}
+    with pytest.raises(DomainError) as exc:  # only once
+        apps.submit_photo(session, app.id, _photo(), None, True, False, False, store)
+    assert exc.value.code == "application_not_open"
+
+
+def test_submit_photo_requires_consent_and_store(session):
+    from ess.storage import MemoryMediaStore
+
+    app, _ = _verified(session)
+    for args, code in (((False, MemoryMediaStore()), "gdpr_consent_required"), ((True, None), "media_store_not_configured")):
+        with pytest.raises(DomainError) as exc:
+            apps.submit_photo(session, app.id, _photo(), None, args[0], True, False, args[1])
+        assert exc.value.code == code
+    assert app.status == "photo_pending"
+
+
+def test_web_photo_step(web):
+    from ess.storage import MemoryMediaStore, get_media_store
+
+    client, mailer, club_id = web
+    store = MemoryMediaStore()
+    client.app.dependency_overrides[get_media_store] = lambda: store
+    _post(client, club_id)
+    link = re.search(r"https?://\S+/ecp/email/\S+", mailer.sent[0].text).group(0)
+    client.get(link[link.index("/ecp/email/"):])
+    html = client.get("/ecp/apply/photo").text
+    csrf = re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+    files = {"photo": ("tvar.jpg", _photo(), "image/jpeg")}
+    response = client.post("/ecp/apply/photo", data={"csrf_token": csrf}, files=files)
+    assert response.status_code == 400 and "Bez súhlasu" in response.text and store.objects == {}
+    response = client.post("/ecp/apply/photo", files=files, follow_redirects=False, data={
+        "csrf_token": csrf, "gdpr": "on", "crop_x": "0.1", "crop_y": "0.1", "crop_w": "0.6", "crop_h": "0.6"})
+    assert response.headers["location"] == "/ecp/apply/done" and len(store.objects) == 2
+    assert "Žiadosť je odoslaná" in client.get("/ecp/apply/done").text
+    assert client.get("/ecp/apply/photo").status_code == 410  # the session no longer holds the application

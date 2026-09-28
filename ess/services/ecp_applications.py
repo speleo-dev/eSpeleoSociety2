@@ -213,3 +213,58 @@ def verify_email(session: Session, token: str) -> EcpApplication | None:
     audit.record(session, actor_type=PUBLIC.audit_type, actor_id=None, action="ecp_application.email_verified",
                  entity_type="ecp_application", entity_id=str(application.id))
     return application
+
+
+# --- step 3: photo and consents ------------------------------------------------------------------------
+
+CONSENT_GDPR = "gdpr_ecp"
+CONSENT_NOTIFICATIONS = "notifications"
+CONSENT_TEXT_VERSION = "2026-1"  # bump when the texts in public/apply_photo.html change
+
+
+@dataclass
+class PhotoUpload:
+    """Objects stored in the bucket; the caller deletes them if the transaction fails."""
+
+    application: EcpApplication
+    objects: list[str]
+
+
+def random_photo_name(prefix: str) -> str:
+    return f"{prefix}/{secrets.token_hex(32)}.jpg"  # 64 random characters (R24)
+
+
+def submit_photo(
+    session: Session, application_id: uuid.UUID, photo: bytes, crop: tuple[float, float, float, float] | None,
+    gdpr_consent: bool, notifications: bool, wants_card: bool, store,
+) -> PhotoUpload:
+    """The applicant uploads a face photo and gives consents; the application goes to the administrator."""
+    from ess.images import crop_portrait, normalize_original
+    from ess.models import Consent, TaskType
+    from ess.services import tasks
+
+    if not gdpr_consent:
+        raise DomainError("gdpr_consent_required")
+    if store is None:
+        raise DomainError("media_store_not_configured")
+    application = session.get(EcpApplication, application_id, with_for_update=True)
+    if application is None or application.status != S.PHOTO_PENDING.value:
+        raise DomainError("application_not_open")
+    original = normalize_original(photo)
+    portrait = crop_portrait(original, crop)
+    original_name, portrait_name = random_photo_name("originals"), random_photo_name("photos")
+    store.put(original_name, original, "image/jpeg")
+    store.put(portrait_name, portrait, "image/jpeg")
+    application.photo_original, application.photo_cropped = original_name, portrait_name
+    application.wants_card = wants_card
+    application.status = S.SUBMITTED.value
+    application.submitted_at = _now()
+    for kind, granted in ((CONSENT_GDPR, True), (CONSENT_NOTIFICATIONS, notifications)):
+        session.add(Consent(id=uuid.uuid4(), member_id=application.member_id, kind=kind,
+                            text_version=CONSENT_TEXT_VERSION, granted=granted, source="application",
+                            application_id=application.id))
+    tasks.open_task(session, PUBLIC, TaskType.ECP_ISSUE, application.member_id, club_id=application.club_id,
+                    context={"application_id": str(application.id)})
+    audit.record(session, actor_type=PUBLIC.audit_type, actor_id=None, action="ecp_application.submit",
+                 entity_type="ecp_application", entity_id=str(application.id))
+    return PhotoUpload(application, [original_name, portrait_name])

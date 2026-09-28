@@ -10,7 +10,7 @@ def test_message_has_text_and_html_parts():
     mailer = SmtpMailer("smtp.example.org", 465, "ess@sss.sk", "pw", "SSS <ess@sss.sk>")
     msg = mailer._message(Mail(to="a@example.org", subject="Predmet – ž", text="Text", html="<p>HTML</p>"))
     assert msg["From"] == "SSS <ess@sss.sk>" and msg["To"] == "a@example.org"
-    assert msg["Message-ID"].endswith("@sss.sk>")
+    assert msg["Message-ID"].endswith("@sss.sk>") and msg["Date"]
     assert [p.get_content_type() for p in msg.iter_parts()] == ["text/plain", "text/html"]
 
 

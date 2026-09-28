@@ -5,15 +5,18 @@ import secrets
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from ess.config import get_settings
 from ess.db import get_session
+from ess.images import MAX_UPLOAD_BYTES
 from ess.mail import Mail, Mailer, MailError, get_mailer
 from ess.services import directory, ecp_applications
 from ess.services.access import DomainError
 from ess.services.ecp_applications import ApplicationForm
+from ess.storage import MediaStore, get_media_store
 from ess.web.auth import csrf_token
 from ess.web.common import parse_date
 from ess.web.templates import ERRORS, templates
@@ -105,8 +108,57 @@ def email_link(request: Request, token: str, session: Session = Depends(get_sess
     return RedirectResponse("/ecp/apply/photo", status_code=303)
 
 
+def _application_in_session(request: Request) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(request.session.get(SESSION_KEY, ""))
+    except ValueError:
+        return None
+
+
+def _crop(form) -> tuple[float, float, float, float] | None:
+    try:
+        values = tuple(float(form.get(f"crop_{k}", "")) for k in ("x", "y", "w", "h"))
+    except ValueError:
+        return None  # no JavaScript: automatic crop
+    return values if all(0 <= v <= 1 for v in values) and values[2] > 0 else None
+
+
 @router.get("/apply/photo")
 def apply_photo(request: Request):
-    if not request.session.get(SESSION_KEY):
+    if _application_in_session(request) is None:
         return _page(request, "public/link_invalid.html", status_code=410)
     return _page(request, "public/apply_photo.html")
+
+
+@router.post("/apply/photo", dependencies=[Depends(verify_public_csrf)])
+async def apply_photo_submit(request: Request, session: Session = Depends(get_session),
+                             store: MediaStore | None = Depends(get_media_store)):
+    application_id = _application_in_session(request)
+    if application_id is None:
+        return _page(request, "public/link_invalid.html", status_code=410)
+    form = await request.form()
+    upload = form.get("photo")
+    data = await upload.read(MAX_UPLOAD_BYTES + 1) if hasattr(upload, "read") else b""
+    result = None
+    try:
+        result = await run_in_threadpool(
+            ecp_applications.submit_photo, session, application_id, data, _crop(form), form.get("gdpr") == "on",
+            form.get("notifications") == "on", form.get("wants_card") == "on", store)
+        session.commit()
+    except DomainError as exc:
+        session.rollback()
+        return _page(request, "public/apply_photo.html", status_code=400,
+                     error=ERRORS.get(exc.code, "Fotku sa nepodarilo spracovať."))
+    except Exception:
+        session.rollback()
+        if result and store:
+            for name in result.objects:
+                store.delete(name)
+        raise
+    request.session.pop(SESSION_KEY, None)
+    return RedirectResponse("/ecp/apply/done", status_code=303)
+
+
+@router.get("/apply/done")
+def apply_done(request: Request):
+    return _page(request, "public/apply_done.html")

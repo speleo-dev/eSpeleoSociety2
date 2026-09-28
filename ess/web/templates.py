@@ -46,6 +46,10 @@ ERRORS = {
     "card_number_required": "Zadajte číslo preukazu SSS.",
     "member_since_required": "Zadajte rok, odkedy ste členom SSS (napr. 1995).",
     "club_required": "Vyberte skupinu.",
+    "gdpr_consent_required": "Bez súhlasu so spracovaním osobných údajov nie je možné eCP vydať.",
+    "application_not_open": "Žiadosť už bola odoslaná alebo vypršala.",
+    "photo_too_small": "Fotka je príliš malá (kratšia strana aspoň 240 px).",
+    "photo_crop_too_small": "Vybraný výrez je príliš malý – zväčšite ho.",
     "invalid_country": "Krajina musí byť dvojpísmenový kód (napr. SK, CZ).",
     "invalid_web": "Web musí začínať http:// alebo https://",
     "invalid_date": "Neplatný dátum.",
@@ -54,6 +58,10 @@ ERRORS = {
     "club_code_in_use": "Tento kód skupiny už má iná skupina.",
     "invalid_club_code": "Kód skupiny môže obsahovať len A–Z, 0–9, - a _ (najviac 20 znakov).",
     "club_required": "Vyberte skupinu.",
+    "gdpr_consent_required": "Bez súhlasu so spracovaním osobných údajov nie je možné eCP vydať.",
+    "application_not_open": "Žiadosť už bola odoslaná alebo vypršala.",
+    "photo_too_small": "Fotka je príliš malá (kratšia strana aspoň 240 px).",
+    "photo_crop_too_small": "Vybraný výrez je príliš malý – zväčšite ho.",
     "club_not_allowed": "Pri tejto funkcii sa skupina nezadáva.",
     "club_inactive": "Skupina nie je aktívna.",
     "invalid_status": "Neplatný stav.",
@@ -95,6 +103,7 @@ def fmt_date(value) -> str:
 TASK_LABELS = {
     "member_activation": "Aktivácia člena",
     "sss_decision": "Rozhodnutie o členstve v SSS",
+    "ecp_issue": "Vydanie eCP",
 }
 
 RESOLUTION_LABELS = {
@@ -124,6 +133,8 @@ def task_description(task) -> str:
         return "Nový člen navrhnutý predsedom skupiny. Aktivujte po doručení podkladov."
     if task.task_type == "sss_decision":
         return "Ukončil členstvo vo všetkých skupinách. Zapíšte rozhodnutie predsedníctva."
+    if task.task_type == "ecp_issue":
+        return "Žiadosť o eCP s fotkou. Skontrolujte fotku a schváľte alebo zamietnite."
     return ""
 
 

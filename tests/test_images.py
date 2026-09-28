@@ -62,3 +62,41 @@ def test_memory_store_urls_and_random_names():
     store.delete(name)
     store.delete(name)  # missing object is not an error
     assert store.objects == {}
+
+
+def test_portrait_box_keeps_ratio_and_stays_inside():
+    from ess.images import PORTRAIT_RATIO, portrait_box
+
+    for size, crop in (((1000, 800), None), ((400, 1200), None), ((1000, 800), (0.9, 0.9, 0.5, 0.5)),
+                       ((1000, 800), (0.1, 0.2, 1.0, 1.0)), ((1000, 800), (-1, 2, 0.3, 0.3))):
+        left, top, right, bottom = portrait_box(size, crop)
+        assert 0 <= left < right <= size[0] and 0 <= top < bottom <= size[1]
+        assert abs((right - left) / (bottom - top) - PORTRAIT_RATIO) < 0.01
+
+
+def test_portrait_is_rotated_by_exif_and_sized():
+    from ess.images import PORTRAIT_SIZE, crop_portrait, normalize_original
+
+    out = io.BytesIO()
+    exif = Image.Exif()
+    exif[0x0112] = 6  # rotated 90° - the photo is really portrait
+    exif[0x010F] = "SecretCamera"
+    Image.new("RGB", (1200, 800), "red").save(out, format="JPEG", exif=exif)
+    original = normalize_original(out.getvalue())
+    with Image.open(io.BytesIO(original)) as img:
+        assert img.size == (800, 1200)
+    assert b"SecretCamera" not in original
+    with Image.open(io.BytesIO(crop_portrait(original, (0.1, 0.1, 0.5, 0.5)))) as img:
+        assert img.size == PORTRAIT_SIZE and img.format == "JPEG"
+
+
+def test_small_photo_and_tiny_crop_are_rejected():
+    from ess.images import crop_portrait, normalize_original
+
+    with pytest.raises(DomainError) as exc:
+        normalize_original(image_bytes("PNG", (200, 300)))
+    assert exc.value.code == "photo_too_small"
+    original = normalize_original(image_bytes("PNG", (300, 400)))
+    with pytest.raises(DomainError) as exc:
+        crop_portrait(original, (0, 0, 0.1, 0.1))
+    assert exc.value.code == "photo_crop_too_small"

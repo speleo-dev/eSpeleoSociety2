@@ -39,6 +39,9 @@ Administrátor v nej vidí fotku, môže ju znova orezať z originálu, schváli
 zodpovedajú evidencii, príde vám e-mail; ak nepríde do 15 minút, kontaktujte predsedu skupiny“).
 Hotové (krok 1): formulár `/ecp/apply`, presná zhoda (`ess/services/ecp_applications.py`), e-mail s odkazom
 `/ecp/email/<token>`, prepadnutie nedokončených žiadostí. Nová žiadosť nahradí nedokončenú.
+Hotové (krok 2): `/ecp/apply/photo` – fotka s orezom v prehliadači (`ess/static/crop.js`, pomer 220:300,
+bez JavaScriptu automatický výrez), súhlasy (verzia textu `2026-1`), voľba kartičky → stav `submitted`
+a požiadavka „Vydanie eCP“. Originál (`originals/`) a portrét 440×600 (`photos/`) majú 64-znakové náhodné názvy.
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.

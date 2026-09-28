@@ -9,7 +9,7 @@ import smtplib
 import ssl
 from dataclasses import dataclass
 from email.message import EmailMessage
-from email.utils import make_msgid
+from email.utils import formatdate, make_msgid
 from functools import lru_cache
 from typing import Protocol
 
@@ -43,6 +43,7 @@ class SmtpMailer:
         msg["From"] = self.sender
         msg["To"] = mail.to
         msg["Subject"] = mail.subject
+        msg["Date"] = formatdate(localtime=True)  # a missing Date header is a strong spam signal
         msg["Message-ID"] = make_msgid(domain=self.user.rsplit("@", 1)[-1])
         msg.set_content(mail.text)
         if mail.html:

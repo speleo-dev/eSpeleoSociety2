@@ -1,6 +1,36 @@
 {% extends "public/_layout.html" %}
 {% block title %}Žiadosť o eCP – fotka{% endblock %}
 {% block content %}
-<h1>E-mail je overený</h1>
-<p>Ďalší krok – nahratie fotky tváre a súhlasy – pripravujeme.</p>
+<style>
+  #crop-stage { position:relative; max-width:28rem; touch-action:none; user-select:none; }
+  #crop-img { display:block; width:100%; }
+  #crop-frame { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; }
+  #crop-stage { overflow:hidden; }
+</style>
+<h1>Fotka a súhlasy</h1>
+<p>E-mail je overený. Nahrajte fotku tváre ako na doklad: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
+   jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<form method="post" enctype="multipart/form-data" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label>Fotka (JPEG alebo PNG, najviac 5 MB) *
+    <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required></label>
+  <div id="crop-stage" hidden>
+    <img id="crop-img" alt="Náhľad fotky">
+    <div id="crop-frame"></div>
+  </div>
+  <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
+  {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
+
+  <label class="check"><input type="checkbox" name="gdpr" required>
+    Súhlasím so spracovaním mojich osobných údajov Slovenskou speleologickou spoločnosťou na účel vydania
+    a overovania elektronického jaskyniarskeho preukazu. Beriem na vedomie, že po naskenovaní QR kódu z preukazu
+    sa kontrolórovi zobrazí moje meno, fotka, adresa bydliska, skupina, dátum členstva a stav členského. *</label>
+  <label class="check"><input type="checkbox" name="notifications" checked>
+    Chcem dostávať oznámenia SSS do preukazu v Peňaženke Google.</label>
+  <label class="check"><input type="checkbox" name="wants_card">
+    Chcem aj kartičku SSS na vytlačenie (PDF, príde e-mailom).</label>
+  <p><button class="primary">Odoslať žiadosť</button></p>
+</form>
+<script src="/static/crop.js" defer></script>
 {% endblock %}
