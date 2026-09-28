@@ -1,0 +1,39 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Import{% endblock %}
+{% block body %}
+<h1>Import z CSV</h1>
+<p class="muted">Postup: 1. skupiny s kódmi, 2. členovia (kód skupiny odkazuje na skupinu). Súbor sa najprv
+skontroluje; uloží sa až po zaškrtnutí „Vykonať import“ a len ak nemá žiadnu chybu. Podrobný návod je
+v <code>docs/import.md</code>.</p>
+
+{% if result %}
+<section class="box">
+  <h2>{{ "Skupiny" if kind == "clubs" else "Členovia" }}: {% if result.ok %}{% if dry_run %}kontrola bez chýb{% else %}hotovo{% endif %}{% else %}nájdené chyby{% endif %}</h2>
+  {% if result.summary %}<p>{{ result.summary }}</p>{% endif %}
+  {% if result.ok and dry_run %}<p>Pre uloženie nahrajte ten istý súbor znova so zaškrtnutým „Vykonať import“.</p>{% endif %}
+  {% if result.errors %}<ul>{% for e in result.errors[:200] %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% if result.errors|length > 200 %}<p class="muted">… a ďalších {{ result.errors|length - 200 }} chýb.</p>{% endif %}{% endif %}
+</section>
+{% endif %}
+
+<h2>1. Skupiny</h2>
+<p>Stĺpce: <code>kod; nazov; skratka; cakatelia</code> (cakatelia: X = skupina používa čakateľov).
+<a href="/admin/import/template/clubs.csv">Stiahnuť vzor</a> · <a href="/admin/import/club-codes.csv">Stiahnuť kódy existujúcich skupín</a></p>
+<form method="post" action="/admin/import/clubs" enctype="multipart/form-data" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid"><label>Súbor CSV<input type="file" name="file" accept=".csv,text/csv" required></label></div>
+  <label class="check"><input type="checkbox" name="execute"> Vykonať import (inak len kontrola)</label>
+  <button class="primary">Nahrať</button>
+</form>
+
+<h2>2. Členovia</h2>
+<p>Jeden riadok = jedno členstvo v skupine. Údaje o osobe sa berú z riadku označeného v stĺpci
+<code>primarna</code> znakom X; v ďalších riadkoch toho istého člena stačí kód skupiny, meno a priezvisko.
+<a href="/admin/import/template/members.csv">Stiahnuť vzor</a></p>
+<form method="post" action="/admin/import/members" enctype="multipart/form-data" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid"><label>Súbor CSV<input type="file" name="file" accept=".csv,text/csv" required></label></div>
+  <label class="check"><input type="checkbox" name="execute"> Vykonať import (inak len kontrola)</label>
+  <button class="primary">Nahrať</button>
+</form>
+{% endblock %}

@@ -1,13 +1,15 @@
 """Administration: clubs, organisation structure, administrative access, settings and documents."""
 
+import csv
+import io
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
 from ess.models import AdminRole, Club, MembershipStatus
-from ess.services import admin_access, certificates, clubs, directory, documents, settings
+from ess.services import admin_access, certificates, clubs, directory, documents, importing, settings
 from ess.services.access import DomainError, PermissionDenied
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, error_text, forbidden, parse_date, render
@@ -28,10 +30,11 @@ def club_new(request: Request, admin: Admin, session: Db):
 def club_create(
     request: Request, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
     short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
+    code: Annotated[str, Form()] = "",
 ):
-    raw = {"name": name, "short_name": short_name, "uses_candidates": uses_candidates == "on"}
+    raw = {"name": name, "short_name": short_name, "uses_candidates": uses_candidates == "on", "code": code}
     try:
-        club = clubs.create_club(session, admin.actor, name, short_name, raw["uses_candidates"])
+        club = clubs.create_club(session, admin.actor, name, short_name, raw["uses_candidates"], code)
         session.commit()
     except (DomainError, PermissionDenied) as exc:
         session.rollback()
@@ -49,7 +52,7 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
     chairs = [h for h in directory.current_positions(session) if h.club_id == club_id]
     active_members = directory.list_members(session, club_id=club_id, status=MembershipStatus.MEMBER)
     raw = {"name": club.name, "short_name": club.short_name or "", "uses_candidates": club.uses_candidates,
-           "active": club.active}
+           "active": club.active, "code": club.code or ""}
     return render(request, "admin/club_form.html", admin, session, club=club, raw=raw, chairs=chairs,
                   active_members=active_members)
 
@@ -58,11 +61,11 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
 def club_update(
     request: Request, club_id: uuid.UUID, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
     short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
-    active: Annotated[str, Form()] = "",
+    active: Annotated[str, Form()] = "", code: Annotated[str, Form()] = "",
 ):
     return act(request, session, f"/admin/clubs/{club_id}",
                lambda: clubs.update_club(session, admin.actor, club_id, name, short_name,
-                                         uses_candidates == "on", active == "on"),
+                                         uses_candidates == "on", active == "on", code),
                "Skupina bola uložená.")
 
 
@@ -155,3 +158,61 @@ def document_save(
 def document_delete(request: Request, document_id: uuid.UUID, admin: Admin, session: Db):
     return act(request, session, "/admin/documents", lambda: documents.delete_document(session, admin.actor, document_id),
                "Dokument bol odstránený.")
+
+
+# --- CSV import -------------------------------------------------------------------------------------------
+
+MAX_IMPORT_BYTES = 2 * 1024 * 1024
+
+
+@router.get("/import")
+def import_page(request: Request, admin: Admin, session: Db):
+    return render(request, "admin/import.html", admin, session, result=None, kind=None)
+
+
+@router.post("/import/{kind}", dependencies=[Depends(verify_csrf)])
+async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
+    if kind not in ("clubs", "members"):
+        return render(request, "admin/not_found.html", admin, session)
+    form = await request.form()
+    upload = form.get("file")
+    dry_run = form.get("execute") != "on"
+    content = await upload.read(MAX_IMPORT_BYTES + 1) if upload is not None and hasattr(upload, "read") else b""
+    if not content:
+        result = importing.ImportResult(False, errors=["Vyberte súbor CSV."])
+    elif len(content) > MAX_IMPORT_BYTES:
+        result = importing.ImportResult(False, errors=["Súbor je príliš veľký (najviac 2 MB)."])
+    else:
+        fn = importing.import_clubs if kind == "clubs" else importing.import_members
+        try:
+            result = fn(session, admin.actor, content, dry_run=dry_run)
+            if result.ok and not dry_run:
+                session.commit()
+            else:
+                session.rollback()
+        except (DomainError, PermissionDenied) as exc:
+            session.rollback()
+            result = importing.ImportResult(False, errors=[error_text(exc)])
+    return render(request, "admin/import.html", admin, session, result=result, kind=kind, dry_run=dry_run,
+                  status_code=200 if result.ok else 400)
+
+
+@router.get("/import/template/{kind}.csv")
+def import_template(kind: str, admin: Admin):
+    if kind not in ("clubs", "members"):
+        kind = "members"
+    name = "vzor_skupiny.csv" if kind == "clubs" else "vzor_clenovia.csv"
+    return Response(importing.template_csv(kind), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+@router.get("/import/club-codes.csv")
+def club_codes(admin: Admin, session: Db):
+    """Current clubs with their codes - for the person preparing the member list."""
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
+    writer.writerow(["kod", "nazov"])
+    for club in directory.active_clubs(session):
+        writer.writerow([club.code or "", club.name])
+    return Response("﻿" + out.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="kody_skupin.csv"'})

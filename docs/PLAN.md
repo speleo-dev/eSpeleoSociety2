@@ -207,7 +207,8 @@ a nastavení (systémový administrátor), dokumenty.
 Dizajn: zatiaľ postačujúci; úprava vzhľadu (vizuálne nedostatky) príde, keď bude hotová funkcionalita.
 Návrh pre úpravu vzhľadu: krátke akcie (zamietnutie s dôvodom, ukončenie, vylúčenie, funkcia, certifikát)
 v dialógových oknach namiesto polí priamo v riadku; dlhé formuláre (nový člen, skupina) ostanú ako stránky.
-Zostáva: šablóna a import zjednoteného zoznamu členov.
+Import skupín a členov z CSV (`docs/import.md`, migrácia 0006 – kód skupiny) – hotové.
+Fáza 1 je funkčne kompletná; zostáva úprava vzhľadu (spolu s ďalšími fázami).
 
 - Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
   administrátori v aplikácii.

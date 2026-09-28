@@ -8,6 +8,7 @@
   <div class="grid">
     <label>Názov *<input name="name" required value="{{ raw.name or '' }}"></label>
     <label>Skratka (na preukaz)<input name="short_name" value="{{ raw.short_name or '' }}"></label>
+    {% if not club or not club.is_unaffiliated %}<label>Kód (pre import, napr. JS-DEM)<input name="code" value="{{ raw.code or '' }}" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,19}"></label>{% endif %}
   </div>
   {% if not club or not club.is_unaffiliated %}
   <label class="check"><input type="checkbox" name="uses_candidates" {% if raw.uses_candidates %}checked{% endif %}> Skupina používa čakateľov</label>

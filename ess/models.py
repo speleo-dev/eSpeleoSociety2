@@ -44,6 +44,8 @@ class Club(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     name: Mapped[str] = mapped_column(String(200), unique=True)
+    # Short unique code used in imports (e.g. "JS-DEM"); "SSS" for the unaffiliated club.
+    code: Mapped[str | None] = mapped_column(String(20), unique=True)
     short_name: Mapped[str | None] = mapped_column(String(50))
     is_unaffiliated: Mapped[bool] = mapped_column(Boolean, default=False)
     uses_candidates: Mapped[bool] = mapped_column(Boolean, default=True)

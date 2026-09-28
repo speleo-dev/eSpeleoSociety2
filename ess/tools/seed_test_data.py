@@ -74,8 +74,8 @@ def _seed(session, rng: random.Random, member_count: int) -> None:
 
     start = date(2026, 1, 1)
     clubs = []
-    for place in PLACES:
-        club = Club(id=uuid.uuid4(), name=f"Jaskyniarska skupina {place}", short_name=f"JS {place}",
+    for index, place in enumerate(PLACES, start=1):
+        club = Club(id=uuid.uuid4(), name=f"Jaskyniarska skupina {place}", short_name=f"JS {place}", code=f"JS{index:02d}",
                     is_unaffiliated=False, uses_candidates=rng.random() < 0.7, active=True)
         session.add(club)
         clubs.append(club)

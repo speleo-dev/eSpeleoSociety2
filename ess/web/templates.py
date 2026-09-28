@@ -45,6 +45,8 @@ ERRORS = {
     "invalid_date": "Neplatný dátum.",
     "card_number_in_use": "Toto číslo preukazu už má iný člen.",
     "club_name_in_use": "Skupina s týmto názvom už existuje.",
+    "club_code_in_use": "Tento kód skupiny už má iná skupina.",
+    "invalid_club_code": "Kód skupiny môže obsahovať len A–Z, 0–9, - a _ (najviac 20 znakov).",
     "club_required": "Vyberte skupinu.",
     "club_not_allowed": "Pri tejto funkcii sa skupina nezadáva.",
     "club_inactive": "Skupina nie je aktívna.",

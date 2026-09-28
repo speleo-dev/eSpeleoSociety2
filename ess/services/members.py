@@ -157,6 +157,11 @@ def update_member(session: Session, actor: Actor, member_id: uuid.UUID, data: Me
     return member
 
 
+def find_by_card_number(session: Session, card_number: str) -> Member | None:
+    index = pii.blind_index(_BIDX_CARD, card_number.strip())
+    return session.scalar(select(Member).where(Member.card_number_bidx == index)) if index else None
+
+
 def find_by_lookup(session: Session, first_name: str, last_name: str, birth_year: int) -> list[Member]:
     index = lookup_index(first_name, last_name, birth_year)
     if index is None:
