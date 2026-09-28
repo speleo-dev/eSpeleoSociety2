@@ -1,0 +1,11 @@
+Dobrý deň {{ first_name }},
+
+dostali sme vašu žiadosť o elektronický jaskyniarsky preukaz (eCP).
+Pokračujte v žiadosti cez tento odkaz (dá sa použiť raz):
+
+{{ link }}
+
+Ak ste o eCP nežiadali, tento e-mail ignorujte.
+
+S pozdravom
+Slovenská speleologická spoločnosť

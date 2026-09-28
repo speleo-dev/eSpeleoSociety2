@@ -1,0 +1,27 @@
+{% extends "public/_layout.html" %}
+{% block title %}Žiadosť o eCP{% endblock %}
+{% block content %}
+<h1>Žiadosť o elektronický jaskyniarsky preukaz (eCP)</h1>
+<p>Žiadosť je pre existujúcich členov SSS. Údaje musia presne zodpovedať evidencii SSS.
+   Nový člen dostane eCP cez predsedu svojej skupiny.</p>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<form method="post" class="form" autocomplete="on">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <div class="grid">
+    <label>Meno *<input name="first_name" required autocomplete="given-name" value="{{ raw.first_name or '' }}"></label>
+    <label>Priezvisko *<input name="last_name" required autocomplete="family-name" value="{{ raw.last_name or '' }}"></label>
+    <label>Dátum narodenia *<input type="date" name="birth_date" required autocomplete="bday" value="{{ raw.birth_date or '' }}"></label>
+    <label>E-mail (ten, ktorý má SSS v evidencii) *<input type="email" name="email" required autocomplete="email" value="{{ raw.email or '' }}"></label>
+    <label>Číslo preukazu SSS *<input name="card_number" required value="{{ raw.card_number or '' }}"></label>
+    <label>Člen SSS od roku *<input name="member_since" required inputmode="numeric" pattern="[0-9]{4}" value="{{ raw.member_since or '' }}"></label>
+    <label>Skupina *
+      <select name="club_id" required>
+        <option value="">— vyberte —</option>
+        {% for c in clubs %}<option value="{{ c.id }}" {% if raw.club_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select></label>
+  </div>
+  <div style="position:absolute;left:-10000px" aria-hidden="true"><label>Nevypĺňajte<input name="website" tabindex="-1" autocomplete="off"></label></div>
+  <p><button class="primary">Pokračovať</button></p>
+</form>
+<p class="muted">Po odoslaní vám pošleme e-mail s odkazom na overenie. V ďalšom kroku nahráte fotku tváre.</p>
+{% endblock %}

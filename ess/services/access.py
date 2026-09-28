@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ess.models import Club, PositionHolder
 
-ActorKind = Literal["system_admin", "admin", "member", "system"]
+ActorKind = Literal["system_admin", "admin", "member", "system", "public"]
 
 
 class PermissionDenied(Exception):
@@ -49,6 +49,7 @@ class Actor:
 
 
 SYSTEM = Actor(kind="system", id="system")
+PUBLIC = Actor(kind="public", id="public")  # anonymous visitor of the public pages
 
 
 def require_admin(actor: Actor) -> None:

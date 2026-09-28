@@ -37,8 +37,11 @@ Administrátor v nej vidí fotku, môže ju znova orezať z originálu, schváli
 
 **Ochrana pred zisťovaním členov:** po odoslaní formulára sa vždy zobrazí rovnaká správa („ak údaje
 zodpovedajú evidencii, príde vám e-mail; ak nepríde do 15 minút, kontaktujte predsedu skupiny“).
+Hotové (krok 1): formulár `/ecp/apply`, presná zhoda (`ess/services/ecp_applications.py`), e-mail s odkazom
+`/ecp/email/<token>`, prepadnutie nedokončených žiadostí. Nová žiadosť nahradí nedokončenú.
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
-ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený (na IP adresu a na e-mail za deň).
+ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
+skryté pole proti robotom.
 
 ## Súhlasy
 

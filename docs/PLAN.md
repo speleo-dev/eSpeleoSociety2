@@ -112,6 +112,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R28** – Adresa člena je po častiach (ulica a číslo, PSČ, obec, krajina – ISO kód, predvolene SK), kvôli čistým
   dátam. Skupina má kontaktné údaje: adresu, e-mail, telefón, web a dátum založenia (migrácia `0009`).
   Inventúra pôvodnej aplikácie: `docs/old-app-inventory.md`.
+- **R29** – **Dočasne sa e-maily posielajú cez Gmail** `speleo.cassovia@gmail.com` (heslo aplikácie
+  v `ess-smtp-gmail-password`). Schránka `ess@sss.sk` na WebSupporte má obmedzenie prihlásenia podľa krajín;
+  Cloud Run (Nemecko) a Cloud Shell sa neprihlásia. Treba požiadať správcu domény `sss.sk` o povolenie
+  (Nemecko) a potom prepnúť späť (`docs/gcp-setup.md`, krok 16).
 
 ## 4. Architektúra
 
