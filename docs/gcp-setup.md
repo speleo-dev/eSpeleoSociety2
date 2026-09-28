@@ -369,6 +369,30 @@ gcloud run services update ess --region europe-west3 --update-secrets ESS_SMTP_P
 
 Server `smtp.m1.websupport.sk`, port 465 (SSL) a používateľ `ess@sss.sk` sú predvolené v aplikácii.
 
+**Dočasne cez Gmail (na testovanie):** potrebuješ Gmail účet so zapnutým dvojstupňovým overením
+a **heslo aplikácie** (16 znakov, Google ho zobrazí v skupinách po 4). Medzery sa pri ukladaní vynechajú.
+Odosielateľ musí byť ten istý Gmail účet. Limit Gmailu je približne 500 e-mailov denne.
+
+```bash
+IFS= read -rs -p "Heslo aplikácie (bez medzier): " PW; echo
+printf '%s' "${PW// /}" | gcloud secrets create ess-smtp-gmail-password --data-file=-; unset PW
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+gcloud secrets add-iam-policy-binding ess-smtp-gmail-password \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+# kontrola z Cloud Shell
+ESS_SMTP_HOST=smtp.gmail.com ESS_SMTP_USER=speleo.cassovia@gmail.com \
+  ESS_SMTP_PASSWORD="$(gcloud secrets versions access latest --secret=ess-smtp-gmail-password)" \
+  .venv/bin/python -m ess.tools.smtp_check
+# prepnutie aplikácie na Gmail
+gcloud run services update ess --region europe-west3 \
+  --update-env-vars "^;^ESS_SMTP_HOST=smtp.gmail.com;ESS_SMTP_USER=speleo.cassovia@gmail.com;ESS_MAIL_FROM=eSS SSS (test) <speleo.cassovia@gmail.com>" \
+  --update-secrets ESS_SMTP_PASSWORD=ess-smtp-gmail-password:latest
+```
+
+Návrat na WebSupport: `--remove-env-vars ESS_SMTP_HOST,ESS_SMTP_USER,ESS_MAIL_FROM` a
+`--update-secrets ESS_SMTP_PASSWORD=ess-smtp-password:latest`.
+
 **Riešenie problémov:**
 - *`SMTPAuthenticationError`* – zlé heslo alebo server. Heslo sa ukladá **presne tak, ako je** (nekóduje sa;
   kódovanie platí len pre heslo v adrese DB v kroku 5). Oprava: nová verzia tajomstva (príkaz z bodu b) s
