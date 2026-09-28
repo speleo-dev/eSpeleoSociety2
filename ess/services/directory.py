@@ -32,6 +32,7 @@ class MemberRow:
     data: MemberData
     clubs: list[tuple[str, MembershipStatus, bool]] = field(default_factory=list)  # (club, status, primary)
     sss_status: SssStatus = SssStatus.NEVER
+    is_chair: bool = False
 
     @property
     def sort_key(self) -> tuple[str, str]:
@@ -59,6 +60,8 @@ def list_members(
     for m in session.scalars(select(Membership).where(Membership.valid_to.is_(None))):
         open_by_member[m.member_id].append(m)
     had_any = set(session.scalars(select(Membership.member_id).distinct()))
+    chairs = set(session.scalars(select(PositionHolder.member_id).where(
+        PositionHolder.position_code == "club_chair", PositionHolder.valid_to.is_(None))))
 
     needle = normalize_for_index(query) if query else None
     rows = []
@@ -79,6 +82,7 @@ def list_members(
                 data=data,
                 clubs=[(clubs[m.club_id], m.status, m.is_primary) for m in sorted(open_ms, key=lambda m: not m.is_primary)],
                 sss_status=_sss_status(member, bool(open_ms), member.id in had_any),
+                is_chair=member.id in chairs,
             )
         )
     rows.sort(key=lambda r: r.sort_key)

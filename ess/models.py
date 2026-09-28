@@ -47,6 +47,8 @@ class Club(TimestampMixin, Base):
     # Short unique code used in imports (e.g. "JS-DEM"); "SSS" for the unaffiliated club.
     code: Mapped[str | None] = mapped_column(String(20), unique=True)
     short_name: Mapped[str | None] = mapped_column(String(50))
+    # Public image of the club logo (https), e.g. in the Cloud Storage bucket. Not personal data.
+    logo_url: Mapped[str | None] = mapped_column(String(500))
     is_unaffiliated: Mapped[bool] = mapped_column(Boolean, default=False)
     uses_candidates: Mapped[bool] = mapped_column(Boolean, default=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)

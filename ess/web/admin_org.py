@@ -30,11 +30,12 @@ def club_new(request: Request, admin: Admin, session: Db):
 def club_create(
     request: Request, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
     short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
-    code: Annotated[str, Form()] = "",
+    code: Annotated[str, Form()] = "", logo_url: Annotated[str, Form()] = "",
 ):
-    raw = {"name": name, "short_name": short_name, "uses_candidates": uses_candidates == "on", "code": code}
+    raw = {"name": name, "short_name": short_name, "uses_candidates": uses_candidates == "on", "code": code,
+           "logo_url": logo_url}
     try:
-        club = clubs.create_club(session, admin.actor, name, short_name, raw["uses_candidates"], code)
+        club = clubs.create_club(session, admin.actor, name, short_name, raw["uses_candidates"], code, logo_url)
         session.commit()
     except (DomainError, PermissionDenied) as exc:
         session.rollback()
@@ -52,7 +53,7 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
     chairs = [h for h in directory.current_positions(session) if h.club_id == club_id]
     active_members = directory.list_members(session, club_id=club_id, status=MembershipStatus.MEMBER)
     raw = {"name": club.name, "short_name": club.short_name or "", "uses_candidates": club.uses_candidates,
-           "active": club.active, "code": club.code or ""}
+           "active": club.active, "code": club.code or "", "logo_url": club.logo_url or ""}
     return render(request, "admin/club_form.html", admin, session, club=club, raw=raw, chairs=chairs,
                   active_members=active_members)
 
@@ -61,11 +62,11 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
 def club_update(
     request: Request, club_id: uuid.UUID, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
     short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
-    active: Annotated[str, Form()] = "", code: Annotated[str, Form()] = "",
+    active: Annotated[str, Form()] = "", code: Annotated[str, Form()] = "", logo_url: Annotated[str, Form()] = "",
 ):
     return act(request, session, f"/admin/clubs/{club_id}",
                lambda: clubs.update_club(session, admin.actor, club_id, name, short_name,
-                                         uses_candidates == "on", active == "on", code),
+                                         uses_candidates == "on", active == "on", code, logo_url),
                "Skupina bola uložená.")
 
 

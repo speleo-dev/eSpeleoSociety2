@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: implementované (migrácie `0002`–`0006`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácie `0002`–`0007`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -21,6 +21,7 @@ Nie sú to osobné údaje, ukladajú sa čitateľne.
 | `id` | uuid | |
 | `name` | text | celý názov, jedinečný |
 | `code` | text | krátky jedinečný kód pre import (napr. `JS-DEM`); klub nezaradených má `SSS` |
+| `logo_url` | text | verejná adresa loga (https, napr. Cloud Storage); nahrávanie z aplikácie vo fáze 2 |
 | `short_name` | text | skratka na preukaz |
 | `is_unaffiliated` | bool | predvolený klub **„SSS – nezaradení“** pre členov bez skupiny (práve jeden, viď nižšie) |
 | `uses_candidates` | bool | skupina používa čakateľský status |

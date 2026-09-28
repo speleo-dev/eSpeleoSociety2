@@ -1,6 +1,7 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Členovia{% endblock %}
 {% block body %}
+{% from "admin/_icons.html" import icon, legend %}
 <h1>Členovia <span class="muted">({{ total }})</span></h1>
 <p><a href="/admin/members/new"><button class="primary">Pridať člena</button></a></p>
 <form class="filters" method="get">
@@ -20,9 +21,11 @@
   <tbody>
   {% for r in rows %}
     <tr>
-      <td><a href="/admin/members/{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</a>
-        {% if r.data.reduced_fee %}<span class="chip" title="zľavnené členské">zľava</span>{% endif %}</td>
-      <td>{% for name, st, primary in r.clubs %}<span class="chip">{{ name }}{% if primary and r.clubs|length > 1 %} ★{% endif %} · {{ st|label }}</span>{% endfor %}</td>
+      <td>{% if r.sss_status.value == "member" and r.clubs %}{{ icon(r.clubs[0][1]|membership_icon, r.clubs[0][1]|label) }}{% else %}{{ icon(r.sss_status|sss_icon, r.sss_status|label) }}{% endif %}
+        <a href="/admin/members/{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</a>
+        {% if r.is_chair %}{{ icon("chair", "predseda skupiny") }}{% endif %}
+        {% if r.data.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}</td>
+      <td>{% for name, st, primary in r.clubs %}<span class="chip">{{ icon(st|membership_icon(primary), st|label if primary else "člen v ďalšej skupine") }} {{ name }}{% if st.value != "member" %} · {{ st|label }}{% endif %}</span>{% endfor %}</td>
       <td>{{ r.data.email or "" }}</td>
       <td>{{ r.sss_status|label }}</td>
     </tr>
@@ -31,6 +34,7 @@
   {% endfor %}
   </tbody>
 </table></div>
+{{ legend() }}
 {% if pages > 1 %}
 <p>
   {% if page > 1 %}<a href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}">← predchádzajúca</a>{% endif %}

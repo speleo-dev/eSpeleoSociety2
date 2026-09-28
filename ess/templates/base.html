@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>{% block title %}eSpeleoSociety{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
   <style>
     :root { color-scheme: light dark; --fg:#1c1c1c; --bg:#fff; --muted:#666; --line:#ddd; --accent:#2b5d8a;
             --ok:#e6f4ea; --err:#fdecea; --chip:#eef2f6; font-family: system-ui, sans-serif; }
@@ -35,6 +36,11 @@
     .filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
     dl { display:grid; grid-template-columns:max-content 1fr; gap:.3rem 1rem; }
     dt { color:var(--muted); }
+    img.icon { width:20px; height:20px; vertical-align:-4px; }
+    header .brand { display:flex; align-items:center; gap:.5rem; }
+    header .brand img { border-radius:50%; }
+    .legend { display:flex; flex-wrap:wrap; gap:.3rem 1rem; font-size:.85rem; margin-top:1rem; }
+    img.club-logo { max-height:48px; max-width:96px; vertical-align:middle; }
     .form .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr)); gap:.75rem 1rem; margin-bottom:.75rem; }
     .form label { display:flex; flex-direction:column; gap:.2rem; font-size:.9rem; color:var(--muted); }
     .form label.check { flex-direction:row; align-items:center; gap:.4rem; color:var(--fg); margin:.4rem 0; }

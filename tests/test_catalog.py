@@ -58,3 +58,12 @@ def test_documents(session):
     assert current.title == "Stanovy SSS"
     documents.delete_document(session, ADMIN, current.id)
     assert [d.title for d in documents.all_documents(session)] == ["Stará výnimka"]
+
+
+def test_club_logo_url(session):
+    club = clubs.create_club(session, ADMIN, "JS Logo", "", True, logo_url="https://storage.googleapis.com/b/club_logos/a.png")
+    assert club.logo_url.endswith("a.png")
+    with pytest.raises(DomainError, match="url_must_be_https"):
+        clubs.update_club(session, ADMIN, club.id, "JS Logo", "", True, True, logo_url="http://x/a.png")
+    clubs.update_club(session, ADMIN, club.id, "JS Logo", "", True, True, logo_url="")
+    assert club.logo_url is None

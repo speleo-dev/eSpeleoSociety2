@@ -32,6 +32,7 @@ Vzorové súbory si stiahnete priamo na stránke importu.
 | `nazov` | áno | celý názov skupiny |
 | `skratka` | nie | skratka na preukaz |
 | `cakatelia` | nie | `X` = skupina používa čakateľov, prázdne = nepoužíva (ak stĺpec chýba úplne, používa) |
+| `logo` | nie | verejná adresa obrázka loga (`https://…`, napr. v Cloud Storage) |
 
 Klub „SSS – nezaradení“ už existuje a má kód **`SSS`** – do súboru ho nepíšte.
 

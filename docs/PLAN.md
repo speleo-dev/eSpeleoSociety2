@@ -209,6 +209,7 @@ Návrh pre úpravu vzhľadu: krátke akcie (zamietnutie s dôvodom, ukončenie, 
 v dialógových oknach namiesto polí priamo v riadku; dlhé formuláre (nový člen, skupina) ostanú ako stránky.
 Import skupín a členov z CSV (`docs/import.md`, migrácia 0006 – kód skupiny) – hotové.
 Fáza 1 je funkčne kompletná; zostáva úprava vzhľadu (spolu s ďalšími fázami).
+Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplikácie a SSS, logá skupín (adresa).
 
 - Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
   administrátori v aplikácii.
@@ -220,6 +221,9 @@ Fáza 1 je funkčne kompletná; zostáva úprava vzhľadu (spolu s ďalšími f�
 - Kontroly: vylúčený sa nesmie znova stať členom, práve jedna primárna skupina.
 
 ### Fáza 2 – eCP a kartička
+- Google Wallet: existujúci účet vydavateľa (Issuer) a navrhnutý eCP (class) z pôvodného projektu sa dajú
+  použiť – v novom projekte stačí servisný účet s rolou v Pay & Wallet Console (overiť pri nastavení).
+- Nahrávanie log skupín a fotiek tvárí do Cloud Storage (neverejný bucket pre fotky; logá môžu byť verejné).
 - Nový člen (R23): pri návrhu predsedu príznak „vydať eCP“ a potvrdenie súhlasu GDPR z papierovej prihlášky;
   po aktivácii dostane člen e-mail s odkazom na doplnenie fotky a overenie e-mailu → požiadavka „Vydanie eCP“.
 - Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail, **číslo preukazu** (povinné; ak IS nemá

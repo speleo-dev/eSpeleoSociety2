@@ -123,6 +123,7 @@ def test_revoked_admin_loses_access_immediately(client, google, migrated_db):
 def test_member_list_detail_and_search(client, google, data):
     login(client, google)
     listing = client.get("/admin/members", params={"q": "podhradska"})
+    assert "/static/icons/pending_activation.png" in listing.text
     assert "Podhradská Bohuslava" in listing.text and "Zoskupiny" not in listing.text
     detail = client.get(f"/admin/members/{data['member_id']}")
     assert "b@example.org" in detail.text and "čaká na aktiváciu" in detail.text

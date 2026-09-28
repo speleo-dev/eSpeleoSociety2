@@ -9,9 +9,10 @@
   <button {% if primary %}class="primary"{% endif %}>{{ text }}</button>
 </form>
 {% endmacro %}
+{% from "admin/_icons.html" import icon %}
 <h1>{{ d.data.full_name() }}</h1>
 <p><a href="/admin/members/{{ d.member.id }}/edit"><button>Upraviť údaje</button></a></p>
-<p><span class="chip">{{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">zľavnené členské</span>{% endif %}</p>
+<p><span class="chip">{{ icon(d.sss_status|sss_icon, d.sss_status|label) }} {{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">{{ icon("reduced_fee", "zľavnené členské") }} zľavnené členské</span>{% endif %}</p>
 <dl>
   <dt>Dátum narodenia</dt><dd>{{ d.data.birth_date|date or "—" }}</dd>
   <dt>E-mail</dt><dd>{{ d.data.email or "—" }}{% if d.shared_email_with %}<br><span class="muted">E-mail zdieľa aj:
@@ -31,7 +32,7 @@
   {% for v in d.open_memberships %}{% set m = v.membership %}
     <tr>
       <td>{{ v.club_name }}{% if m.is_primary %} <span class="chip">primárna</span>{% endif %}</td>
-      <td data-label="Stav">{{ m.status|label }}</td>
+      <td data-label="Stav">{{ icon(m.status|membership_icon(m.is_primary), m.status|label) }} {{ m.status|label }}</td>
       <td data-label="Od">{{ m.valid_from|date }}</td>
       <td>
         {% if m.status in (S.CANDIDATE, S.PENDING_ACTIVATION) %}{{ status_button(m.id, S.MEMBER, "Aktivovať", True) }}{% endif %}

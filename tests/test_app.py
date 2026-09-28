@@ -54,3 +54,10 @@ def test_audit_entry_is_part_of_transaction(migrated_db):
         session.commit()
         actions = session.scalars(select(audit.AuditLog.action)).all()
     assert actions == ["test.commit"]
+
+
+def test_static_icons_and_logo_are_served():
+    client = TestClient(create_app())
+    assert client.get("/static/icons/member.png").headers["content-type"] == "image/png"
+    assert client.get("/static/logo-app.png").status_code == 200
+    assert "/static/logo-sss.png" in client.get("/").text

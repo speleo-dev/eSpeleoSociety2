@@ -7,6 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.staticfiles import StaticFiles
+from pathlib import Path
 
 from ess.config import get_settings
 from ess.web import admin, admin_members, admin_org, auth
@@ -43,6 +45,7 @@ def create_app() -> FastAPI:
         # Cookie only over HTTPS whenever the app is served over HTTPS (Cloud Run, production).
         https_only=settings.environment == "prod" or (settings.public_base_url or "").startswith("https://"),
     )
+    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
     app.include_router(auth.router)
     # Specific routes (/members/new, /clubs/new) before parametrised ones.
     app.include_router(admin_members.router)

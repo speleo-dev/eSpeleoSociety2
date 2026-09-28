@@ -117,6 +117,28 @@ def task_description(task) -> str:
     return ""
 
 
+def membership_icon(status, primary: bool = True) -> str:
+    """Icon file for a club membership; an active membership in a non-primary club is shown as "guest"."""
+    value = getattr(status, "value", status)
+    if value == "member" and not primary:
+        return "guest"
+    return value
+
+
+def sss_icon(sss_status) -> str:
+    value = getattr(sss_status, "value", sss_status)
+    return {"expelled": "expelled", "member": "member"}.get(value, "no_club")
+
+
+ICON_LEGEND = [
+    ("member", "člen"), ("candidate", "čakateľ"), ("pending_activation", "čaká na aktiváciu"),
+    ("suspended", "pozastavené"), ("guest", "člen v ďalšej (neprimárnej) skupine"), ("chair", "predseda skupiny"),
+    ("no_club", "bez skupiny"), ("expelled", "vylúčený zo SSS"), ("reduced_fee", "zľavnené členské"),
+]
+
+templates.env.filters["membership_icon"] = membership_icon
+templates.env.filters["sss_icon"] = sss_icon
+templates.env.globals["ICON_LEGEND"] = ICON_LEGEND
 templates.env.filters["label"] = label
 templates.env.filters["date"] = fmt_date
 templates.env.filters["task_label"] = task_label

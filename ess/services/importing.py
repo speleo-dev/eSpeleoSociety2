@@ -23,7 +23,7 @@ from ess.services import memberships
 from ess.services.access import Actor, DomainError, require_admin
 from ess.services.members import MemberData
 
-CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia"]
+CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia", "logo"]
 MEMBER_COLUMNS = ["kod_skupiny", "primarna", "stav", "titul_pred", "meno", "priezvisko", "titul_za",
                   "datum_narodenia", "email", "telefon", "bydlisko", "cislo_preukazu", "clen_sss_od", "zlava"]
 CODE_RE = re.compile(r"^[A-Z0-9][A-Z0-9_-]{0,19}$")
@@ -114,6 +114,9 @@ def import_clubs(session: Session, actor: Actor, content: bytes, dry_run: bool =
             errors.append(f"Riadok {i}: kód {code} už existuje.")
         if not name:
             errors.append(f"Riadok {i}: chýba názov.")
+        logo = row.get("logo", "").strip()
+        if logo and not logo.startswith("https://"):
+            errors.append(f"Riadok {i}: adresa loga musí začínať https://")
         elif normalize_for_index(name) in existing_names or normalize_for_index(name) in seen_names:
             errors.append(f"Riadok {i}: skupina s rovnakým názvom už existuje.")
         seen_codes.add(code)
@@ -126,7 +129,7 @@ def import_clubs(session: Session, actor: Actor, content: bytes, dry_run: bool =
         # Column "cakatelia": X = the club uses candidates, empty = it does not. Missing column = uses them.
         uses_candidates = _flag(row["cakatelia"]) if "cakatelia" in headers else True
         clubs_service.create_club(session, actor, row["nazov"], row.get("skratka", ""), uses_candidates,
-                                  code=row["kod"])
+                                  code=row["kod"], logo_url=row.get("logo", ""))
     result.created = len(rows)
     result.summary = f"Naimportovaných {len(rows)} skupín."
     return result
@@ -268,8 +271,9 @@ def import_members(session: Session, actor: Actor, content: bytes, dry_run: bool
 def template_csv(kind: str) -> str:
     """Header and fictional example rows for the person preparing the data (';' for Slovak Excel)."""
     if kind == "clubs":
-        rows = [CLUB_COLUMNS, ["JS-DEM", "Jaskyniarska skupina Demänová", "JS Demänová", "X"],
-                ["OS-LIP", "Oblastná skupina Liptov", "OS Liptov", ""]]
+        rows = [CLUB_COLUMNS, ["JS-DEM", "Jaskyniarska skupina Demänová", "JS Demänová", "X",
+                               "https://storage.googleapis.com/BUCKET/club_logos/js-dem.png"],
+                ["OS-LIP", "Oblastná skupina Liptov", "OS Liptov", "", ""]]
     else:
         rows = [MEMBER_COLUMNS,
                 ["JS-DEM", "X", "člen", "Ing.", "Ján", "Vzorový", "", "15.3.1975", "jan.vzorovy@example.org",

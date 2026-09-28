@@ -1,13 +1,14 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}{{ club.name if club else "Nová skupina" }}{% endblock %}
 {% block body %}
-<h1>{{ club.name if club else "Nová skupina" }}</h1>
+<h1>{% if club and club.logo_url %}<img class="club-logo" src="{{ club.logo_url }}" alt=""> {% endif %}{{ club.name if club else "Nová skupina" }}</h1>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form" action="{{ '/admin/clubs/' ~ club.id if club else '/admin/clubs/new' }}">
   {% include "admin/_csrf.html" %}
   <div class="grid">
     <label>Názov *<input name="name" required value="{{ raw.name or '' }}"></label>
     <label>Skratka (na preukaz)<input name="short_name" value="{{ raw.short_name or '' }}"></label>
+    <label>Adresa loga (https://…)<input type="url" name="logo_url" value="{{ raw.logo_url or '' }}" pattern="https://.*"></label>
     {% if not club or not club.is_unaffiliated %}<label>Kód (pre import, napr. JS-DEM)<input name="code" value="{{ raw.code or '' }}" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,19}"></label>{% endif %}
   </div>
   {% if not club or not club.is_unaffiliated %}
