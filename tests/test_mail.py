@@ -49,3 +49,12 @@ def test_test_mail_only_for_system_admin(client, google, migrated_db):
     login(client, google, email="plain@example.org")
     response = client.post("/admin/settings/test-mail", data={"csrf_token": csrf(client), "to": "a@example.org"})
     assert response.status_code == 403 and memory.sent == []
+
+
+def test_smtp_check_describes_password_without_revealing_it():
+    from ess.tools.smtp_check import describe, fingerprint
+
+    text = describe(" tajné%41 ")
+    assert "tajné" not in text and "length 10" in text
+    assert "whitespace" in text and "non-ASCII" in text and "URL-encoded" in text
+    assert fingerprint("a") == fingerprint("a") != fingerprint("b")

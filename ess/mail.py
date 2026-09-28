@@ -61,8 +61,11 @@ class SmtpMailer:
                 smtp.login(self.user, self.password)
                 smtp.send_message(self._message(mail))
         except (OSError, smtplib.SMTPException) as exc:
-            log.warning("SMTP send failed: %s", type(exc).__name__)
-            raise MailError(type(exc).__name__) from None
+            # The SMTP reply code helps diagnose (e.g. 535 = wrong password); no address or message text.
+            code = getattr(exc, "smtp_code", None)
+            reason = f"{type(exc).__name__} {code}" if code else type(exc).__name__
+            log.warning("SMTP send failed: %s", reason)
+            raise MailError(reason) from None
 
 
 class MemoryMailer:

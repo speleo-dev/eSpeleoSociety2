@@ -52,7 +52,7 @@ V administrácii WebSupportu pri databáze `eSpeleoSoc2`:
 Heslo nikdy nepíš do súborov ani do repozitára. Ulož ho do Secret Manageru (v Cloud Shell):
 
 ```bash
-read -s -p "DB heslo: " DBPASS; echo
+IFS= read -rs -p "DB heslo: " DBPASS; echo
 printf 'postgresql://DB_USER:%s@DB_HOST:5432/eSpeleoSoc2' "$DBPASS" \
   | gcloud secrets create ess-database-url --data-file=-
 unset DBPASS
@@ -214,7 +214,7 @@ URL=$(gcloud run services describe ess --region $REGION --format='value(status.u
 - po vytvorení skopíruj **Client ID**; **Client secret** ulož rovno do Secret Manageru:
 
 ```bash
-read -s -p "Client secret: " CS; echo
+IFS= read -rs -p "Client secret: " CS; echo
 printf '%s' "$CS" | gcloud secrets create ess-google-client-secret --data-file=-; unset CS
 openssl rand -base64 48 | tr -d '\n' | gcloud secrets create ess-session-secret --data-file=-
 
@@ -353,7 +353,7 @@ Pozri aj limit počtu odoslaných e-mailov za hodinu/deň pre túto schránku a 
 **b)** Heslo ulož do Secret Manager (zadáva sa skryto, nezostane v histórii príkazov):
 
 ```bash
-read -s -p "Heslo k ess@sss.sk: " PW; echo
+IFS= read -rs -p "Heslo k ess@sss.sk: " PW; echo
 printf '%s' "$PW" | gcloud secrets create ess-smtp-password --data-file=-; unset PW
 PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
 gcloud secrets add-iam-policy-binding ess-smtp-password \
@@ -374,6 +374,14 @@ Server `smtp.m1.websupport.sk`, port 465 (SSL) a používateľ `ess@sss.sk` sú 
   kódovanie platí len pre heslo v adrese DB v kroku 5). Oprava: nová verzia tajomstva (príkaz z bodu b) s
   `gcloud secrets versions add ess-smtp-password --data-file=-` namiesto `create`) a
   `gcloud run services update ess --region europe-west3 --update-secrets ESS_SMTP_PASSWORD=ess-smtp-password:latest`.
+- Kontrola prihlásenia priamo z Cloud Shell (heslo sa nevypíše, len jeho „odtlačok“):
+  ```bash
+  cd ~/eSpeleoSociety2 && git pull && .venv/bin/pip install -q .
+  .venv/bin/python -m ess.tools.smtp_check        # zadáš heslo ručne
+  ESS_SMTP_PASSWORD="$(gcloud secrets versions access latest --secret=ess-smtp-password)" .venv/bin/python -m ess.tools.smtp_check
+  ```
+  Ak ručne zadané heslo prejde a uložené nie, líšia sa ich odtlačky – ulož heslo znova.
+  Ak neprejde ani ručne zadané, heslo alebo schránku treba overiť na WebSupporte (napr. prihlásením do webmailu).
 - Server je uvedený v administrácii WebSupportu pri schránke (Prihlasovacie údaje → Server odchádzajúcej pošty).
   Ak je iný, nastav ho bez nového zostavenia:
   `gcloud run services update ess --region europe-west3 --update-env-vars ESS_SMTP_HOST=<server>`.
