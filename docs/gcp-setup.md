@@ -308,7 +308,8 @@ Logá skupín skopíruj rovnako do `gs://$BUCKET/clubs/` (starý bucket zatiaľ 
 **e) Konfigurácia** (bez nového zostavenia):
 
 ```bash
-gcloud run services update ess --region $REGION --update-env-vars ESS_MEDIA_BUCKET=$BUCKET
+gcloud run services update ess --region europe-west3 \
+  --update-env-vars ESS_MEDIA_BUCKET=ess-media-$(gcloud config get-value project)
 ```
 
 ## Neskôr
