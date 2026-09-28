@@ -40,6 +40,16 @@ class Settings(BaseSettings):
     session_secret: str | None = None
     session_max_age_seconds: int = 8 * 3600
 
+    # Google Wallet (not secret). Full class id is "<issuer_id>.<class_suffix>".
+    wallet_issuer_id: str | None = None
+    wallet_class_suffix: str = "member"
+
+    @property
+    def wallet_class_id(self) -> str | None:
+        if not self.wallet_issuer_id:
+            return None
+        return f"{self.wallet_issuer_id}.{self.wallet_class_suffix}"
+
     @field_validator("environment")
     @classmethod
     def _check_environment(cls, value: str) -> str:

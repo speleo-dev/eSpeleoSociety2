@@ -30,7 +30,9 @@ vzhľadu eCP pre fázu 2. Nová implementácia ich prepíše do vlastného kódu
 
 ## Otvorené otázky
 
-- **Issuer ID a Class ID** existujúcej triedy; prístup servisného účtu z nového GCP projektu.
+- Issuer ID `3388000000022877308`, trieda `member` → Class ID `3388000000022877308.member`
+  (premenné `ESS_WALLET_ISSUER_ID`, `ESS_WALLET_CLASS_SUFFIX`). Ešte treba prístup servisného účtu
+  z nového GCP projektu.
 - **Fotka:** Google Wallet sťahuje obrázky z verejnej URL. Neverejný bucket s krátkodobou podpísanou URL
   nemusí stačiť (Google môže obrázok stiahnuť neskôr znova). Treba overiť na teste.
 - **Obrázky SSS** (`sss_sk_bucket` v starom projekte): ponechať, alebo presunúť do bucketu nového projektu.
