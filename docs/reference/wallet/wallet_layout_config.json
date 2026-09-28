@@ -1,0 +1,61 @@
+{
+    "textModules": [
+        {
+            "id": "primary_club",
+            "header": "Klub",
+            "format": "{club.name}"
+        },
+        {
+            "id": "member_from",
+            "header": "Členom od",
+            "format": "{member.member_since:%d.%m.%Y}"
+        },
+        {
+            "id": "member_id",
+            "header": "Identifikačné číslo",
+            "format": "{member.id}"
+        },
+        {
+            "id": "birth_date",
+            "header": "Dátum narodenia",
+            "format": "{member.birth_date:%d.%m.%Y}"
+        }
+    ],
+    "linksModuleData": {
+        "uris": [
+            {
+                "id": "homepage",
+                "uri": "https://www.speleology.sk",
+                "description": "Web SSS"
+            },
+            {
+                "id": "payment_info",
+                "uri": "{payment_link}",
+                "description": "Zaplatiť členské na rok {current_year}"
+            }
+        ]
+    },
+    "valueAddedModuleData": {
+        "items": [
+            {
+                "header": {
+                    "defaultValue": {
+                        "language": "sk",
+                        "value": "Platný do"
+                    }
+                },
+                "body": {
+                    "defaultValue": {
+                        "language": "sk",
+                        "value": "{valid_until:%d.%m.%Y}"
+                    }
+                }
+            }
+        ],
+        "source": {
+            "items_path": "member.certificates",
+            "header_format": "{certificate.name}",
+            "body_format": "Vydané: {certificate.issue_date:%d.%m.%Y}"
+        }
+    }
+}

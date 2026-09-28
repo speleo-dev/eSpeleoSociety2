@@ -223,6 +223,7 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 ### Fáza 2 – eCP a kartička
 - Google Wallet: existujúci účet vydavateľa (Issuer) a navrhnutý eCP (class) z pôvodného projektu sa dajú
   použiť – v novom projekte stačí servisný účet s rolou v Pay & Wallet Console (overiť pri nastavení).
+  Návrh vzhľadu eCP a e-mailu z pôvodného projektu: `docs/reference/wallet/` (mapovanie premenných a otázky).
 - Nahrávanie log skupín a fotiek tvárí do Cloud Storage (neverejný bucket pre fotky; logá môžu byť verejné).
 - Nový člen (R23): pri návrhu predsedu príznak „vydať eCP“ a potvrdenie súhlasu GDPR z papierovej prihlášky;
   po aktivácii dostane člen e-mail s odkazom na doplnenie fotky a overenie e-mailu → požiadavka „Vydanie eCP“.

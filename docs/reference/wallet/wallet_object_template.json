@@ -1,0 +1,119 @@
+{
+    "id": "{pass_object_id}",
+    "classId": "{pass_class_id}",
+    "version": "1",
+    "state": "ACTIVE",
+    "logo": {
+        "sourceUri": {
+            "uri": "https://storage.googleapis.com/sss_sk_bucket/Logo_sss.png"
+        }
+    },
+    "cardTitle": {
+        "defaultValue": {
+            "language": "sk",
+            "value": "Slovenská Speleologická Spoločnosť"
+        }
+    },
+    "heroImage": {
+        "sourceUri": {
+            "uri": "{sticker_url}"
+        }
+    },
+    "barcode": {
+        "type": "QR_CODE",
+        "value": "{check_url}",
+        "showCodeText": {
+            "defaultValue": {
+                "language": "sk",
+                "value": "Platnosť do {valid_until:%d.%m.%Y}"
+            }
+        }
+    },
+    "header": {
+        "defaultValue": {
+            "language": "sk",
+            "value": "{member_name}"
+        }
+    },
+    "wideLogo": {
+        "sourceUri": {
+            "uri": "https://storage.googleapis.com/sss_sk_bucket/SSS_logo_meno.png"
+        }
+    },
+    "imageModulesData": [
+        {
+            "mainImage": {
+                "sourceUri": {
+                    "uri": "{photo_url}"
+                }
+            }
+        }
+    ],
+    "textModulesData": [
+        {
+            "header": "Klub",
+            "body": "{club.name}"
+        },
+        {
+            "header": "Členom od",
+            "body": "{member.member_since:%d.%m.%Y}"
+        },
+        {
+            "header": "Identifikačné číslo",
+            "body": "{member.public_id}"
+        },
+        {
+            "header": "Dátum narodenia",
+            "body": "{member.birth_date:%d.%m.%Y}"
+        },
+        {   "header": "Platný do",
+            "body": "{valid_until:%d.%m.%Y}"
+        }
+    ],
+    "linksModuleData": {
+        "uris": [
+            {
+                "uri": "https://www.speleology.sk",
+                "description": "Web SSS"
+            }
+        ]
+    },
+    "appLinkData": {
+        "webAppLinkInfo": {
+            "title": {
+                "defaultValue": {
+                    "language": "sk",
+                    "value": "Platba clenskeho"
+                }
+            },
+            "appTarget": {
+                "targetUri": {
+                    "uri": "{payment_link}",
+                    "description": "payme.sk"
+                }
+            }
+        },
+        "displayText": {
+            "defaultValue": {
+                "language": "sk",
+                "value": "Platba clenskeho na rok {issue_year}"
+            }
+        }
+    },
+    "valueAddedModuleData": [
+        {
+            "header": {
+                "defaultValue": {
+                    "language": "sk",
+                    "value": "{certificate.name}"
+            }
+            },
+            "body": {
+                "defaultValue": {
+                    "language": "sk",
+                    "value": "{certificate.issue_date:%d.%m.%Y}"
+                }
+            }
+        }
+    ]
+}
