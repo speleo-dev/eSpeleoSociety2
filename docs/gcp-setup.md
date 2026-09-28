@@ -312,6 +312,37 @@ gcloud run services update ess --region europe-west3 \
   --update-env-vars ESS_MEDIA_BUCKET=ess-media-$(gcloud config get-value project)
 ```
 
+## 15. Test Google Wallet (jednorazový)
+
+Overí kroky 14a–d: prístup k issuerovi, verejné čítanie obrázkov, vytvorenie testovacieho preukazu
+pre **fiktívneho** člena a podpis odkazu bez kľúča.
+
+```bash
+cd ~/eSpeleoSociety2 && git pull && cd spikes/wallet-probe
+gcloud run deploy ess-wallet-probe --source . --region europe-west3 --no-allow-unauthenticated --max-instances 1 \
+  --set-env-vars MEDIA_BUCKET=ess-media-espeleosociety,WALLET_ISSUER_ID=3388000000022877308,WALLET_CLASS=member
+URL=$(gcloud run services describe ess-wallet-probe --region europe-west3 --format='value(status.url)')
+curl -s -H "Authorization: Bearer $(gcloud auth print-identity-token)" "$URL/probe" | python3 -m json.tool
+```
+
+Výsledok skopíruj do konverzácie **bez riadku `save_url`**. Ten otvor na mobile s Androidom
+(pošli si ho napr. e-mailom sebe) a pridaj preukaz do Peňaženky Google.
+
+Ako výsledok vyhodnotiť:
+- `class.http` 200: servisný účet má prístup k issuerovi. 403: chýba krok 14b.
+- `images_http`: `logo`, `wide_logo`, `photo` musia byť 200, `bucket_listing` 401 alebo 403.
+- `object.http` 200: testovací preukaz je vytvorený.
+- `sign_jwt.http` 200: podpis funguje. 403: chýba krok 14a.
+
+Upratanie po teste:
+
+```bash
+gcloud run services delete ess-wallet-probe --region europe-west3
+gcloud storage rm "gs://ess-media-espeleosociety/probe/**"
+```
+
+Testovací preukaz v Peňaženke Google môžeš po kontrole vzhľadu odstrániť.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
