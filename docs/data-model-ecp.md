@@ -45,7 +45,11 @@ a požiadavka „Vydanie eCP“. Originál (`originals/`) a portrét 440×600 (`
 Hotové (krok 3): posúdenie `/admin/ecp-applications/<id>` (porovnanie s evidenciou, nový výrez fotky, zamietnutie
 s dôvodom a e-mailom, schválenie). Schválenie doplní chýbajúce číslo preukazu a „člen od“, vytvorí `ecp_passes`,
 QR token a objekt v Google Wallet (`ess/wallet.py`) a pošle e-mail s tlačidlom „Pridať do Peňaženky Google“.
-Zostáva: overovacia stránka `/v/<token>`, jednorazový QR, kartička PDF, cesta nového člena (R23).
+Hotové (krok 4): overovacia stránka `/v/<token>` (`ess/services/ecp_verification.py`) – výsledok (člen / pozastavené /
+nie je člen / kód použitý / neplatný), fotka, meno, bydlisko, skupina, člen od, kontakty na predsedu skupiny a SSS,
+platné dokumenty; stránka sa neukladá do cache ani neindexuje. Jednorazový QR: prvé naskenovanie vydá nový token
+a aktualizuje QR v Google Wallet; ak to nejde (denný limit, chyba Wallet), token sa nespotrebuje.
+Zostáva: stav členského (fáza 3), kartička PDF, cesta nového člena (R23), zmena stavu eCP pri pozastavení/vylúčení (R25).
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.

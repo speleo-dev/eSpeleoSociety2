@@ -13,10 +13,11 @@ from ess.config import get_settings
 from ess.db import get_session
 from ess.images import MAX_UPLOAD_BYTES
 from ess.mail import Mailer, get_mailer
-from ess.services import directory, ecp_applications
+from ess.services import directory, ecp_applications, ecp_verification
 from ess.services.access import DomainError
 from ess.services.ecp_applications import ApplicationForm
 from ess.storage import MediaStore, get_media_store
+from ess.wallet import WalletClient, get_wallet
 from ess.web.auth import csrf_token
 from ess.web.common import parse_date
 from ess.web.mailing import render_mail, send
@@ -158,6 +159,14 @@ def apply_done(request: Request):
 
 
 @verify_router.get("/v/{token}")
-def verification_page(request: Request, token: str):
-    """Target of the eCP QR code (R18). The full verification page (section 5a) comes next."""
-    return _page(request, "public/verify_placeholder.html")
+def verification_page(request: Request, token: str, session: Session = Depends(get_session),
+                      wallet: WalletClient = Depends(get_wallet), store: MediaStore | None = Depends(get_media_store)):
+    """Target of the eCP QR code (section 5a). Personal data: never cached, never indexed."""
+    result = ecp_verification.verify(session, token, wallet, base_url(request))
+    session.commit()
+    photo_url = store.url(result.photo) if store and result.photo else None
+    response = _page(request, "public/verify.html", r=result, O=ecp_verification.Outcome, photo_url=photo_url)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response

@@ -18,6 +18,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pillow>=11",
     "google-cloud-storage>=2.18",
+    "tzdata",
 ]
 
 [project.optional-dependencies]

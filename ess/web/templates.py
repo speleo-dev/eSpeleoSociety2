@@ -163,6 +163,16 @@ templates.env.filters["sss_icon"] = sss_icon
 templates.env.globals["ICON_LEGEND"] = ICON_LEGEND
 templates.env.filters["label"] = label
 templates.env.filters["date"] = fmt_date
+
+
+def local_time(value) -> str:
+    """Date and time in Slovak local time (Cloud Run runs in UTC)."""
+    from zoneinfo import ZoneInfo
+
+    return value.astimezone(ZoneInfo("Europe/Bratislava")).strftime("%d.%m.%Y %H:%M:%S") if value else ""
+
+
+templates.env.filters["local_time"] = local_time
 templates.env.filters["task_label"] = task_label
 templates.env.filters["resolution_label"] = resolution_label
 templates.env.filters["task_description"] = task_description

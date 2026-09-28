@@ -87,6 +87,8 @@ class WalletClient(Protocol):
 
     def set_state(self, object_id: str, state: str) -> None: ...
 
+    def patch_object(self, object_id: str, fields: dict) -> None: ...
+
     def save_url(self, object_id: str) -> str: ...
 
 
@@ -97,8 +99,12 @@ class GoogleWalletClient:
         import google.auth
         from google.auth.transport.requests import AuthorizedSession, Request
 
-        credentials, _ = google.auth.default(scopes=[scope])
-        credentials.refresh(Request())
+        try:
+            credentials, _ = google.auth.default(scopes=[scope])
+            credentials.refresh(Request())
+        except Exception as exc:  # no credentials (local development) or metadata server unavailable
+            log.warning("Google credentials unavailable: %s", type(exc).__name__)
+            raise WalletError("credentials unavailable") from None
         return AuthorizedSession(credentials), getattr(credentials, "service_account_email", "")
 
     def _check(self, response, action: str) -> None:
@@ -108,23 +114,35 @@ class GoogleWalletClient:
 
     def upsert_object(self, obj: dict) -> None:
         session, _ = self._session("https://www.googleapis.com/auth/wallet_object.issuer")
-        response = session.post(f"{WALLET_API}/genericObject", json=obj, timeout=20)
-        if response.status_code == 409:
-            response = session.put(f"{WALLET_API}/genericObject/{obj['id']}", json=obj, timeout=20)
+        try:
+            response = session.post(f"{WALLET_API}/genericObject", json=obj, timeout=20)
+            if response.status_code == 409:
+                response = session.put(f"{WALLET_API}/genericObject/{obj['id']}", json=obj, timeout=20)
+        except OSError:
+            raise WalletError("upsert: connection failed") from None
         self._check(response, "upsert")
 
     def set_state(self, object_id: str, state: str) -> None:
+        self.patch_object(object_id, {"state": state})
+
+    def patch_object(self, object_id: str, fields: dict) -> None:
         session, _ = self._session("https://www.googleapis.com/auth/wallet_object.issuer")
-        response = session.patch(f"{WALLET_API}/genericObject/{object_id}", json={"state": state}, timeout=20)
-        self._check(response, "set_state")
+        try:
+            response = session.patch(f"{WALLET_API}/genericObject/{object_id}", json=fields, timeout=20)
+        except OSError:
+            raise WalletError("patch: connection failed") from None
+        self._check(response, "patch")
 
     def save_url(self, object_id: str) -> str:
         session, email = self._session("https://www.googleapis.com/auth/cloud-platform")
         claims = {"iss": email, "aud": "google", "typ": "savetowallet", "iat": int(time.time()), "origins": [],
                   "payload": {"genericObjects": [{"id": object_id}]}}
-        response = session.post(
-            f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{email}:signJwt",
-            json={"payload": json.dumps(claims)}, timeout=20)
+        try:
+            response = session.post(
+                f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{email}:signJwt",
+                json={"payload": json.dumps(claims)}, timeout=20)
+        except OSError:
+            raise WalletError("sign: connection failed") from None
         self._check(response, "sign")
         return SAVE_URL + response.json()["signedJwt"]
 
@@ -139,7 +157,12 @@ class MemoryWalletClient:
         self.objects[obj["id"]] = obj
 
     def set_state(self, object_id: str, state: str) -> None:
-        self.objects[object_id]["state"] = state
+        self.patch_object(object_id, {"state": state})
+
+    def patch_object(self, object_id: str, fields: dict) -> None:
+        if object_id not in self.objects:
+            raise WalletError("patch: HTTP 404")
+        self.objects[object_id].update(fields)
 
     def save_url(self, object_id: str) -> str:
         return SAVE_URL + "test-" + object_id
