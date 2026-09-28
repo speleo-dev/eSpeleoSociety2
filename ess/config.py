@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     media_bucket: str | None = None
 
     # Outgoing e-mail (WebSupport SMTP for ess@sss.sk). Port 465 = implicit TLS, 587 = STARTTLS.
-    smtp_host: str = "smtp.websupport.sk"
+    smtp_host: str = "smtp.m1.websupport.sk"
     smtp_port: int = 465
     smtp_user: str = "ess@sss.sk"
     smtp_password: str | None = None

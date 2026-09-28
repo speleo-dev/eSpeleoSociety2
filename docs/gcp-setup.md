@@ -367,7 +367,16 @@ gcloud secrets add-iam-policy-binding ess-smtp-password \
 gcloud run services update ess --region europe-west3 --update-secrets ESS_SMTP_PASSWORD=ess-smtp-password:latest
 ```
 
-Server `smtp.websupport.sk`, port 465 (SSL) a používateľ `ess@sss.sk` sú predvolené v aplikácii.
+Server `smtp.m1.websupport.sk`, port 465 (SSL) a používateľ `ess@sss.sk` sú predvolené v aplikácii.
+
+**Riešenie problémov:**
+- *`SMTPAuthenticationError`* – zlé heslo alebo server. Heslo sa ukladá **presne tak, ako je** (nekóduje sa;
+  kódovanie platí len pre heslo v adrese DB v kroku 5). Oprava: nová verzia tajomstva (príkaz z bodu b) s
+  `gcloud secrets versions add ess-smtp-password --data-file=-` namiesto `create`) a
+  `gcloud run services update ess --region europe-west3 --update-secrets ESS_SMTP_PASSWORD=ess-smtp-password:latest`.
+- Server je uvedený v administrácii WebSupportu pri schránke (Prihlasovacie údaje → Server odchádzajúcej pošty).
+  Ak je iný, nastav ho bez nového zostavenia:
+  `gcloud run services update ess --region europe-west3 --update-env-vars ESS_SMTP_HOST=<server>`.
 
 ## Neskôr
 
