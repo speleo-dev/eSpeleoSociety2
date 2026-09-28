@@ -4,6 +4,7 @@ Informačný systém Slovenskej speleologickej spoločnosti (SSS). Nahrádza pap
 členov a vydáva elektronický jaskyniarsky preukaz (eCP) do Google Wallet a náhradnú PDF kartičku SSS.
 
 Podrobný plán, rozhodnutia a otvorené otázky: [docs/PLAN.md](docs/PLAN.md). Pred väčšou zmenou ho prečítaj.
+Inventúra nastavení a funkcií pôvodnej aplikácie: [docs/old-app-inventory.md](docs/old-app-inventory.md).
 
 ## Jazyk a konvencie
 
