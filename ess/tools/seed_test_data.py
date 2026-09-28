@@ -45,6 +45,7 @@ def _person(rng: random.Random, index: int) -> MemberData:
     first = rng.choice(FEMALE_FIRST if female else MALE_FIRST)
     last = rng.choice(FEMALE_LAST if female else MALE_LAST)
     birth = date(1945, 1, 1) + timedelta(days=rng.randrange(0, 63 * 365))
+    has_address = rng.random() < 0.7
     return MemberData(
         first_name=first,
         last_name=last,
@@ -52,7 +53,9 @@ def _person(rng: random.Random, index: int) -> MemberData:
         title_after=rng.choice(TITLES_AFTER) if rng.random() < 0.05 else None,
         birth_date=birth if rng.random() < 0.8 else None,
         email=f"clen{index:04d}@example.org" if rng.random() < 0.85 else None,
-        address=f"{rng.choice(STREETS)} {rng.randint(1, 120)}, {rng.choice(TOWNS)}" if rng.random() < 0.7 else None,
+        street=f"{rng.choice(STREETS)} {rng.randint(1, 120)}" if has_address else None,
+        city=rng.choice(TOWNS) if has_address else None,
+        postal_code=f"0{rng.randint(10, 99)} 01" if has_address else None,
         phone=f"+421 9{rng.randint(0, 99):02d} {rng.randint(100, 999)} {rng.randint(100, 999)}"
         if rng.random() < 0.6 else None,
         card_number=str(1000 + index) if rng.random() < 0.5 else None,

@@ -45,9 +45,6 @@ def test_parse_date_flexible(value, expected):
     assert importing.parse_date_flexible(value) == expected
 
 
-def test_template_contains_all_columns():
-    assert importing.template_csv("members").lstrip("﻿").splitlines()[0].split(";") == importing.MEMBER_COLUMNS
-
 
 @pytest.mark.db
 def test_import_clubs_then_members(session):

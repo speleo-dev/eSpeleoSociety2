@@ -42,6 +42,8 @@ ERRORS = {
     "member_required": "Vyberte člena.",
     "name_required": "Vyplňte meno (názov).",
     "invalid_email": "Neplatná e-mailová adresa.",
+    "invalid_country": "Krajina musí byť dvojpísmenový kód (napr. SK, CZ).",
+    "invalid_web": "Web musí začínať http:// alebo https://",
     "invalid_date": "Neplatný dátum.",
     "card_number_in_use": "Toto číslo preukazu už má iný člen.",
     "club_name_in_use": "Skupina s týmto názvom už existuje.",

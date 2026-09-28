@@ -49,6 +49,15 @@ class Club(TimestampMixin, Base):
     short_name: Mapped[str | None] = mapped_column(String(50))
     # Public image of the club logo (https), e.g. in the Cloud Storage bucket. Not personal data.
     logo_url: Mapped[str | None] = mapped_column(String(500))
+    # Public contact details of the club (an association, not personal data).
+    street: Mapped[str | None] = mapped_column(String(200))
+    city: Mapped[str | None] = mapped_column(String(100))
+    postal_code: Mapped[str | None] = mapped_column(String(10))
+    country: Mapped[str] = mapped_column(String(2), default="SK", server_default="SK")
+    email: Mapped[str | None] = mapped_column(String(254))
+    phone: Mapped[str | None] = mapped_column(String(50))
+    web: Mapped[str | None] = mapped_column(String(300))
+    founded_on: Mapped[date | None] = mapped_column(Date)
     is_unaffiliated: Mapped[bool] = mapped_column(Boolean, default=False)
     uses_candidates: Mapped[bool] = mapped_column(Boolean, default=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -69,7 +78,10 @@ class Member(TimestampMixin, Base):
     title_after_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     birth_date_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     email_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
-    address_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    street_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    city_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    postal_code_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    country: Mapped[str] = mapped_column(String(2), default="SK", server_default="SK")  # not identifying alone
     phone_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     card_number_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
 

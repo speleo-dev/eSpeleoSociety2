@@ -32,7 +32,11 @@ Vzorové súbory si stiahnete priamo na stránke importu.
 | `nazov` | áno | celý názov skupiny |
 | `skratka` | nie | skratka na preukaz |
 | `cakatelia` | nie | `X` = skupina používa čakateľov, prázdne = nepoužíva (ak stĺpec chýba úplne, používa) |
-| `logo` | nie | verejná adresa obrázka loga (`https://…`, napr. v Cloud Storage) |
+| `logo` | nie | verejná adresa obrázka loga (`https://…`); jednoduchšie je nahrať logo v detaile skupiny |
+| `ulica`, `psc`, `obec` | nie | adresa skupiny |
+| `krajina` | nie | dvojpísmenový kód, prázdne = `SK` |
+| `email`, `telefon`, `web` | nie | kontakt skupiny; web začína `http://` alebo `https://` |
+| `zalozena` | nie | dátum založenia (31.12.1990, 1990-12-31 alebo len rok) |
 
 Klub „SSS – nezaradení“ už existuje a má kód **`SSS`** – do súboru ho nepíšte.
 
@@ -52,7 +56,9 @@ toho istého člena stačí vyplniť `kod_skupiny`, `meno` a `priezvisko`.
 | `datum_narodenia` | nie* | `31.12.1980`, `31. 12. 1980` alebo `1980-12-31` |
 | `email` | nie* | e-mail; manželia môžu mať rovnaký |
 | `telefon` | nie | |
-| `bydlisko` | nie | |
+| `ulica` | nie | ulica a číslo (stĺpec `bydlisko` alebo `adresa` sa načíta sem) |
+| `psc`, `obec` | nie | PSČ a obec/mesto |
+| `krajina` | nie | dvojpísmenový kód, prázdne = `SK` |
 | `cislo_preukazu` | nie | číslo papierového preukazu; musí byť jedinečné |
 | `clen_sss_od` | nie | dátum alebo len rok (`1995` = 1. 1. 1995) |
 | `zlava` | nie | `X` = zľavnené členské (napr. ZTP; podľa veku sa nastaví automaticky) |

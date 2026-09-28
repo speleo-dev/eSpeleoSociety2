@@ -23,7 +23,7 @@ Mailer_ = Annotated[Mailer | None, Depends(get_mailer)]
 
 router = APIRouter(prefix="/admin")
 
-SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency",
+SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
                 "ecp_link_valid_hours", "ecp_application_expiry_days", "ecp_qr_grace_minutes", "ecp_qr_daily_limit")
 
 
@@ -34,16 +34,23 @@ def club_new(request: Request, admin: Admin, session: Db):
     return render(request, "admin/club_form.html", admin, session, club=None, raw={"uses_candidates": True})
 
 
+def _club_form(form) -> tuple[dict, clubs.ClubContact]:
+    """Raw values of the club form (to re-fill it on error) and the parsed contact details."""
+    raw = {k: str(form.get(k, "")).strip() for k in ("name", "short_name", "code", "logo_url", *clubs.CONTACT_FIELDS)}
+    raw["uses_candidates"] = form.get("uses_candidates") == "on"
+    raw["active"] = form.get("active") == "on"
+    contact = clubs.ClubContact(**{f: raw[f] or None for f in clubs.CONTACT_FIELDS if f not in ("country", "founded_on")},
+                                country=raw["country"] or "SK", founded_on=parse_date(raw["founded_on"]))
+    return raw, contact
+
+
 @router.post("/clubs/new", dependencies=[Depends(verify_csrf)])
-def club_create(
-    request: Request, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
-    short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
-    code: Annotated[str, Form()] = "", logo_url: Annotated[str, Form()] = "",
-):
-    raw = {"name": name, "short_name": short_name, "uses_candidates": uses_candidates == "on", "code": code,
-           "logo_url": logo_url}
+async def club_create(request: Request, admin: Admin, session: Db):
+    raw = {}
     try:
-        club = clubs.create_club(session, admin.actor, name, short_name, raw["uses_candidates"], code, logo_url)
+        raw, contact = _club_form(await request.form())
+        club = clubs.create_club(session, admin.actor, raw["name"], raw["short_name"], raw["uses_candidates"],
+                                 raw["code"], raw["logo_url"], contact)
         session.commit()
     except (DomainError, PermissionDenied) as exc:
         session.rollback()
@@ -62,20 +69,22 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
     active_members = directory.list_members(session, club_id=club_id, status=MembershipStatus.MEMBER)
     raw = {"name": club.name, "short_name": club.short_name or "", "uses_candidates": club.uses_candidates,
            "active": club.active, "code": club.code or "", "logo_url": club.logo_url or ""}
+    raw.update({f: getattr(club, f) or "" for f in clubs.CONTACT_FIELDS})
+    raw["founded_on"] = club.founded_on.isoformat() if club.founded_on else ""
     return render(request, "admin/club_form.html", admin, session, club=club, raw=raw, chairs=chairs,
                   active_members=active_members)
 
 
 @router.post("/clubs/{club_id}", dependencies=[Depends(verify_csrf)])
-def club_update(
-    request: Request, club_id: uuid.UUID, admin: Admin, session: Db, name: Annotated[str, Form()] = "",
-    short_name: Annotated[str, Form()] = "", uses_candidates: Annotated[str, Form()] = "",
-    active: Annotated[str, Form()] = "", code: Annotated[str, Form()] = "", logo_url: Annotated[str, Form()] = "",
-):
-    return act(request, session, f"/admin/clubs/{club_id}",
-               lambda: clubs.update_club(session, admin.actor, club_id, name, short_name,
-                                         uses_candidates == "on", active == "on", code, logo_url),
-               "Skupina bola uložená.")
+async def club_update(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
+    form = await request.form()
+
+    def update():
+        raw, contact = _club_form(form)
+        clubs.update_club(session, admin.actor, club_id, raw["name"], raw["short_name"], raw["uses_candidates"],
+                          raw["active"], raw["code"], raw["logo_url"], contact)
+
+    return act(request, session, f"/admin/clubs/{club_id}", update, "Skupina bola uložená.")
 
 
 def _logo_action(request: Request, session: Db, store: MediaStore | None, club_id: uuid.UUID, action, success: str):

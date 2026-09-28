@@ -13,7 +13,10 @@
     <label>Dátum narodenia<input type="date" name="birth_date" value="{{ raw.birth_date or '' }}"></label>
     <label>E-mail<input type="email" name="email" value="{{ raw.email or '' }}"></label>
     <label>Telefón<input type="tel" name="phone" value="{{ raw.phone or '' }}"></label>
-    <label>Bydlisko<input name="address" value="{{ raw.address or '' }}"></label>
+    <label>Ulica a číslo<input name="street" autocomplete="street-address" value="{{ raw.street or '' }}"></label>
+    <label>PSČ<input name="postal_code" autocomplete="postal-code" value="{{ raw.postal_code or '' }}"></label>
+    <label>Obec / mesto<input name="city" autocomplete="address-level2" value="{{ raw.city or '' }}"></label>
+    <label>Krajina (kód)<input name="country" maxlength="2" pattern="[A-Za-z]{2}" value="{{ raw.country or 'SK' }}"></label>
     <label>Číslo papierového preukazu<input name="card_number" value="{{ raw.card_number or '' }}"></label>
     <label>Člen SSS od<input type="date" name="member_since" value="{{ raw.member_since or '' }}"></label>
   </div>

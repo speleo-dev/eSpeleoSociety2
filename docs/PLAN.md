@@ -107,6 +107,11 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   E-mail `ess@sss.sk` sa posiela cez SMTP WebSupportu (heslo v Secret Manager).
   PDF kartička: žiadateľ si ju zvolí v žiadosti (príde e-mailom); členovi bez e-mailu ju vytlačí
   administrátor alebo predseda skupiny z detailu člena. Návrh tabuliek: `docs/data-model-ecp.md`.
+- **R27** – **Obdobie obnovy:** `renewal_window_days` dní pred koncom roka (nastavenie, predvolene 60) sa v eCP
+  a na portáli objaví platobný odkaz na **nasledujúci** rok (fáza 3).
+- **R28** – Adresa člena je po častiach (ulica a číslo, PSČ, obec, krajina – ISO kód, predvolene SK), kvôli čistým
+  dátam. Skupina má kontaktné údaje: adresu, e-mail, telefón, web a dátum založenia (migrácia `0009`).
+  Inventúra pôvodnej aplikácie: `docs/old-app-inventory.md`.
 
 ## 4. Architektúra
 

@@ -2,7 +2,8 @@
 
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -40,6 +41,51 @@ def _check_code(session: Session, code: str | None, club_id: uuid.UUID | None = 
     return code
 
 
+@dataclass
+class ClubContact:
+    """Public contact details of a club."""
+
+    street: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str = "SK"
+    email: str | None = None
+    phone: str | None = None
+    web: str | None = None
+    founded_on: date | None = None
+
+
+CONTACT_FIELDS = tuple(f.name for f in fields(ClubContact))
+
+
+def _clean(value: str | None, limit: int) -> str | None:
+    value = " ".join((value or "").split())
+    return value[:limit] or None
+
+
+def _apply_contact(club: Club, contact: ClubContact) -> None:
+    country = (contact.country or "SK").strip().upper()
+    if not re.fullmatch(r"[A-Z]{2}", country):
+        raise DomainError("invalid_country")
+    email = _clean(contact.email, 254)
+    if email and "@" not in email:
+        raise DomainError("invalid_email")
+    web = _clean(contact.web, 300)
+    if web and not web.startswith(("https://", "http://")):
+        raise DomainError("invalid_web")
+    club.street = _clean(contact.street, 200)
+    club.city = _clean(contact.city, 100)
+    club.postal_code = _clean(contact.postal_code, 10)
+    club.country = country
+    club.email, club.web = email, web
+    club.phone = _clean(contact.phone, 50)
+    club.founded_on = contact.founded_on
+
+
+def contact_of(club: Club) -> ClubContact:
+    return ClubContact(**{f: getattr(club, f) for f in CONTACT_FIELDS})
+
+
 def _check_logo_url(url: str | None) -> str | None:
     url = (url or "").strip()
     if not url:
@@ -51,13 +97,14 @@ def _check_logo_url(url: str | None) -> str | None:
 
 def create_club(
     session: Session, actor: Actor, name: str, short_name: str, uses_candidates: bool, code: str | None = None,
-    logo_url: str | None = None,
+    logo_url: str | None = None, contact: ClubContact | None = None,
 ) -> Club:
     require_admin(actor)
     club = Club(id=uuid.uuid4(), name=_check_name(session, name), code=_check_code(session, code),
                 logo_url=_check_logo_url(logo_url),
                 short_name=short_name.strip() or None,
                 is_unaffiliated=False, uses_candidates=uses_candidates, active=True)
+    _apply_contact(club, contact or ClubContact())
     session.add(club)
     session.flush()
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.create",
@@ -67,7 +114,7 @@ def create_club(
 
 def update_club(
     session: Session, actor: Actor, club_id: uuid.UUID, name: str, short_name: str, uses_candidates: bool, active: bool,
-    code: str | None = None, logo_url: str | None = None,
+    code: str | None = None, logo_url: str | None = None, contact: ClubContact | None = None,
 ) -> Club:
     require_admin(actor)
     club = session.get(Club, club_id)
@@ -76,6 +123,9 @@ def update_club(
     if club.is_unaffiliated and not active:
         raise DomainError("unaffiliated_club_cannot_be_deactivated")
     before = (club.name, club.short_name, club.uses_candidates, club.active, club.code, club.logo_url)
+    contact_before = contact_of(club)
+    if contact is not None:
+        _apply_contact(club, contact)
     if logo_url is not None:
         club.logo_url = _check_logo_url(logo_url)
     club.name = _check_name(session, name, club_id)
@@ -85,8 +135,9 @@ def update_club(
     club.uses_candidates = False if club.is_unaffiliated else uses_candidates
     club.active = active
     after = (club.name, club.short_name, club.uses_candidates, club.active, club.code, club.logo_url)
-    fields = ("name", "short_name", "uses_candidates", "active", "code", "logo_url")
-    changed = [f for f, b, a in zip(fields, before, after) if b != a]
+    names = ("name", "short_name", "uses_candidates", "active", "code", "logo_url")
+    changed = [f for f, b, a in zip(names, before, after) if b != a]
+    changed += [f for f in CONTACT_FIELDS if getattr(contact_before, f) != getattr(club, f)]
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.update",
                  entity_type="club", entity_id=str(club.id), details={"fields": changed})
     return club

@@ -1,6 +1,7 @@
 """Members: encrypted personal data, lookup and expulsion."""
 
 import enum
+import re
 import uuid
 from dataclasses import dataclass, fields
 from datetime import date
@@ -20,7 +21,9 @@ _CTX = {
     "title_before": "members.title_before",
     "title_after": "members.title_after",
     "email": "members.email",
-    "address": "members.address",
+    "street": "members.address",  # historical context name: the column was the one-line address
+    "city": "members.city",
+    "postal_code": "members.postal_code",
     "phone": "members.phone",
     "card_number": "members.card_number",
 }
@@ -40,11 +43,22 @@ class MemberData:
     title_after: str | None = None
     birth_date: date | None = None
     email: str | None = None
-    address: str | None = None
+    street: str | None = None  # street and number (or village and number)
+    city: str | None = None
+    postal_code: str | None = None
+    country: str = "SK"  # ISO 3166-1 alpha-2
     phone: str | None = None
     card_number: str | None = None
     member_since: date | None = None
     reduced_fee: bool = False
+
+    def full_address(self) -> str:
+        """One line for display, e.g. "Hlavná 1, 031 01 Liptovský Mikuláš" (country only if not SK)."""
+        town = " ".join(p for p in (self.postal_code, self.city) if p)
+        parts = [p for p in (self.street, town) if p]
+        if parts and self.country and self.country != "SK":
+            parts.append(self.country)
+        return ", ".join(parts)
 
     def full_name(self) -> str:
         name = " ".join(p for p in (self.title_before, self.first_name, self.last_name) if p)
@@ -73,6 +87,9 @@ def _validate(data: MemberData) -> None:
         raise DomainError("name_required")
     if data.email and "@" not in data.email:
         raise DomainError("invalid_email")
+    data.country = (data.country or "SK").strip().upper()
+    if not re.fullmatch(r"[A-Z]{2}", data.country):
+        raise DomainError("invalid_country")
 
 
 def _apply(member: Member, data: MemberData) -> None:
@@ -87,6 +104,7 @@ def _apply(member: Member, data: MemberData) -> None:
     member.card_number_bidx = pii.blind_index(_BIDX_CARD, data.card_number)
     member.member_since = data.member_since
     member.reduced_fee = data.reduced_fee
+    member.country = data.country
 
 
 def read_member(member: Member) -> MemberData:
@@ -96,6 +114,7 @@ def read_member(member: Member) -> MemberData:
         birth_date=pii.decrypt_date(member.birth_date_enc, _CTX_BIRTH_DATE),
         member_since=member.member_since,
         reduced_fee=member.reduced_fee,
+        country=member.country,
     )
 
 

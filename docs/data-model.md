@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: implementované (migrácie `0002`–`0007`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácie `0002`–`0007` a `0009`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -21,7 +21,9 @@ Nie sú to osobné údaje, ukladajú sa čitateľne.
 | `id` | uuid | |
 | `name` | text | celý názov, jedinečný |
 | `code` | text | krátky jedinečný kód pre import (napr. `JS-DEM`); klub nezaradených má `SSS` |
-| `logo_url` | text | verejná adresa loga (https, napr. Cloud Storage); nahrávanie z aplikácie vo fáze 2 |
+| `logo_url` | text | verejná adresa loga (https); logo sa nahráva v detaile skupiny pod náhodným názvom |
+| `street`, `postal_code`, `city`, `country` | text | adresa skupiny (nie osobný údaj – skupina je združenie); krajina ISO kód, predvolene `SK` |
+| `email`, `phone`, `web`, `founded_on` | text / dátum | kontakt skupiny, dátum založenia |
 | `short_name` | text | skratka na preukaz |
 | `is_unaffiliated` | bool | predvolený klub **„SSS – nezaradení“** pre členov bez skupiny (práve jeden, viď nižšie) |
 | `uses_candidates` | bool | skupina používa čakateľský status |
@@ -46,7 +48,8 @@ Klub **„SSS – nezaradení“**:
 | `member_since` | date | člen SSS od (pri importe z papierovej evidencie ručne); zobrazuje sa pri overení |
 | `birth_date_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP |
 | `email_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP; **nie je jedinečný** (manželia) |
-| `address_enc` | bytes | bydlisko, voliteľné |
+| `street_enc`, `postal_code_enc`, `city_enc` | bytes | adresa po častiach, voliteľné (`street_enc` je pôvodné jednoriadkové bydlisko – migrácia `0009` ho zachovala) |
+| `country` | text(2) | krajina, ISO kód, predvolene `SK` (sama osebe neidentifikuje) |
 | `phone_enc` | bytes | voliteľné; telefón predsedu skupiny a predsedu SSS sa zobrazuje na overovacej stránke |
 | `lookup_bidx` | bytes | HMAC(meno, priezvisko, rok narodenia) – vyhľadanie pri žiadosti o eCP |
 | `email_bidx` | bytes | HMAC(e-mail) – nie jedinečný; zobrazenie, kto e-mail zdieľa; člena nikdy neidentifikuje sám |

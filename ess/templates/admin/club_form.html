@@ -11,6 +11,17 @@
     <label>Adresa loga (vyplní sa po nahratí)<input type="url" name="logo_url" value="{{ raw.logo_url or '' }}" pattern="https://.*"></label>
     {% if not club or not club.is_unaffiliated %}<label>Kód (pre import, napr. JS-DEM)<input name="code" value="{{ raw.code or '' }}" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,19}"></label>{% endif %}
   </div>
+  <h2>Kontakt</h2>
+  <div class="grid">
+    <label>Ulica a číslo<input name="street" value="{{ raw.street or '' }}"></label>
+    <label>PSČ<input name="postal_code" value="{{ raw.postal_code or '' }}"></label>
+    <label>Obec / mesto<input name="city" value="{{ raw.city or '' }}"></label>
+    <label>Krajina (kód)<input name="country" maxlength="2" pattern="[A-Za-z]{2}" value="{{ raw.country or 'SK' }}"></label>
+    <label>E-mail<input type="email" name="email" value="{{ raw.email or '' }}"></label>
+    <label>Telefón<input type="tel" name="phone" value="{{ raw.phone or '' }}"></label>
+    <label>Web<input type="url" name="web" value="{{ raw.web or '' }}" placeholder="https://"></label>
+    <label>Dátum založenia<input type="date" name="founded_on" value="{{ raw.founded_on or '' }}"></label>
+  </div>
   {% if not club or not club.is_unaffiliated %}
   <label class="check"><input type="checkbox" name="uses_candidates" {% if raw.uses_candidates %}checked{% endif %}> Skupina používa čakateľov</label>
   {% endif %}

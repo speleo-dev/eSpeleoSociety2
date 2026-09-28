@@ -23,9 +23,11 @@ from ess.services import memberships
 from ess.services.access import Actor, DomainError, require_admin
 from ess.services.members import MemberData
 
-CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia", "logo"]
+CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia", "logo", "ulica", "psc", "obec", "krajina", "email", "telefon",
+                "web", "zalozena"]
 MEMBER_COLUMNS = ["kod_skupiny", "primarna", "stav", "titul_pred", "meno", "priezvisko", "titul_za",
-                  "datum_narodenia", "email", "telefon", "bydlisko", "cislo_preukazu", "clen_sss_od", "zlava"]
+                  "datum_narodenia", "email", "telefon", "ulica", "psc", "obec", "krajina", "cislo_preukazu",
+                  "clen_sss_od", "zlava"]
 CODE_RE = re.compile(r"^[A-Z0-9][A-Z0-9_-]{0,19}$")
 _TRUE = {"x", "1", "ano", "true", "t", "yes", "y"}
 
@@ -41,7 +43,8 @@ class ImportResult:
 
 # Common alternative header names people use in spreadsheets.
 _ALIASES = {"e_mail": "email", "mail": "email", "tel": "telefon", "telefonne_cislo": "telefon",
-            "tel_cislo": "telefon", "adresa": "bydlisko", "skupina": "kod_skupiny", "kod_klubu": "kod_skupiny",
+            "tel_cislo": "telefon", "adresa": "ulica", "bydlisko": "ulica", "mesto": "obec",
+            "postove_smerovacie_cislo": "psc", "stat": "krajina", "skupina": "kod_skupiny", "kod_klubu": "kod_skupiny",
             "cislo_papieroveho_preukazu": "cislo_preukazu", "narodeny": "datum_narodenia", "zlavnene": "zlava",
             "zlavnene_clenske": "zlava", "nazov_skupiny": "nazov", "primarny": "primarna"}
 
@@ -119,6 +122,19 @@ def import_clubs(session: Session, actor: Actor, content: bytes, dry_run: bool =
             errors.append(f"Riadok {i}: adresa loga musí začínať https://")
         elif normalize_for_index(name) in existing_names or normalize_for_index(name) in seen_names:
             errors.append(f"Riadok {i}: skupina s rovnakým názvom už existuje.")
+        email = row.get("email", "").strip()
+        if email and "@" not in email:
+            errors.append(f"Riadok {i}: neplatný e-mail.")
+        web = row.get("web", "").strip()
+        if web and not web.startswith(("https://", "http://")):
+            errors.append(f"Riadok {i}: web musí začínať http:// alebo https://")
+        country = row.get("krajina", "").strip()
+        if country and not re.fullmatch(r"[A-Za-z]{2}", country):
+            errors.append(f"Riadok {i}: krajina musí byť dvojpísmenový kód (napr. SK).")
+        try:
+            parse_date_flexible(row.get("zalozena", ""))
+        except ValueError:
+            errors.append(f"Riadok {i}: neplatný dátum založenia (použite 31.12.1980 alebo 1980-12-31).")
         seen_codes.add(code)
         seen_names.add(normalize_for_index(name))
     result = ImportResult(not errors, rows=len(rows), errors=errors)
@@ -128,8 +144,12 @@ def import_clubs(session: Session, actor: Actor, content: bytes, dry_run: bool =
     for row in rows:
         # Column "cakatelia": X = the club uses candidates, empty = it does not. Missing column = uses them.
         uses_candidates = _flag(row["cakatelia"]) if "cakatelia" in headers else True
+        contact = clubs_service.ClubContact(
+            street=row.get("ulica", ""), postal_code=row.get("psc", ""), city=row.get("obec", ""),
+            country=row.get("krajina", "") or "SK", email=row.get("email", ""), phone=row.get("telefon", ""),
+            web=row.get("web", ""), founded_on=parse_date_flexible(row.get("zalozena", "")))
         clubs_service.create_club(session, actor, row["nazov"], row.get("skratka", ""), uses_candidates,
-                                  code=row["kod"], logo_url=row.get("logo", ""))
+                                  code=row["kod"], logo_url=row.get("logo", ""), contact=contact)
     result.created = len(rows)
     result.summary = f"Naimportovaných {len(rows)} skupín."
     return result
@@ -207,7 +227,10 @@ def import_members(session: Session, actor: Actor, content: bytes, dry_run: bool
                 title_after=row.get("titul_za", "").strip() or None,
                 birth_date=dates["datum_narodenia"], email=email,
                 phone=row.get("telefon", "").strip() or None,
-                address=row.get("bydlisko", "").strip() or None,
+                street=row.get("ulica", "").strip() or None,
+                postal_code=row.get("psc", "").strip() or None,
+                city=row.get("obec", "").strip() or None,
+                country=row.get("krajina", "").strip().upper() or "SK",
                 card_number=row.get("cislo_preukazu", "").strip() or None,
                 member_since=dates["clen_sss_od"],
                 reduced_fee=_flag(row.get("zlava", "")),
@@ -272,14 +295,17 @@ def template_csv(kind: str) -> str:
     """Header and fictional example rows for the person preparing the data (';' for Slovak Excel)."""
     if kind == "clubs":
         rows = [CLUB_COLUMNS, ["JS-DEM", "Jaskyniarska skupina Demänová", "JS Demänová", "X",
-                               "https://storage.googleapis.com/BUCKET/club_logos/js-dem.png"],
-                ["OS-LIP", "Oblastná skupina Liptov", "OS Liptov", "", ""]]
+                               "https://storage.googleapis.com/BUCKET/clubs/js-dem.png", "Hlavná 1", "031 01",
+                               "Liptovský Mikuláš", "SK", "js-dem@example.org", "+421 900 000 000",
+                               "https://example.org", "1.1.1990"],
+                ["OS-LIP", "Oblastná skupina Liptov", "OS Liptov", "", "", "", "", "", "", "", "", "", ""]]
     else:
         rows = [MEMBER_COLUMNS,
                 ["JS-DEM", "X", "člen", "Ing.", "Ján", "Vzorový", "", "15.3.1975", "jan.vzorovy@example.org",
-                 "+421 900 000 000", "Hlavná 1, Liptovský Mikuláš", "1234", "1995", ""],
-                ["OS-LIP", "", "člen", "", "Ján", "Vzorový", "", "", "", "", "", "", "", ""],
-                ["JS-DEM", "X", "čakateľ", "", "Eva", "Ukážková", "", "2.8.2001", "eva@example.org", "", "", "", "", ""]]
+                 "+421 900 000 000", "Hlavná 1", "031 01", "Liptovský Mikuláš", "SK", "1234", "1995", ""],
+                ["OS-LIP", "", "člen", "", "Ján", "Vzorový", "", "", "", "", "", "", "", "", "", "", "", ""],
+                ["JS-DEM", "X", "čakateľ", "", "Eva", "Ukážková", "", "2.8.2001", "eva@example.org", "", "", "", "",
+                 "", "", "", ""]]
     out = io.StringIO()
     csv.writer(out, delimiter=";", lineterminator="\r\n").writerows(rows)
     return "﻿" + out.getvalue()  # BOM so that Excel opens UTF-8 correctly

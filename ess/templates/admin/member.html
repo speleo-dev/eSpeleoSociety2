@@ -18,7 +18,7 @@
   <dt>E-mail</dt><dd>{{ d.data.email or "—" }}{% if d.shared_email_with %}<br><span class="muted">E-mail zdieľa aj:
     {% for id, name in d.shared_email_with %}<a href="/admin/members/{{ id }}">{{ name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</dd>
   <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
-  <dt>Bydlisko</dt><dd>{{ d.data.address or "—" }}</dd>
+  <dt>Bydlisko</dt><dd>{{ d.data.full_address() or "—" }}</dd>
   <dt>Číslo preukazu</dt><dd>{{ d.data.card_number or "—" }}</dd>
   <dt>Člen SSS od</dt><dd>{{ d.data.member_since|date or "—" }}</dd>
   {% if d.member.expelled_at %}<dt>Vylúčený</dt><dd>{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</dd>{% endif %}

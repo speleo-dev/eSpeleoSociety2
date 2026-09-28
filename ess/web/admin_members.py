@@ -17,7 +17,7 @@ router = APIRouter(prefix="/admin")
 
 S = MembershipStatus
 MEMBER_FIELDS = ("title_before", "first_name", "last_name", "title_after", "birth_date", "email", "phone",
-                 "address", "card_number", "member_since")
+                 "street", "city", "postal_code", "country", "card_number", "member_since")
 
 
 async def _member_form(request: Request) -> tuple[MemberData, dict]:
@@ -33,7 +33,10 @@ async def _member_form(request: Request) -> tuple[MemberData, dict]:
         birth_date=parse_date(raw["birth_date"]),
         email=raw["email"] or None,
         phone=raw["phone"] or None,
-        address=raw["address"] or None,
+        street=raw["street"] or None,
+        city=raw["city"] or None,
+        postal_code=raw["postal_code"] or None,
+        country=raw["country"] or "SK",
         card_number=raw["card_number"] or None,
         member_since=parse_date(raw["member_since"]),
         reduced_fee=raw["reduced_fee"],

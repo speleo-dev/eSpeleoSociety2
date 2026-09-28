@@ -14,6 +14,7 @@ _KNOWN: dict[str, type] = {
     "reduced_fee_amount": Decimal,
     "reduced_fee_age": int,
     "fee_currency": str,
+    "renewal_window_days": int,  # payment link for the next year appears this many days before year end
     # eCP (phase 2): positive whole numbers
     "ecp_link_valid_hours": int,  # validity of one-time links in e-mails
     "ecp_application_expiry_days": int,  # unfinished application expires after
@@ -21,8 +22,9 @@ _KNOWN: dict[str, type] = {
     "ecp_qr_daily_limit": int,  # new QR codes per eCP and day
 }
 
-# Built-in defaults (also inserted by migration 0008).
+# Built-in defaults (also inserted by migrations 0008 and 0009).
 DEFAULTS = {
+    "renewal_window_days": "60",
     "ecp_link_valid_hours": "24",
     "ecp_application_expiry_days": "14",
     "ecp_qr_grace_minutes": "15",

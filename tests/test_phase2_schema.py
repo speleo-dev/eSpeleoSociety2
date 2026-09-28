@@ -23,9 +23,9 @@ def test_migrations_match_models(migrated_db):
     assert diff == []
 
 
-def test_downgrade_and_upgrade_0008(migrated_db):
+def test_downgrade_and_upgrade_phase2(migrated_db):
     config = Config("alembic.ini")
-    command.downgrade(config, "0007")
+    command.downgrade(config, "0007")  # through 0009 and 0008
     command.upgrade(config, "head")
 
 

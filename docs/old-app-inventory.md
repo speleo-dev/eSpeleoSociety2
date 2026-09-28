@@ -10,9 +10,9 @@ volania boli len náčrt, platobné odkazy sa negenerovali, notifikácie sa nepo
 
 | Pôvodné nastavenie | Význam | Nová verzia |
 |---|---|---|
-| krajina, jazyk (`preferred_country`, `preferred_language`) | predvolená krajina v adresách, jazyk UI | ❓ krajina pri adrese; UI je po slovensky, EN neskôr |
+| krajina, jazyk (`preferred_country`, `preferred_language`) | predvolená krajina v adresách, jazyk UI | ✔ krajina pri adrese (predvolene SK); UI po slovensky, EN neskôr |
 | mena, členské, zľavnené členské | výška členského | ✔ (15 € / 7 €, vek 62) |
-| platnosť členstva (mesiac/deň), obdobie obnovy (dni) | nikdy nepoužité | ❓ pozri otázku 1 |
+| platnosť členstva (mesiac/deň), obdobie obnovy (dni) | nikdy nepoužité | ✔ platí kalendárny rok; obdobie obnovy – nastavenie (R27), použije F3 |
 | rok vydania | vždy aktuálny rok | ✔ kalendárny rok (R25) |
 | IBAN, názov účtu | príjemca platby, kontrola IBAN vo výpise | F3 |
 | generátor platobného odkazu (PAYME v1.2 / v2.0) | formát odkazu | F3 (PAYMe, R7) |
@@ -27,9 +27,9 @@ volania boli len náčrt, platobné odkazy sa negenerovali, notifikácie sa nepo
 
 | Oblasť | Pôvodne | Nová verzia |
 |---|---|---|
-| Skupiny | názov, **adresa (ulica, mesto, PSČ, krajina), e-mail, telefón, web, dátum založenia**, verejné meno predsedu, logo | ✔ názov, kód, logo, predseda; ❓ kontaktné údaje (otázka 2) |
+| Skupiny | názov, **adresa (ulica, mesto, PSČ, krajina), e-mail, telefón, web, dátum založenia**, verejné meno predsedu, logo | ✔ vrátane kontaktných údajov (R28) |
 | Import skupín | stiahnutie zoznamu zo sss.sk | ✔ CSV import |
-| Členovia | stav, rola, titul, meno, dátum narodenia, **adresa po častiach**, telefón, e-mail, zľava, viac skupín s primárnou | ✔ (adresa jedno pole – otázka 3) |
+| Členovia | stav, rola, titul, meno, dátum narodenia, **adresa po častiach**, telefón, e-mail, zľava, viac skupín s primárnou | ✔ adresa po častiach (R28) |
 | Ikonky stavu | člen, pozastavený, čakateľ, hosť, predseda, zľava, nezaplatené, eCP | ✔ |
 | Vyhľadávanie | bez diakritiky, podľa mena | ✔ |
 | Hromadné akcie | „zaplatené“ pre vybraných, znova poslať eCP e-mailom | F3 / F2 |
@@ -49,8 +49,4 @@ volania boli len náčrt, platobné odkazy sa negenerovali, notifikácie sa nepo
 
 ## Otázky
 
-1. **Obdobie obnovy:** stará aplikácia mala „obdobie obnovy (dni)“ – nepoužité. Navrhujem: X dní pred koncom roka
-   (nastavenie, napr. 60) sa v eCP a na portáli objaví platobný odkaz na **nasledujúci** rok.
-2. **Kontaktné údaje skupiny** (adresa, e-mail, telefón, web, dátum založenia): pridať? Overovacia stránka zatiaľ
-   ukazuje kontakt na predsedu skupiny.
-3. **Adresa člena:** teraz jedno textové pole. Rozdeliť na ulicu, mesto, PSČ a krajinu (ako pôvodne)?
+Všetky vyriešené (R27, R28 v `docs/PLAN.md`). Reporty sa naplánujú neskôr.
