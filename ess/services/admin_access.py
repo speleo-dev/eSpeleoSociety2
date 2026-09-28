@@ -86,3 +86,18 @@ def revoke_access(session: Session, actor: Actor, admin_user_id: uuid.UUID) -> N
     user.active = False
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="admin_access.revoke",
                  entity_type="admin_user", entity_id=str(user.id))
+
+
+def list_users(session: Session) -> list[dict]:
+    """Admin users with decrypted e-mail and name (for the access management page)."""
+    rows = []
+    for user in session.scalars(select(AdminUser)):
+        rows.append({
+            "id": user.id,
+            "email": pii.decrypt(user.google_email_enc, _CTX_EMAIL),
+            "name": pii.decrypt(user.display_name_enc, _CTX_NAME),
+            "role": user.role,
+            "active": user.active,
+            "granted_at": user.granted_at,
+        })
+    return sorted(rows, key=lambda r: (not r["active"], r["name"] or ""))

@@ -35,6 +35,12 @@
     .filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
     dl { display:grid; grid-template-columns:max-content 1fr; gap:.3rem 1rem; }
     dt { color:var(--muted); }
+    .form .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr)); gap:.75rem 1rem; margin-bottom:.75rem; }
+    .form label { display:flex; flex-direction:column; gap:.2rem; font-size:.9rem; color:var(--muted); }
+    .form label.check { flex-direction:row; align-items:center; gap:.4rem; color:var(--fg); margin:.4rem 0; }
+    .form input, .form select { padding:.35rem .5rem; border:1px solid var(--line); border-radius:.35rem; background:var(--bg); color:var(--fg); }
+    section.box { border:1px solid var(--line); border-radius:.5rem; padding:.75rem 1rem; margin:1rem 0; }
+    details summary { cursor:pointer; color:var(--accent); margin:.5rem 0; }
     dd { margin:0; min-width:0; overflow-wrap:anywhere; }
     td form.inline button { margin:0 .2rem .2rem 0; white-space:nowrap; }
     @media (max-width: 640px) {

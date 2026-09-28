@@ -194,9 +194,11 @@ Každá fáza končí funkčným, otestovaným a nasadeným stavom.
 generátor testovacích dát, prihlásenie cez Google, obrazovky: prehľad, členovia (vyhľadávanie, filtre),
 detail člena (zmeny stavu, ukončenie), zoznam požiadaviek (aktivácia so zamietnutím, rozhodnutie o
 členstve v SSS), skupiny.
+(2026-09-28) Doplnené: formuláre na pridanie/úpravu člena a skupiny, pridanie do skupiny, primárna
+skupina, vylúčenie, funkcie (detail člena, skupiny, prehľad organizácie), certifikáty, správa prístupov
+a nastavení (systémový administrátor), dokumenty.
 Dizajn: zatiaľ postačujúci; úprava vzhľadu (vizuálne nedostatky) príde, keď bude hotová funkcionalita.
-Zostáva: formuláre na pridanie/úpravu člena a skupiny, správa funkcií, správa administrátorov,
-nastavenia, certifikáty, dokumenty, šablóna a import zoznamu členov.
+Zostáva: šablóna a import zjednoteného zoznamu členov.
 
 - Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
   administrátori v aplikácii.

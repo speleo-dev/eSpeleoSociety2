@@ -1,0 +1,31 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Dokumenty{% endblock %}
+{% block body %}
+<h1>Dokumenty</h1>
+<p class="muted">Stanovy, rozhodnutia, výnimky a povolenia SSS. Zobrazujú sa na portáli a na overovacej stránke;
+po dátume platnosti sa skryjú. Samotný súbor musí byť zverejnený inde (odkaz https://).</p>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Názov</th><th>Platný do</th><th>Poradie</th><th></th></tr></thead>
+  <tbody>
+  {% for d in docs %}
+    <tr><td><a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a></td>
+      <td data-label="Platný do">{{ d.valid_until|date or "bez obmedzenia" }}</td><td data-label="Poradie">{{ d.sort_order }}</td>
+      <td><form class="inline" method="post" action="/admin/documents/{{ d.id }}/delete" onsubmit="return confirm('Odstrániť dokument?')">
+        {% include "admin/_csrf.html" %}<button>Odstrániť</button></form></td></tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">Žiadne dokumenty.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<h2>Pridať dokument</h2>
+<form method="post" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Názov *<input name="title" required></label>
+    <label>Odkaz (https://…) *<input type="url" name="url" required pattern="https://.*"></label>
+    <label>Platný do<input type="date" name="valid_until"></label>
+    <label>Poradie<input type="number" name="sort_order" value="0"></label>
+  </div>
+  <p><button class="primary">Pridať</button></p>
+</form>
+{% endblock %}

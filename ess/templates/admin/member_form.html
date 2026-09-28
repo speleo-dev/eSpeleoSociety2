@@ -1,0 +1,39 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}{% if member_id %}Úprava člena{% else %}Nový člen{% endif %}{% endblock %}
+{% block body %}
+<h1>{% if member_id %}Úprava údajov člena{% else %}Nový člen{% endif %}</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<form method="post" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Titul pred menom<input name="title_before" value="{{ raw.title_before or '' }}"></label>
+    <label>Meno *<input name="first_name" required value="{{ raw.first_name or '' }}"></label>
+    <label>Priezvisko *<input name="last_name" required value="{{ raw.last_name or '' }}"></label>
+    <label>Titul za menom<input name="title_after" value="{{ raw.title_after or '' }}"></label>
+    <label>Dátum narodenia<input type="date" name="birth_date" value="{{ raw.birth_date or '' }}"></label>
+    <label>E-mail<input type="email" name="email" value="{{ raw.email or '' }}"></label>
+    <label>Telefón<input type="tel" name="phone" value="{{ raw.phone or '' }}"></label>
+    <label>Bydlisko<input name="address" value="{{ raw.address or '' }}"></label>
+    <label>Číslo papierového preukazu<input name="card_number" value="{{ raw.card_number or '' }}"></label>
+    <label>Člen SSS od<input type="date" name="member_since" value="{{ raw.member_since or '' }}"></label>
+  </div>
+  <label class="check"><input type="checkbox" name="reduced_fee" {% if raw.reduced_fee %}checked{% endif %}> Zľavnené členské (napr. ZTP; podľa veku sa nastaví automaticky)</label>
+  {% if not member_id %}
+  <div class="grid">
+    <label>Skupina *
+      <select name="club_id" required>
+        <option value="">— vyberte —</option>
+        {% for c in clubs %}<option value="{{ c.id }}" {% if club_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select></label>
+    <label>Stav
+      <select name="status">
+        <option value="member" {% if status == "member" %}selected{% endif %}>člen</option>
+        <option value="candidate" {% if status == "candidate" %}selected{% endif %}>čakateľ</option>
+      </select></label>
+  </div>
+  {% endif %}
+  <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
+  <p><button class="primary">Uložiť</button>
+     <a href="{% if member_id %}/admin/members/{{ member_id }}{% else %}/admin/members{% endif %}">Zrušiť</a></p>
+</form>
+{% endblock %}

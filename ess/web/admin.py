@@ -5,39 +5,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
 
-from ess.db import get_session
 from ess.models import MembershipStatus, TaskType
-from ess.services import directory, members, memberships, tasks
-from ess.services.access import DomainError, PermissionDenied
-from ess.web.auth import AdminContext, current_admin, verify_csrf
-from ess.web.templates import ERRORS, templates
+from ess.services import certificates, directory, members, memberships, tasks
+from ess.web.auth import verify_csrf
+from ess.web.common import Admin, Db, act as _act, render as _render, safe_back as _safe_back
 
 router = APIRouter(prefix="/admin")
 PAGE_SIZE = 50
-
-Admin = Annotated[AdminContext, Depends(current_admin)]
-Db = Annotated[Session, Depends(get_session)]
-
-
-def _render(request: Request, name: str, admin: AdminContext, session: Session | None = None, **context):
-    flash = request.session.pop("flash", None)
-    open_tasks = tasks.count_open(session) if session is not None else None
-    return templates.TemplateResponse(request, name, {"admin": admin, "flash": flash, "open_tasks": open_tasks, **context})
-
-
-def _act(request: Request, session: Session, back: str, action, success: str) -> RedirectResponse:
-    """Run a service call in one transaction and redirect back with a message (POST-redirect-GET)."""
-    try:
-        action()
-        session.commit()
-        request.session["flash"] = {"kind": "ok", "text": success}
-    except (DomainError, PermissionDenied) as exc:
-        session.rollback()
-        code = exc.code if isinstance(exc, DomainError) else str(exc)
-        request.session["flash"] = {"kind": "error", "text": ERRORS.get(code, "Akciu nebolo možné vykonať.")}
-    return RedirectResponse(back, status_code=303)
 
 
 @router.get("")
@@ -66,7 +41,9 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     detail = directory.member_detail(session, member_id)
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
-    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus)
+    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus,
+                   clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
+                   cert_types=certificates.active_types(session))
 
 
 @router.post("/memberships/{membership_id}/status", dependencies=[Depends(verify_csrf)])
@@ -141,8 +118,3 @@ def old_lists():
 @router.get("/clubs")
 def clubs(request: Request, admin: Admin, session: Db):
     return _render(request, "admin/clubs.html", admin, session, rows=directory.clubs_overview(session), S=MembershipStatus)
-
-
-def _safe_back(back: str) -> str:
-    """Only allow redirects inside the administration (no open redirect)."""
-    return back if back.startswith("/admin") and "//" not in back else "/admin"

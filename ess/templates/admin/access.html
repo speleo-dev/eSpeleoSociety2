@@ -1,0 +1,29 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Prístupy{% endblock %}
+{% block body %}
+<h1>Prístupy do administrácie</h1>
+<p class="muted">Hlavní systémoví administrátori sú nastavení na serveri a nie sú v tomto zozname.
+Prístup nie je viazaný na členstvo ani funkciu v SSS.</p>
+<form method="post" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>E-mail Google účtu *<input type="email" name="email" required></label>
+    <label>Meno *<input name="name" required></label>
+    <label>Rola<select name="role">{% for r in roles %}<option value="{{ r.value }}">{{ r|label }}</option>{% endfor %}</select></label>
+  </div>
+  <p><button class="primary">Udeliť prístup</button></p>
+</form>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Meno</th><th>E-mail</th><th>Rola</th><th>Stav</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr><td>{{ u.name }}</td><td data-label="E-mail">{{ u.email }}</td><td data-label="Rola">{{ u.role|label }}</td>
+      <td data-label="Stav">{{ "aktívny" if u.active else "odobratý" }}</td>
+      <td>{% if u.active %}<form class="inline" method="post" action="/admin/access/{{ u.id }}/revoke" onsubmit="return confirm('Odobrať prístup?')">
+        {% include "admin/_csrf.html" %}<button>Odobrať</button></form>{% endif %}</td></tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">Zatiaľ nikto ďalší.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

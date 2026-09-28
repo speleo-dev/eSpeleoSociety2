@@ -2,6 +2,7 @@
 {% block page_title %}Členovia{% endblock %}
 {% block body %}
 <h1>Členovia <span class="muted">({{ total }})</span></h1>
+<p><a href="/admin/members/new"><button class="primary">Pridať člena</button></a></p>
 <form class="filters" method="get">
   <input name="q" value="{{ q }}" placeholder="Meno, e-mail, číslo preukazu" aria-label="Hľadať">
   <select name="club" aria-label="Skupina">

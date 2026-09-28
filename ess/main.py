@@ -9,7 +9,7 @@ from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
 
 from ess.config import get_settings
-from ess.web import admin, auth
+from ess.web import admin, admin_members, admin_org, auth
 from ess.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,9 @@ def create_app() -> FastAPI:
         https_only=settings.environment == "prod" or (settings.public_base_url or "").startswith("https://"),
     )
     app.include_router(auth.router)
+    # Specific routes (/members/new, /clubs/new) before parametrised ones.
+    app.include_router(admin_members.router)
+    app.include_router(admin_org.router)
     app.include_router(admin.router)
 
     @app.exception_handler(auth.LoginRequired)

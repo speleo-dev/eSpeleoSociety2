@@ -141,9 +141,12 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
   `ess/security/pii.py` – prístup ku kľúčom z konfigurácie
 - `ess/models.py` – ORM modely (`docs/data-model.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
-  `positions`, `admin_access`, `settings`, `tasks` – požiadavky). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `certificates`, `documents`). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
-- `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `admin.py` (administrácia),
-  `templates.py` (Jinja2, slovenské popisy enumov). Každý POST formulár musí mať `csrf_token`.
+- `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `common.py` (spoločné pomocné
+  funkcie), `admin.py` (prehľad, zoznamy, požiadavky), `admin_members.py` (formuláre a akcie nad členom),
+  `admin_org.py` (skupiny, organizácia, prístupy, nastavenia, dokumenty), `templates.py` (Jinja2, slovenské
+  popisy a chybové hlášky). Každý POST formulár musí mať `csrf_token`. Konkrétne cesty (`/members/new`)
+  registruj pred parametrizovanými (`/members/{id}`).
 - `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie
 - `spikes/` – jednorazové technické testy (nie súčasť aplikácie)

@@ -12,7 +12,16 @@ from datetime import date
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ess.models import Club, Member, Membership, MembershipStatus, OrgPosition, PositionHolder
+from ess.models import (
+    CertificateType,
+    Club,
+    Member,
+    MemberCertificate,
+    Membership,
+    MembershipStatus,
+    OrgPosition,
+    PositionHolder,
+)
 from ess.security.crypto import normalize_for_index
 from ess.services.members import MemberData, SssStatus, read_member
 
@@ -85,10 +94,20 @@ class MembershipView:
 
 @dataclass
 class PositionView:
+    id: uuid.UUID
     name: str
     club_name: str | None
     valid_from: date
     valid_to: date | None
+
+
+@dataclass
+class CertificateView:
+    id: uuid.UUID
+    name: str
+    valid_from: date | None
+    valid_to: date | None
+    note: str | None
 
 
 @dataclass
@@ -99,6 +118,7 @@ class MemberDetail:
     open_memberships: list[MembershipView]
     history: list[MembershipView]
     positions: list[PositionView]
+    certificates: list[CertificateView]
 
 
 def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None:
@@ -123,8 +143,18 @@ def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None
         open_memberships=[v for v in views if v.membership.valid_to is None],
         history=views,
         positions=[
-            PositionView(position_names[h.position_code], clubs[h.club_id].name if h.club_id else None, h.valid_from, h.valid_to)
+            PositionView(h.id, position_names[h.position_code], clubs[h.club_id].name if h.club_id else None,
+                         h.valid_from, h.valid_to)
             for h in holders
+        ],
+        certificates=[
+            CertificateView(c.id, t.name, c.valid_from, c.valid_to, c.note)
+            for c, t in session.execute(
+                select(MemberCertificate, CertificateType)
+                .join(CertificateType, CertificateType.id == MemberCertificate.certificate_type_id)
+                .where(MemberCertificate.member_id == member_id)
+                .order_by(CertificateType.name)
+            )
         ],
     )
 
@@ -198,3 +228,45 @@ def dashboard_counts(session: Session) -> dict[str, int]:
         ),
         "clubs": session.scalar(select(func.count()).select_from(Club).where(Club.active, ~Club.is_unaffiliated)),
     }
+
+
+@dataclass
+class HolderRow:
+    holder_id: uuid.UUID
+    position_code: str
+    position_name: str
+    member_id: uuid.UUID
+    full_name: str
+    phone: str | None
+    club_id: uuid.UUID | None
+    club_name: str | None
+    valid_from: date
+
+
+def current_positions(session: Session) -> list[HolderRow]:
+    """All currently held positions (SSS bodies and club chairs), ordered by position."""
+    rows = session.execute(
+        select(PositionHolder, OrgPosition, Member, Club)
+        .join(OrgPosition, OrgPosition.code == PositionHolder.position_code)
+        .join(Member, Member.id == PositionHolder.member_id)
+        .outerjoin(Club, Club.id == PositionHolder.club_id)
+        .where(PositionHolder.valid_to.is_(None))
+    ).all()
+    result = []
+    for holder, position, member, club in rows:
+        data = read_member(member)
+        result.append(HolderRow(holder.id, position.code, position.name, member.id, data.full_name(), data.phone,
+                                club.id if club else None, club.name if club else None, holder.valid_from))
+    order = {code: i for i, code in enumerate(p.code for p in session.scalars(select(OrgPosition).order_by(OrgPosition.sort_order)))}
+    return sorted(result, key=lambda r: (order.get(r.position_code, 99), r.club_name or "", normalize_for_index(r.full_name)))
+
+
+def positions_catalog(session: Session) -> list[OrgPosition]:
+    return list(session.scalars(select(OrgPosition).order_by(OrgPosition.sort_order)))
+
+
+def active_clubs(session: Session, include_unaffiliated: bool = True) -> list[Club]:
+    query = select(Club).where(Club.active).order_by(Club.is_unaffiliated.desc(), Club.name)
+    if not include_unaffiliated:
+        query = query.where(~Club.is_unaffiliated)
+    return list(session.scalars(query))

@@ -10,6 +10,7 @@
 </form>
 {% endmacro %}
 <h1>{{ d.data.full_name() }}</h1>
+<p><a href="/admin/members/{{ d.member.id }}/edit"><button>Upraviť údaje</button></a></p>
 <p><span class="chip">{{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">zľavnené členské</span>{% endif %}</p>
 <dl>
   <dt>Dátum narodenia</dt><dd>{{ d.data.birth_date|date or "—" }}</dd>
@@ -36,6 +37,8 @@
         {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
         {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
         {% if m.status == S.SUSPENDED %}{{ status_button(m.id, S.MEMBER, "Obnoviť") }}{% endif %}
+        {% if not m.is_primary %}<form class="inline" method="post" action="/admin/memberships/{{ m.id }}/primary">
+          {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Nastaviť ako primárnu</button></form>{% endif %}
         <form class="inline" method="post" action="/admin/memberships/{{ m.id }}/terminate"
               onsubmit="return confirm('Ukončiť členstvo v tejto skupine?')">
           {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
@@ -49,6 +52,19 @@
   </tbody>
 </table></div>
 
+{% if not d.member.expelled_at %}
+<details><summary>Pridať do skupiny</summary>
+<form method="post" action="/admin/members/{{ d.member.id }}/memberships" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Skupina<select name="club_id" required><option value="">— vyberte —</option>
+      {% for c in clubs %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+    <label>Stav<select name="status"><option value="member">člen</option><option value="candidate">čakateľ</option></select></label>
+  </div>
+  <button class="primary">Pridať</button>
+</form></details>
+{% endif %}
+
 {% if d.sss_status.value in ("awaiting_decision", "ended") %}
 <p>
   <form class="inline" method="post" action="/admin/members/{{ d.member.id }}/restore-unaffiliated">
@@ -58,10 +74,42 @@
 </p>
 {% endif %}
 
-{% if d.positions %}
 <h2>Funkcie</h2>
-<ul>{% for p in d.positions %}<li>{{ p.name }}{% if p.club_name %} ({{ p.club_name }}){% endif %}: {{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}</li>{% endfor %}</ul>
+<ul>{% for p in d.positions %}<li>{{ p.name }}{% if p.club_name %} ({{ p.club_name }}){% endif %}: {{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}
+  {% if not p.valid_to %}<form class="inline" method="post" action="/admin/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Ukončiť</button></form>{% endif %}</li>
+{% else %}<li class="muted">Žiadne funkcie.</li>{% endfor %}</ul>
+{% if d.sss_status.value == "member" %}
+<details><summary>Priradiť funkciu</summary>
+<form method="post" action="/admin/members/{{ d.member.id }}/positions" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Funkcia<select name="position_code" required>{% for p in positions %}<option value="{{ p.code }}">{{ p.name }}</option>{% endfor %}</select></label>
+    <label>Skupina (len pre predsedu skupiny)<select name="club_id"><option value="">—</option>
+      {% for v in d.open_memberships %}<option value="{{ v.membership.club_id }}">{{ v.club_name }}</option>{% endfor %}</select></label>
+    <label>Od<input type="date" name="valid_from"></label>
+  </div>
+  <button class="primary">Priradiť</button>
+  <p class="muted">Pri funkciách, ktoré môže zastávať len jeden človek (predseda SSS, predseda skupiny…), sa predchádzajúcemu držiteľovi funkcia ukončí k tomuto dátumu.</p>
+</form></details>
 {% endif %}
+
+<h2>Certifikáty</h2>
+<ul>{% for c in d.certificates %}<li>{{ c.name }}{% if c.valid_from or c.valid_to %} ({{ c.valid_from|date or "?" }} – {{ c.valid_to|date or "bez obmedzenia" }}){% endif %}{% if c.note %} – {{ c.note }}{% endif %}
+  <form class="inline" method="post" action="/admin/certificates/{{ c.id }}/delete" onsubmit="return confirm('Odstrániť certifikát?')">
+    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Odstrániť</button></form></li>
+{% else %}<li class="muted">Žiadne certifikáty.</li>{% endfor %}</ul>
+<details><summary>Pridať certifikát</summary>
+<form method="post" action="/admin/members/{{ d.member.id }}/certificates" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Typ<select name="certificate_type_id" required>{% for t in cert_types %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></label>
+    <label>Platný od<input type="date" name="valid_from"></label>
+    <label>Platný do<input type="date" name="valid_to"></label>
+    <label>Poznámka<input name="note"></label>
+  </div>
+  <button class="primary">Pridať</button>
+</form></details>
 
 <h2>História členstiev</h2>
 <div class="table-wrap"><table class="stack">
@@ -74,4 +122,20 @@
   </tbody>
 </table></div>
 <p class="muted">„Do“ je prvý deň, keď záznam už neplatí.</p>
+
+{% if not d.member.expelled_at %}
+<section class="box">
+<details><summary>Vylúčiť zo SSS</summary>
+<p>Len na základe rozhodnutia valného zhromaždenia. <strong>Vylúčenie je nevratné</strong> – ukončí všetky členstvá
+a funkcie a člen sa už nebude môcť stať členom SSS.</p>
+<form method="post" action="/admin/members/{{ d.member.id }}/expel" class="form" onsubmit="return confirm('Naozaj vylúčiť zo SSS? Toto sa nedá vrátiť.')">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Dôvod / číslo uznesenia VZ *<input name="reason" required></label>
+    <label>Dátum<input type="date" name="on"></label>
+  </div>
+  <button>Vylúčiť zo SSS</button>
+</form></details>
+</section>
+{% endif %}
 {% endblock %}

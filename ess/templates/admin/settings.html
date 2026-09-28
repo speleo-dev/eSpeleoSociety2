@@ -1,0 +1,26 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Nastavenia{% endblock %}
+{% block body %}
+<h1>Nastavenia</h1>
+<h2>Členské</h2>
+<form method="post" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Členské<input name="fee_amount" inputmode="decimal" value="{{ values.fee_amount }}"></label>
+    <label>Zľavnené členské<input name="reduced_fee_amount" inputmode="decimal" value="{{ values.reduced_fee_amount }}"></label>
+    <label>Vek pre zľavu (rokov)<input name="reduced_fee_age" inputmode="numeric" value="{{ values.reduced_fee_age }}"></label>
+    <label>Mena<input name="fee_currency" value="{{ values.fee_currency }}"></label>
+  </div>
+  <p><button class="primary">Uložiť</button></p>
+</form>
+<h2>Typy certifikátov</h2>
+<p>{% for t in cert_types %}<span class="chip">{{ t.name }}</span>{% endfor %}</p>
+<form method="post" action="/admin/settings/certificate-types" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Kód (bez medzier)<input name="code" required pattern="[a-z0-9_-]+"></label>
+    <label>Názov<input name="name" required></label>
+  </div>
+  <p><button>Pridať typ</button></p>
+</form>
+{% endblock %}

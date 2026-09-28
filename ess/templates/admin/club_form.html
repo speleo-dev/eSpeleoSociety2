@@ -1,0 +1,44 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}{{ club.name if club else "Nová skupina" }}{% endblock %}
+{% block body %}
+<h1>{{ club.name if club else "Nová skupina" }}</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<form method="post" class="form" action="{{ '/admin/clubs/' ~ club.id if club else '/admin/clubs/new' }}">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Názov *<input name="name" required value="{{ raw.name or '' }}"></label>
+    <label>Skratka (na preukaz)<input name="short_name" value="{{ raw.short_name or '' }}"></label>
+  </div>
+  {% if not club or not club.is_unaffiliated %}
+  <label class="check"><input type="checkbox" name="uses_candidates" {% if raw.uses_candidates %}checked{% endif %}> Skupina používa čakateľov</label>
+  {% endif %}
+  {% if club %}
+    {% if club.is_unaffiliated %}<input type="hidden" name="active" value="on">
+    {% else %}<label class="check"><input type="checkbox" name="active" {% if raw.active %}checked{% endif %}> Aktívna</label>{% endif %}
+  {% endif %}
+  <p><button class="primary">Uložiť</button> <a href="/admin/clubs">Späť</a></p>
+</form>
+
+{% if club %}
+  {% if not club.is_unaffiliated %}
+  <h2>Predseda skupiny</h2>
+  {% for h in chairs %}<p>{{ h.full_name }} (od {{ h.valid_from|date }}) – <a href="/admin/members/{{ h.member_id }}">detail</a></p>
+  {% else %}<p class="muted">Skupina nemá zadaného predsedu.</p>{% endfor %}
+  <form class="inline" method="post" action="/admin/positions">
+    {% include "admin/_csrf.html" %}
+    <input type="hidden" name="position_code" value="club_chair">
+    <input type="hidden" name="club_id" value="{{ club.id }}">
+    <input type="hidden" name="back" value="/admin/clubs/{{ club.id }}">
+    <label>Nový predseda
+      <select name="member_id" required>
+        <option value="">— vyberte člena skupiny —</option>
+        {% for r in active_members %}<option value="{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</option>{% endfor %}
+      </select></label>
+    <label>Od<input type="date" name="valid_from"></label>
+    <button>Zadať predsedu</button>
+  </form>
+  <p class="muted">Zadajte až po doručení dokumentov z výročnej schôdze. Predchádzajúcemu predsedovi sa funkcia ukončí k tomuto dátumu.</p>
+  {% endif %}
+  <p><a href="/admin/members?club={{ club.id }}">Členovia skupiny →</a></p>
+{% endif %}
+{% endblock %}
