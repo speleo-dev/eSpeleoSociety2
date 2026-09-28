@@ -94,6 +94,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     Pri výmene fotky dostane nová fotka nový názov a stará sa zmaže.
   - Obrázky SSS (logá, tlačidlo Wallet) sa presunú zo starého `sss_sk_bucket` do bucketu nového projektu.
   - Certifikáty na preukaze zatiaľ vypnuté. QR sa posiela aj pri aktualizácii objektu (R18).
+- **R25** – Pravidlá eCP:
+  - eCP dostane len člen so stavom `member` aspoň v jednej skupine; **čakateľ nie**.
+  - eCP sa vydá aj **bez zaplateného členského**; overovacia stránka ukáže, či je členské na aktuálny rok
+    zaplatené. „Platný do“ = koniec posledného zaplateného roka (do fázy 3 sa neukazuje).
+  - Pozastavenie vo všetkých skupinách: eCP sa v Google Wallet prepne na neaktívny, po obnovení sa aktivuje.
+  - **Vylúčenie alebo ukončenie členstva v SSS: eCP sa zruší úplne** (objekt v Google Wallet sa zneplatní
+    a odstránia sa z neho údaje; API objekty nemaže). Jeho tokeny ďalej vedú na overovaciu stránku
+    s výrazným upozornením, že nejde o člena SSS.
 
 ## 4. Architektúra
 
