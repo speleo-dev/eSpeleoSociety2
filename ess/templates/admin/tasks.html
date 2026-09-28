@@ -26,7 +26,9 @@
       {% if show == "open" %}
         {% if t.task_type == T.MEMBER_ACTIVATION.value %}
           <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/activate">
-            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="primary">Aktivovať</button></form>
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <input name="card_number" placeholder="Č. papierového preukazu (ak bol vydaný)" aria-label="Číslo papierového preukazu">
+            <button class="primary">Aktivovať</button></form>
           <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/reject">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="reason" required placeholder="Dôvod zamietnutia" aria-label="Dôvod zamietnutia">

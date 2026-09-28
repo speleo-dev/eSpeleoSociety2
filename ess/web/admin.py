@@ -76,8 +76,10 @@ def task_list(request: Request, admin: Admin, session: Db, show: str = "open", t
 
 
 @router.post("/tasks/{task_id}/activate", dependencies=[Depends(verify_csrf)])
-def task_activate(request: Request, task_id: uuid.UUID, admin: Admin, session: Db):
-    return _act(request, session, "/admin/tasks", lambda: tasks.activate(session, admin.actor, task_id),
+def task_activate(
+    request: Request, task_id: uuid.UUID, admin: Admin, session: Db, card_number: Annotated[str, Form()] = ""
+):
+    return _act(request, session, "/admin/tasks", lambda: tasks.activate(session, admin.actor, task_id, card_number),
                 "Člen bol aktivovaný.")
 
 

@@ -77,6 +77,9 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   e-mailu; v detaile člena sa zobrazí, s kým e-mail zdieľa.
 - **R22** – Žiadosť o eCP dopĺňa chýbajúce údaje: **číslo preukazu je povinné**; ak IS nemá „člen SSS od“,
   žiadateľ ho musí zadať. Chýbajúce údaje sa uložia po schválení žiadosti administrátorom.
+- **R23** – **Nový člen** nejde cez verejnú žiadosť. Predseda skupiny ho zadá podľa papierovej prihlášky
+  (obsahuje súhlas GDPR) a rovno zaškrtne „vydať eCP“. Administrátor pri aktivácii doplní číslo papierového
+  preukazu, ak bol vydaný (hotové). Verejná žiadosť o eCP je pre existujúcich členov.
 - **R20** – Všetko, čo čaká na administrátora (aktivácie, rozhodnutia o členstve v SSS, neskôr žiadosti
   o eCP), je v jednom zozname **„Požiadavky“** s popisom a tlačidlami v každom riadku (tabuľka `tasks`).
 - **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
@@ -202,6 +205,8 @@ detail člena (zmeny stavu, ukončenie), zoznam požiadaviek (aktivácia so zami
 skupina, vylúčenie, funkcie (detail člena, skupiny, prehľad organizácie), certifikáty, správa prístupov
 a nastavení (systémový administrátor), dokumenty.
 Dizajn: zatiaľ postačujúci; úprava vzhľadu (vizuálne nedostatky) príde, keď bude hotová funkcionalita.
+Návrh pre úpravu vzhľadu: krátke akcie (zamietnutie s dôvodom, ukončenie, vylúčenie, funkcia, certifikát)
+v dialógových oknach namiesto polí priamo v riadku; dlhé formuláre (nový člen, skupina) ostanú ako stránky.
 Zostáva: šablóna a import zjednoteného zoznamu členov.
 
 - Prihlásenie cez Google účet; hlavní systémoví administrátori z konfigurácie, ďalší systémoví administrátori a
@@ -214,6 +219,8 @@ Zostáva: šablóna a import zjednoteného zoznamu členov.
 - Kontroly: vylúčený sa nesmie znova stať členom, práve jedna primárna skupina.
 
 ### Fáza 2 – eCP a kartička
+- Nový člen (R23): pri návrhu predsedu príznak „vydať eCP“ a potvrdenie súhlasu GDPR z papierovej prihlášky;
+  po aktivácii dostane člen e-mail s odkazom na doplnenie fotky a overenie e-mailu → požiadavka „Vydanie eCP“.
 - Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail, **číslo preukazu** (povinné; ak IS nemá
   „člen SSS od“, aj ten) → overenie e-mailu
   („klikni sem“) → vyhľadanie člena. **Pokračovať sa dá len pri presnej zhode všetkých údajov.**

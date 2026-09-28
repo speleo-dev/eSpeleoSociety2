@@ -365,3 +365,32 @@ def test_expulsion_cancels_open_tasks(session):
     memberships.add_membership(session, ADMIN, m.id, club.id, S.PENDING_ACTIVATION)
     members.expel_member(session, ADMIN, m.id, "Uznesenie VZ")
     assert _open_tasks(session, m.id) == [("member_activation", "cancelled")]
+
+
+
+def test_activation_records_paper_card_number(session):
+    from ess.services import tasks as tasks_service
+
+    club = _club(session, "JS A")
+    chair = _chair_of(session, club)
+    new = memberships.add_new_member_to_club(session, chair, MemberData("Nový", "Z"), club.id, S.PENDING_ACTIVATION)
+    _member(session, first="Iný", card_number="500")
+    session.commit()
+    task = tasks_service.list_tasks(session)[0].task
+    with pytest.raises(DomainError, match="card_number_in_use"):
+        tasks_service.activate(session, ADMIN, task.id, card_number="500")
+    session.rollback()
+    task = tasks_service.list_tasks(session)[0].task
+    tasks_service.activate(session, ADMIN, task.id, card_number=" 501 ")
+    assert members.read_member(session.get(Member, new.member_id)).card_number == "501"
+
+
+
+def test_update_with_duplicate_card_number_is_a_clear_error(session):
+    _member(session, first="Prvý", card_number="600")
+    second = _member(session, first="Druhý")
+    session.commit()
+    data = members.read_member(second)
+    data.card_number = "600"
+    with pytest.raises(DomainError, match="card_number_in_use"):
+        members.update_member(session, ADMIN, second.id, data)

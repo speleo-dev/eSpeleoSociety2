@@ -98,11 +98,14 @@ def _get_open(session: Session, task_id: uuid.UUID, task_type: TaskType) -> Task
 
 # --- actions started from the task list -----------------------------------------------------------
 
-def activate(session: Session, actor: Actor, task_id: uuid.UUID) -> None:
-    from ess.services import memberships
+def activate(session: Session, actor: Actor, task_id: uuid.UUID, card_number: str = "") -> None:
+    """Activate a proposed member; optionally record the paper card number issued to them."""
+    from ess.services import members, memberships
 
     require_admin(actor)
     task = _get_open(session, task_id, TaskType.MEMBER_ACTIVATION)
+    if card_number.strip():
+        members.set_card_number(session, actor, task.member_id, card_number)
     memberships.activate(session, actor, task.membership_id)
 
 

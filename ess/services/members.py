@@ -100,13 +100,15 @@ def read_member(member: Member) -> MemberData:
 
 
 def _check_unique(session: Session, member: Member) -> None:
-    for column, code in ((Member.card_number_bidx, "card_number_in_use"),):
-        value = getattr(member, column.key)
-        if value is None:
-            continue
-        other = session.scalar(select(Member.id).where(column == value, Member.id != member.id))
-        if other:
-            raise DomainError(code)
+    # no_autoflush: the pending change must not reach the database before we check it.
+    with session.no_autoflush:
+        for column, code in ((Member.card_number_bidx, "card_number_in_use"),):
+            value = getattr(member, column.key)
+            if value is None:
+                continue
+            other = session.scalar(select(Member.id).where(column == value, Member.id != member.id))
+            if other:
+                raise DomainError(code)
 
 
 def create_member(session: Session, actor: Actor, data: MemberData) -> Member:
@@ -296,3 +298,19 @@ def restore_to_unaffiliated(session: Session, actor: Actor, member_id: uuid.UUID
         raise DomainError("member_expelled")
     unaffiliated = session.scalars(select(Club).where(Club.is_unaffiliated)).one()
     return memberships.add_membership(session, actor, member_id, unaffiliated.id, MembershipStatus.MEMBER, on)
+
+
+def set_card_number(session: Session, actor: Actor, member_id: uuid.UUID, card_number: str) -> None:
+    """Record the paper card number (e.g. when a new member is activated). Must be unique."""
+    require_admin(actor)
+    member = session.get(Member, member_id)
+    if member is None:
+        raise DomainError("member_not_found")
+    card_number = card_number.strip()
+    if not card_number:
+        return
+    member.card_number_enc = pii.encrypt(card_number, _CTX["card_number"])
+    member.card_number_bidx = pii.blind_index(_BIDX_CARD, card_number)
+    _check_unique(session, member)
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.update",
+                 entity_type="member", entity_id=str(member_id), details={"fields": ["card_number"]})
