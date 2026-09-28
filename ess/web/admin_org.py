@@ -5,14 +5,18 @@ import io
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
 
+from ess.images import MAX_UPLOAD_BYTES
 from ess.models import AdminRole, Club, MembershipStatus
 from ess.services import admin_access, certificates, clubs, directory, documents, importing, settings
 from ess.services.access import DomainError, PermissionDenied
+from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, error_text, forbidden, parse_date, render
+
+Store = Annotated[MediaStore | None, Depends(get_media_store)]
 
 router = APIRouter(prefix="/admin")
 
@@ -68,6 +72,41 @@ def club_update(
                lambda: clubs.update_club(session, admin.actor, club_id, name, short_name,
                                          uses_candidates == "on", active == "on", code, logo_url),
                "Skupina bola uložená.")
+
+
+def _logo_action(request: Request, session: Db, store: MediaStore | None, club_id: uuid.UUID, action, success: str):
+    """Change the logo; delete the replaced object only after commit and the new one on failure."""
+    change = None
+    try:
+        change = action()
+        session.commit()
+        request.session["flash"] = {"kind": "ok", "text": success}
+    except (DomainError, PermissionDenied) as exc:
+        session.rollback()
+        request.session["flash"] = {"kind": "error", "text": error_text(exc)}
+        return RedirectResponse(f"/admin/clubs/{club_id}", status_code=303)
+    except Exception:
+        session.rollback()
+        if change and change.new_object and store:
+            store.delete(change.new_object)
+        raise
+    if change.old_object and store:
+        store.delete(change.old_object)
+    return RedirectResponse(f"/admin/clubs/{club_id}", status_code=303)
+
+
+@router.post("/clubs/{club_id}/logo", dependencies=[Depends(verify_csrf)])
+def club_logo_upload(request: Request, club_id: uuid.UUID, admin: Admin, session: Db, store: Store,
+                           logo: Annotated[UploadFile, File()]):
+    data = logo.file.read(MAX_UPLOAD_BYTES + 1)  # sync handler runs in a thread pool
+    return _logo_action(request, session, store, club_id,
+                        lambda: clubs.set_logo(session, admin.actor, club_id, data, store), "Logo bolo nahraté.")
+
+
+@router.post("/clubs/{club_id}/logo/remove", dependencies=[Depends(verify_csrf)])
+def club_logo_remove(request: Request, club_id: uuid.UUID, admin: Admin, session: Db, store: Store):
+    return _logo_action(request, session, store, club_id,
+                        lambda: clubs.remove_logo(session, admin.actor, club_id, store), "Logo bolo odstránené.")
 
 
 # --- organisation structure ---------------------------------------------------------------------------

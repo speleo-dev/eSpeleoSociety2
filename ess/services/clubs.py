@@ -2,13 +2,16 @@
 
 import re
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess import audit
+from ess.images import normalize_logo
 from ess.models import Club
 from ess.services.access import Actor, DomainError, require_admin
+from ess.storage import MediaStore, random_name
 
 
 def _check_name(session: Session, name: str, club_id: uuid.UUID | None = None) -> str:
@@ -87,3 +90,43 @@ def update_club(
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.update",
                  entity_type="club", entity_id=str(club.id), details={"fields": changed})
     return club
+
+
+@dataclass
+class LogoChange:
+    """Result of a logo change. Old object is deleted only after commit, new one on rollback."""
+
+    club: Club
+    old_object: str | None
+    new_object: str | None
+
+
+def _club_for_logo(session: Session, actor: Actor, club_id: uuid.UUID) -> Club:
+    require_admin(actor)
+    club = session.get(Club, club_id)
+    if club is None:
+        raise DomainError("club_not_found")
+    return club
+
+
+def set_logo(session: Session, actor: Actor, club_id: uuid.UUID, data: bytes, store: MediaStore | None) -> LogoChange:
+    """Upload a new club logo under a random name and point the club to it."""
+    if store is None:
+        raise DomainError("media_store_not_configured")
+    club = _club_for_logo(session, actor, club_id)
+    png = normalize_logo(data)
+    name = random_name("clubs", "png")
+    old = store.name_from_url(club.logo_url)
+    club.logo_url = store.put(name, png, "image/png")
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.logo_upload",
+                 entity_type="club", entity_id=str(club.id))
+    return LogoChange(club, old, name)
+
+
+def remove_logo(session: Session, actor: Actor, club_id: uuid.UUID, store: MediaStore | None) -> LogoChange:
+    club = _club_for_logo(session, actor, club_id)
+    old = store.name_from_url(club.logo_url) if store else None
+    club.logo_url = None
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.logo_remove",
+                 entity_type="club", entity_id=str(club.id))
+    return LogoChange(club, old, None)

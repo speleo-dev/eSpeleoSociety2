@@ -142,6 +142,8 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/db.py` – pool spojení, `Base` pre modely; `ess/audit.py` – auditný log
 - `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC);
   `ess/security/pii.py` – prístup ku kľúčom z konfigurácie
+- `ess/storage.py` – úložisko obrázkov (GCS, náhodné názvy; `MemoryMediaStore` pre testy); `ess/images.py` –
+  kontrola a prevod nahratých obrázkov (Pillow, len rastrové formáty, bez EXIF)
 - `ess/models.py` – ORM modely (`docs/data-model.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `certificates`, `documents`,

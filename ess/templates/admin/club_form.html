@@ -8,7 +8,7 @@
   <div class="grid">
     <label>Názov *<input name="name" required value="{{ raw.name or '' }}"></label>
     <label>Skratka (na preukaz)<input name="short_name" value="{{ raw.short_name or '' }}"></label>
-    <label>Adresa loga (https://…)<input type="url" name="logo_url" value="{{ raw.logo_url or '' }}" pattern="https://.*"></label>
+    <label>Adresa loga (vyplní sa po nahratí)<input type="url" name="logo_url" value="{{ raw.logo_url or '' }}" pattern="https://.*"></label>
     {% if not club or not club.is_unaffiliated %}<label>Kód (pre import, napr. JS-DEM)<input name="code" value="{{ raw.code or '' }}" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,19}"></label>{% endif %}
   </div>
   {% if not club or not club.is_unaffiliated %}
@@ -22,6 +22,21 @@
 </form>
 
 {% if club %}
+  <h2>Logo</h2>
+  {% if club.logo_url %}<p><img class="club-logo-large" src="{{ club.logo_url }}" alt="Logo skupiny"></p>{% endif %}
+  <form class="inline" method="post" enctype="multipart/form-data" action="/admin/clubs/{{ club.id }}/logo">
+    {% include "admin/_csrf.html" %}
+    <label>Súbor (PNG, JPEG, WebP, GIF; najviac 5 MB)<input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif" required></label>
+    <button>Nahrať logo</button>
+  </form>
+  {% if club.logo_url %}
+  <form class="inline" method="post" action="/admin/clubs/{{ club.id }}/logo/remove">
+    {% include "admin/_csrf.html" %}
+    <button>Odstrániť logo</button>
+  </form>
+  {% endif %}
+  <p class="muted">Obrázok sa zmenší na najviac 512 × 512 px, uloží ako PNG pod náhodným názvom a adresa sa vyplní sama.</p>
+
   {% if not club.is_unaffiliated %}
   <h2>Predseda skupiny</h2>
   {% for h in chairs %}<p>{{ h.full_name }} (od {{ h.valid_from|date }}) – <a href="/admin/members/{{ h.member_id }}">detail</a></p>
