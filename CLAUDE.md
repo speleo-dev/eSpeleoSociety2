@@ -74,7 +74,9 @@ administrátor v aplikácii.
 - Stack: Python, FastAPI, stránky generované serverom (Jinja2 + HTMX), PostgreSQL.
 - Hosting: Google Cloud Run (kontajner). Databáza: PostgreSQL 14 na WebSupporte (`eSpeleoSoc2`),
   pripojenie cez SSL. Počet DB dotazov na požiadavku drž nízky (DB je cez internet).
-- Fotky tvárí: Google Cloud Storage (neverejný bucket, prístup cez krátkodobé podpísané URL).
+- Fotky tvárí: Google Cloud Storage; objekty čitateľné len cez neuhádnuteľný náhodný 64-znakový názov
+  (Google Wallet si ich musí vedieť stiahnuť), bez verejného zoznamu objektov (R24).
+- Google Wallet: issuer `3388000000022877308`, trieda `member` (R24).
 - Platby: bez platobnej brány; PAYMe odkaz (parameter `PI` = referencia platiteľa), párovanie
   z nahratého bankového výpisu. Referencia je náhodný alfanumerický kód bez vnútorného významu.
 - Dokumenty: tabuľka (názov, platnosť, odkaz), samotné súbory sú mimo eSS.

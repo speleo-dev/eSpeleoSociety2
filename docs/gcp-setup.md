@@ -258,10 +258,63 @@ Potom otvor `<URL>/admin` a prihlás sa. Ďalších administrátorov bude možn�
   a znova nasaď. Client Secret sa **nekóduje** (kódovanie sa týka len hesla k DB v kroku 5).
 - *„Tento Google účet nemá prístup“* – e-mail nie je v `ESS_SUPER_ADMIN_EMAILS` alebo nie je v *Test users*.
 
+## 14. Google Wallet a úložisko obrázkov (príprava fázy 2)
+
+Aplikácia nepotrebuje **žiadny kľúč servisného účtu**. Cloud Run beží pod predvoleným servisným účtom
+projektu; ten volá Wallet API a podpisuje odkaz „Pridať do Peňaženky Google“ cez IAM (bez súboru s kľúčom).
+
+**a) Služby a oprávnenie podpisovať:**
+
+```bash
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+echo $SA        # túto adresu použiješ v bode b)
+gcloud services enable walletobjects.googleapis.com iamcredentials.googleapis.com storage.googleapis.com
+gcloud iam service-accounts add-iam-policy-binding $SA \
+  --member="serviceAccount:$SA" --role="roles/iam.serviceAccountTokenCreator"
+```
+
+**b) Prístup k issuerovi:** [Google Pay & Wallet Console](https://pay.google.com/business/console) →
+issuer `3388000000022877308` → **Google Wallet API** → **Users** → **Invite a user** → e-mail `$SA`
+z bodu a), úroveň **Developer**. Pozvánku netreba potvrdzovať.
+
+**c) Bucket pre obrázky** (región EU; pri ~1 000 fotkách je cena zanedbateľná, rádovo centy za rok):
+
+```bash
+BUCKET=ess-media-$(gcloud config get-value project)
+gcloud storage buckets create gs://$BUCKET --location=europe-west3 --uniform-bucket-level-access
+# Čítanie konkrétneho objektu podľa názvu (Google Wallet si musí fotku stiahnuť), BEZ zoznamu objektov:
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
+  --member=allUsers --role=roles/storage.legacyObjectReader
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
+  --member="serviceAccount:$SA" --role=roles/storage.objectAdmin
+```
+
+Ak druhý príkaz skončí chybou o *public access prevention*, pošli mi výpis.
+
+Kontrola, že zoznam objektov nie je verejný (musí vrátiť chybu 401/403):
+`curl -s -o /dev/null -w '%{http_code}\n' https://storage.googleapis.com/$BUCKET`
+
+**d) Presun obrázkov SSS zo starého bucketu:**
+
+```bash
+gcloud storage ls gs://sss_sk_bucket/          # pozri, čo tam je
+gcloud storage cp gs://sss_sk_bucket/Logo_sss.png gs://sss_sk_bucket/SSS_logo_meno.png \
+  gs://sss_sk_bucket/sk_add_to_google_wallet_add-wallet-badge.png gs://$BUCKET/static/
+```
+
+Logá skupín skopíruj rovnako do `gs://$BUCKET/clubs/` (starý bucket zatiaľ nemaž).
+
+**e) Konfigurácia** (bez nového zostavenia):
+
+```bash
+gcloud run services update ess --region $REGION --update-env-vars ESS_MEDIA_BUCKET=$BUCKET
+```
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).
 - Vlastná doména `ess.sss.sk` namapovaná na Cloud Run.
 - Overovanie certifikátu DB servera (`sslmode=verify-full`), ak WebSupport poskytne CA certifikát.
   Test používa `sslmode=require`, ktorý spojenie šifruje, ale neoveruje identitu servera.
-- Ďalšie tajomstvá: Google Wallet účet, SMTP heslo pre `ess@sss.sk`.
+- Ďalšie tajomstvá: SMTP heslo pre `ess@sss.sk` (Google Wallet kľúč nepotrebuje, krok 14).

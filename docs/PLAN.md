@@ -85,13 +85,22 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
   Denný limit overení na člena. Podrobnosti v sekcii 5a.
 - **R12** – E-mail systému: `ess@sss.sk`, doména `sss.sk` (aplikácia napr. na `ess.sss.sk`).
+- **R24** – eCP používa existujúci Google Wallet issuer `3388000000022877308` a triedu `member`
+  (`3388000000022877308.member`). ID nie sú tajné (konfigurácia `ESS_WALLET_ISSUER_ID`, `ESS_WALLET_CLASS`);
+  tajný je len kľúč servisného účtu. Návrh vzhľadu: `docs/reference/wallet/`.
+  - „Identifikačné číslo“ na preukaze = **číslo preukazu** (`card_number`).
+  - **Fotky tvárí** musí vedieť stiahnuť Google Wallet, preto sú objekty čitateľné cez verejnú URL
+    s **náhodným 64-znakovým názvom** (neuhádnuteľný). Bucket nemá verejný zoznam objektov.
+    Pri výmene fotky dostane nová fotka nový názov a stará sa zmaže.
+  - Obrázky SSS (logá, tlačidlo Wallet) sa presunú zo starého `sss_sk_bucket` do bucketu nového projektu.
+  - Certifikáty na preukaze zatiaľ vypnuté. QR sa posiela aj pri aktualizácii objektu (R18).
 
 ## 4. Architektúra
 
 ```
 Google Wallet ─┐
 Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─► PostgreSQL eSpeleoSoc2 (WebSupport, SSL)
-(člen/predseda/│        ├─► Google Cloud Storage (fotky, neverejný bucket)
+(člen/predseda/│        ├─► Google Cloud Storage (fotky, náhodné názvy)  
  admin/overenie)        ├─► Google Wallet API (preukazy, notifikácie)
                         ├─► Google prihlásenie (admini)
                         └─► SMTP ess@sss.sk
@@ -224,7 +233,7 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 - Google Wallet: existujúci účet vydavateľa (Issuer) a navrhnutý eCP (class) z pôvodného projektu sa dajú
   použiť – v novom projekte stačí servisný účet s rolou v Pay & Wallet Console (overiť pri nastavení).
   Návrh vzhľadu eCP a e-mailu z pôvodného projektu: `docs/reference/wallet/` (mapovanie premenných a otázky).
-- Nahrávanie log skupín a fotiek tvárí do Cloud Storage (neverejný bucket pre fotky; logá môžu byť verejné).
+- Nahrávanie log skupín a fotiek tvárí do Cloud Storage (fotky s náhodnými 64-znakovými názvami, R24).
 - Nový člen (R23): pri návrhu predsedu príznak „vydať eCP“ a potvrdenie súhlasu GDPR z papierovej prihlášky;
   po aktivácii dostane člen e-mail s odkazom na doplnenie fotky a overenie e-mailu → požiadavka „Vydanie eCP“.
 - Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail, **číslo preukazu** (povinné; ak IS nemá

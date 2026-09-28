@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     public_base_url: str | None = None
     # Secret for signing session cookies (random, at least 32 characters).
     session_secret: str | None = None
+
+    # Google Wallet (eCP). IDs are not secret; the runtime service account signs and calls the API.
+    wallet_issuer_id: str = "3388000000022877308"
+    wallet_class: str = "member"
+    # Cloud Storage bucket for face photos (random 64-char names) and SSS images.
+    media_bucket: str | None = None
     session_max_age_seconds: int = 8 * 3600
 
     # Google Wallet (not secret). Full class id is "<issuer_id>.<class_suffix>".
