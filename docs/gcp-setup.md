@@ -18,6 +18,10 @@ Poznač si **Project ID** (nemusí sa zhodovať s názvom). V Cloud Shell:
 gcloud config set project PROJECT_ID
 ```
 
+> **Pri každom novom otvorení Cloud Shell** over, že pracuješ v správnom projekte:
+> `gcloud config get-value project`. Ak je iný, nastav ho znova. Príkazy nad nesprávnym projektom
+> skončia chybou typu „Cannot find service [ess]“ alebo „API not enabled“.
+
 ## 2. Fakturácia a rozpočtové upozornenie
 
 Cloud Run vyžaduje prepojený fakturačný účet (platobná karta), aj keď sa zmestíme do bezplatného limitu.
