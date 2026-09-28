@@ -65,10 +65,11 @@ def test_lookup_ignores_case_and_diacritics(session):
     assert members.find_by_lookup(session, "stefan", "kovac", 1966) == []
 
 
-def test_email_and_card_number_are_unique(session):
-    _member(session, email="a@example.org", card_number="1234")
-    with pytest.raises(DomainError, match="email_in_use"):
-        _member(session, first="Iný", email=" a@example.org")
+def test_shared_email_allowed_card_number_unique(session):
+    husband = _member(session, first="Ján", email="rodina@example.org", card_number="1234")
+    wife = _member(session, first="Jana", last="Nováková", email=" Rodina@Example.org")
+    assert [m.id for m in members.members_sharing_email(session, husband)] == [wife.id]
+    assert members.members_sharing_email(session, _member(session, first="Sám", email="sam@example.org")) == []
     with pytest.raises(DomainError, match="card_number_in_use"):
         _member(session, first="Iný", card_number="1234")
 

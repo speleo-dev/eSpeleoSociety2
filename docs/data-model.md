@@ -1,6 +1,6 @@
 # Dátový model – fáza 1 (návrh na odsúhlasenie)
 
-Stav: implementované (migrácie `0002`–`0004`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
+Stav: implementované (migrácie `0002`–`0005`, 2026-09-28). Pokrýva fázu 1 (administrácia). Tabuľky pre eCP, platby a portál pribudnú
 v ďalších fázach.
 
 Konvencie:
@@ -43,11 +43,11 @@ Klub **„SSS – nezaradení“**:
 | `card_number_enc`, `card_number_bidx` | bytes | číslo papierového preukazu, voliteľné, dopĺňa sa ručne; jedinečné |
 | `member_since` | date | člen SSS od (pri importe z papierovej evidencie ručne); zobrazuje sa pri overení |
 | `birth_date_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP |
-| `email_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP |
+| `email_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP; **nie je jedinečný** (manželia) |
 | `address_enc` | bytes | bydlisko, voliteľné |
 | `phone_enc` | bytes | voliteľné; telefón predsedu skupiny a predsedu SSS sa zobrazuje na overovacej stránke |
 | `lookup_bidx` | bytes | HMAC(meno, priezvisko, rok narodenia) – vyhľadanie pri žiadosti o eCP |
-| `email_bidx` | bytes | HMAC(e-mail) – kontrola, že e-mail nepoužíva iný člen |
+| `email_bidx` | bytes | HMAC(e-mail) – nie jedinečný; zobrazenie, kto e-mail zdieľa; člena nikdy neidentifikuje sám |
 | `reduced_fee` | bool | zľavnené členské (R13) |
 | `expelled_at`, `expelled_reason` | date, text | vylúčenie zo SSS; potom sa nedá vytvoriť žiadne členstvo |
 | `sss_ended_at`, `sss_ended_note` | date, text | členstvo v SSS ukončené rozhodnutím predsedníctva (nie vylúčenie – dá sa obnoviť) |

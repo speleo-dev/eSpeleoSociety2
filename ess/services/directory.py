@@ -23,7 +23,7 @@ from ess.models import (
     PositionHolder,
 )
 from ess.security.crypto import normalize_for_index
-from ess.services.members import MemberData, SssStatus, read_member
+from ess.services.members import MemberData, SssStatus, members_sharing_email, read_member
 
 
 @dataclass
@@ -119,6 +119,7 @@ class MemberDetail:
     history: list[MembershipView]
     positions: list[PositionView]
     certificates: list[CertificateView]
+    shared_email_with: list[tuple[uuid.UUID, str]]
 
 
 def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None:
@@ -147,6 +148,7 @@ def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None
                          h.valid_from, h.valid_to)
             for h in holders
         ],
+        shared_email_with=[(m.id, read_member(m).full_name()) for m in members_sharing_email(session, member)],
         certificates=[
             CertificateView(c.id, t.name, c.valid_from, c.valid_to, c.note)
             for c, t in session.execute(

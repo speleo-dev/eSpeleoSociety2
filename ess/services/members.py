@@ -57,7 +57,15 @@ def lookup_index(first_name: str, last_name: str, birth_year: int) -> bytes | No
 
 
 def email_index(email: str | None) -> bytes | None:
+    """Blind index of an e-mail (case-insensitive). E-mails are NOT unique - spouses may share one."""
     return pii.blind_index(_BIDX_EMAIL, email.strip() if email else email)
+
+
+def members_sharing_email(session: Session, member: Member) -> list[Member]:
+    """Other members with the same e-mail (shown as information, not an error)."""
+    if member.email_bidx is None:
+        return []
+    return list(session.scalars(select(Member).where(Member.email_bidx == member.email_bidx, Member.id != member.id)))
 
 
 def _validate(data: MemberData) -> None:
@@ -92,7 +100,7 @@ def read_member(member: Member) -> MemberData:
 
 
 def _check_unique(session: Session, member: Member) -> None:
-    for column, code in ((Member.email_bidx, "email_in_use"), (Member.card_number_bidx, "card_number_in_use")):
+    for column, code in ((Member.card_number_bidx, "card_number_in_use"),):
         value = getattr(member, column.key)
         if value is None:
             continue

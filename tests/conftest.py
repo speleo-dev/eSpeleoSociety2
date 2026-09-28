@@ -40,9 +40,14 @@ def migrated_db(monkeypatch):
 
     monkeypatch.setenv("ESS_DATABASE_URL", TEST_DATABASE_URL)
     _clear_caches()
-    config = Config("alembic.ini")
-    command.downgrade(config, "base")
-    command.upgrade(config, "head")
+    # Start every test from an empty schema (faster and independent of downgrade paths).
+    from sqlalchemy import text
+
+    with get_engine().begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+    get_engine().dispose()
+    command.upgrade(Config("alembic.ini"), "head")
     yield get_sessionmaker()
     get_engine().dispose()
 

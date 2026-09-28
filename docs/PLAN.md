@@ -73,6 +73,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R19** – Ukončenie členstva v skupine platí len pre skupinu. Ak člen nemá žiadnu skupinu, čaká na
   rozhodnutie predsedníctva: členstvo v SSS zanikne (dá sa neskôr obnoviť), alebo sa presunie do
   „SSS – nezaradení“. Zapisuje administrátor. Vylúčenie (valné zhromaždenie) je nevratné.
+- **R21** – E-mail **nie je jedinečný** (manželia často zdieľajú jeden). Člena nikdy neidentifikujeme len podľa
+  e-mailu; v detaile člena sa zobrazí, s kým e-mail zdieľa.
+- **R22** – Žiadosť o eCP dopĺňa chýbajúce údaje: **číslo preukazu je povinné**; ak IS nemá „člen SSS od“,
+  žiadateľ ho musí zadať. Chýbajúce údaje sa uložia po schválení žiadosti administrátorom.
 - **R20** – Všetko, čo čaká na administrátora (aktivácie, rozhodnutia o členstve v SSS, neskôr žiadosti
   o eCP), je v jednom zozname **„Požiadavky“** s popisom a tlačidlami v každom riadku (tabuľka `tasks`).
 - **R18** – QR v eCP je **jednorazový**: po overení sa token zneplatní a eCP v Google Wallet dostane nový QR.
@@ -210,10 +214,13 @@ Zostáva: šablóna a import zjednoteného zoznamu členov.
 - Kontroly: vylúčený sa nesmie znova stať členom, práve jedna primárna skupina.
 
 ### Fáza 2 – eCP a kartička
-- Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail (povinné) → overenie e-mailu
+- Verejná žiadosť: meno, priezvisko, rok narodenia, skupina, e-mail, **číslo preukazu** (povinné; ak IS nemá
+  „člen SSS od“, aj ten) → overenie e-mailu
   („klikni sem“) → vyhľadanie člena. **Pokračovať sa dá len pri presnej zhode všetkých údajov.**
   Ak IS nemá dátum narodenia alebo e-mail, alebo sa e-mail nezhoduje, žiadosť sa zastaví s pokynom
-  kontaktovať predsedu skupiny alebo administrátora SSS → fotka tváre + súhlasy (GDPR, notifikácie)
+  kontaktovať predsedu skupiny alebo administrátora SSS. Číslo preukazu: ak ho IS má, musí sa zhodovať
+  (inak rovnako zastaviť); ak ho IS nemá, uloží sa po schválení (musí byť jedinečné). Rovnako „člen SSS od“.
+  → fotka tváre + súhlasy (GDPR, notifikácie)
   + voľba PDF kartičky.
 - Obrazovka spracovania žiadostí: schváliť / zamietnuť s dôvodom (napr. nevyhovujúca fotka).
 - Vydanie: Google Wallet preukaz, PDF kartička, e-mail s odkazmi.

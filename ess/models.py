@@ -84,7 +84,8 @@ class Member(TimestampMixin, Base):
     memberships: Mapped[list["Membership"]] = relationship(back_populates="member")
 
     __table_args__ = (
-        Index("uq_members_email_bidx", "email_bidx", unique=True, postgresql_where=text("email_bidx IS NOT NULL")),
+        # Not unique: spouses often share one e-mail. Never identify a member by e-mail alone.
+        Index("ix_members_email_bidx", "email_bidx"),
         Index(
             "uq_members_card_number_bidx",
             "card_number_bidx",

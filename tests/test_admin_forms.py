@@ -51,14 +51,14 @@ def test_create_member_errors_keep_values(client, google, migrated_db):
     login(client, google)
     club_id = _club(migrated_db)
     with migrated_db() as s:
-        members.create_member(s, SYSTEM, MemberData("Iný", "Člen", email="taken@example.org"))
+        members.create_member(s, SYSTEM, MemberData("Iný", "Člen", card_number="777"))
         s.commit()
-    form = {"csrf_token": csrf(client), "first_name": "Nový", "last_name": "Zadávaný", "email": "taken@example.org",
+    form = {"csrf_token": csrf(client), "first_name": "Nový", "last_name": "Zadávaný", "card_number": "777",
             "club_id": str(club_id)}
     response = client.post("/admin/members/new", data=form)
     assert response.status_code == 400
-    assert "Tento e-mail už má iný člen." in response.text and 'value="Zadávaný"' in response.text
-    bad_date = client.post("/admin/members/new", data={**form, "email": "", "birth_date": "31.12.1980"})
+    assert "Toto číslo preukazu už má iný člen." in response.text and 'value="Zadávaný"' in response.text
+    bad_date = client.post("/admin/members/new", data={**form, "card_number": "", "birth_date": "31.12.1980"})
     assert bad_date.status_code == 400 and "Neplatný dátum." in bad_date.text
 
 
@@ -140,3 +140,17 @@ def test_documents_page(client, google):
     client.post("/admin/documents", data={"csrf_token": token, "title": "Zlý", "url": "ftp://x"}, follow_redirects=False)
     page = client.get("/admin/documents").text
     assert "Stanovy" in page and "Odkaz musí začínať https://" in page
+
+
+def test_member_page_shows_shared_email(client, google, migrated_db):
+    club_id = _club(migrated_db)
+    login(client, google)
+    ids = []
+    for first in ("Ján", "Jana"):
+        r = client.post("/admin/members/new", data={"csrf_token": csrf(client), "first_name": first,
+                                                   "last_name": "Rodinný", "email": "rodina@example.org",
+                                                   "club_id": str(club_id)}, follow_redirects=False)
+        assert r.status_code == 303
+        ids.append(_member_id_from(r))
+    page = client.get(f"/admin/members/{ids[0]}").text
+    assert "E-mail zdieľa aj" in page and "Jana Rodinný" in page

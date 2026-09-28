@@ -43,7 +43,6 @@ ERRORS = {
     "name_required": "Vyplňte meno (názov).",
     "invalid_email": "Neplatná e-mailová adresa.",
     "invalid_date": "Neplatný dátum.",
-    "email_in_use": "Tento e-mail už má iný člen.",
     "card_number_in_use": "Toto číslo preukazu už má iný člen.",
     "club_name_in_use": "Skupina s týmto názvom už existuje.",
     "club_required": "Vyberte skupinu.",

@@ -14,7 +14,8 @@
 <p><span class="chip">{{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">zľavnené členské</span>{% endif %}</p>
 <dl>
   <dt>Dátum narodenia</dt><dd>{{ d.data.birth_date|date or "—" }}</dd>
-  <dt>E-mail</dt><dd>{{ d.data.email or "—" }}</dd>
+  <dt>E-mail</dt><dd>{{ d.data.email or "—" }}{% if d.shared_email_with %}<br><span class="muted">E-mail zdieľa aj:
+    {% for id, name in d.shared_email_with %}<a href="/admin/members/{{ id }}">{{ name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</dd>
   <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
   <dt>Bydlisko</dt><dd>{{ d.data.address or "—" }}</dd>
   <dt>Číslo preukazu</dt><dd>{{ d.data.card_number or "—" }}</dd>

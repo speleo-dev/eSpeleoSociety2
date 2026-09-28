@@ -64,10 +64,13 @@ def seed(member_count: int, rng_seed: int) -> None:
     settings = get_settings()
     if settings.environment == "prod":
         sys.exit("Refusing to seed test data in production (ESS_ENVIRONMENT=prod).")
-    rng = random.Random(rng_seed)
-    session = get_sessionmaker()()
-    if session.scalar(select(func.count()).select_from(Member)):
-        sys.exit("The database already contains members - test data are only for an empty database.")
+    with get_sessionmaker()() as session:
+        if session.scalar(select(func.count()).select_from(Member)):
+            sys.exit("The database already contains members - test data are only for an empty database.")
+        _seed(session, random.Random(rng_seed), member_count)
+
+
+def _seed(session, rng: random.Random, member_count: int) -> None:
 
     start = date(2026, 1, 1)
     clubs = []

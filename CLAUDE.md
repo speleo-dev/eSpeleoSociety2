@@ -87,6 +87,7 @@ administrátor v aplikácii.
 - Osobné údaje (GDPR) sú v DB **šifrované na úrovni aplikácie**; kľúč je mimo DB. Vyhľadávanie cez
   blind index (HMAC), nie cez čitateľný text.
 - Osobné údaje nikdy do logov, chybových hlášok ani URL.
+- E-mail nie je jedinečný (manželia ho zdieľajú) – člena nikdy neidentifikuj len podľa e-mailu.
 - Každá zmena dát sa zapisuje do auditného logu (kto, kedy, čo) v rovnakej transakcii.
 - Autorizácia sa kontroluje na serveri pri každej požiadavke (predseda vidí len svoju skupinu).
 - Admin: Google prihlásenie (OIDC, len `openid email profile`), prístup len pre e-maily evidované ako admin.
