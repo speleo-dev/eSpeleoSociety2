@@ -29,4 +29,8 @@ vrátane čakateľov, bydliska a čísla preukazu. Tlačidlá „Preniesť sprá
 administráciu klubu“ (zástupca), všetky s potvrdením.
 Hotové (krok 4): na portáli platné dokumenty. Novinky sa nerobia (R41) – tabuľka `news` z migrácie `0020` sa
 v `0021` zmazala.
-Zostáva: notifikácie do eCP, hlásenie vstupu do jaskyne.
+Hotové (krok 5): notifikácie do eCP (R41) – `ecp_notifications`, `ecp_notification_deliveries` (migrácia `0022`),
+`ess/services/ecp_notifications.py`, administrácia **Notifikácie** (`/admin/notifications`). Len administrátor, celej SSS,
+len členom s aktívnym eCP a súhlasom „oznámenia“ (posledný záznam v `consents`); najviac 3 za 24 hodín; odosiela sa
+po dávkach 50, chybné doručenie sa skúša 5-krát.
+Zostáva: hlásenie vstupu do jaskyne.

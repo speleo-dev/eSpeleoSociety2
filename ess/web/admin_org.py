@@ -297,6 +297,30 @@ def document_save(
                "Dokument bol uložený.")
 
 
+@router.get("/notifications")
+def notifications_page(request: Request, admin: Admin, session: Db):
+    from ess.services import ecp_notifications as n
+
+    return render(request, "admin/notifications.html", admin, session, rows=n.history(session),
+                  recipients=len(n.recipients(session)), pending=n.pending_count(session),
+                  left_today=max(0, n.DAILY_LIMIT - n.sent_last_day(session)))
+
+
+@router.post("/notifications", dependencies=[Depends(verify_csrf)])
+def notification_send(request: Request, admin: Admin, session: Db, header: Annotated[str, Form()] = "",
+                      body: Annotated[str, Form()] = ""):
+    from ess.services import ecp_notifications
+
+    return act(request, session, "/admin/notifications",
+               lambda: ecp_notifications.send(session, admin.actor, header, body),
+               "Notifikácia sa odosiela do eCP.")
+
+
+@router.post("/notifications/push", dependencies=[Depends(verify_csrf)])
+def notification_push(request: Request, admin: Admin, session: Db):
+    return act(request, session, "/admin/notifications", lambda: None, "Ďalšia dávka bola odoslaná.")
+
+
 @router.post("/documents/{document_id}/delete", dependencies=[Depends(verify_csrf)])
 def document_delete(request: Request, document_id: uuid.UUID, admin: Admin, session: Db):
     return act(request, session, "/admin/documents", lambda: documents.delete_document(session, admin.actor, document_id),

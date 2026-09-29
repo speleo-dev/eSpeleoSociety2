@@ -1,0 +1,32 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Notifikácie do eCP{% endblock %}
+{% block body %}
+<h1>Notifikácie do eCP</h1>
+<p>Správa sa zobrazí v preukaze eCP v Peňaženke Google a telefón člena upozorní. Dostanú ju všetci členovia
+   s aktívnym eCP, ktorí súhlasili s oznámeniami – teraz <strong>{{ recipients }}</strong>.</p>
+<p class="muted">Google Wallet dovolí najviac 3 upozornenia na preukaz za 24 hodín – dnes ešte {{ left_today }}.
+   Nepíšte do notifikácií osobné údaje.</p>
+{% if left_today %}
+<form method="post" class="form" onsubmit="return confirm('Odoslať notifikáciu všetkým členom so súhlasom? Nedá sa vrátiť.')">
+  {% include "admin/_csrf.html" %}
+  <label>Nadpis * (najviac 100 znakov)<input name="header" required maxlength="100"></label>
+  <label>Text * (najviac 500 znakov)<textarea name="body" rows="4" required maxlength="500"></textarea></label>
+  <p><button class="primary">Odoslať</button></p>
+</form>
+{% endif %}
+{% if pending %}
+<p>Na odoslanie čaká <strong>{{ pending }}</strong> notifikácií do eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.</p>
+<form method="post" action="/admin/notifications/push">{% include "admin/_csrf.html" %}<button>Odoslať ďalšiu dávku</button></form>
+{% endif %}
+<h2>Odoslané</h2>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Kedy</th><th>Nadpis</th><th>Doručené</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.notification.created_at|local_time }}</td>
+        <td><strong>{{ r.notification.header }}</strong><br><span class="muted">{{ r.notification.body }}</span></td>
+        <td data-label="Doručené">{{ r.sent }} z {{ r.notification.recipients }}{% if r.failed %} ({{ r.failed }} nedoručených){% endif %}</td></tr>
+  {% else %}<tr><td colspan="3" class="muted">Zatiaľ žiadne notifikácie.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

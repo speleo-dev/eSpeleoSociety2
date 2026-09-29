@@ -649,3 +649,35 @@ class MemberPasskey(Base):
     sign_count: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EcpNotification(Base):
+    """A message sent by an administrator to the eCP of all members who agreed to notifications (R41)."""
+
+    __tablename__ = "ecp_notifications"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    header: Mapped[str] = mapped_column(String(100))
+    body: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    recipients: Mapped[int] = mapped_column(default=0)
+
+
+class EcpNotificationDelivery(Base):
+    """One notification to one eCP; sent in batches after commits (`sent_at` empty = waiting)."""
+
+    __tablename__ = "ecp_notification_deliveries"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    notification_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ecp_notifications.id"), index=True)
+    pass_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ecp_passes.id"))
+    attempts: Mapped[int] = mapped_column(default=0)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # gave up after repeated errors
+
+    __table_args__ = (
+        Index("uq_ecp_notification_deliveries", "notification_id", "pass_id", unique=True),
+        Index("ix_ecp_notification_deliveries_waiting", "notification_id",
+              postgresql_where=text("sent_at IS NULL AND failed_at IS NULL")),
+    )

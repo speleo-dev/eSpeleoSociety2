@@ -38,12 +38,14 @@ def dependency(request: Request, provider):
 
 def push_ecp_changes(request: Request, session: Session) -> None:
     """After a commit: send changed eCP states and content to Google Wallet (R25, R36). Failures are retried next time."""
-    from ess.services import ecp_content, ecp_state
+    from ess.services import ecp_content, ecp_notifications, ecp_state
     from ess.storage import get_media_store
     from ess.wallet import get_wallet
 
     if ecp_state.has_pending(session):
         ecp_state.push_pending(session, dependency(request, get_wallet), dependency(request, get_media_store))
+    if ecp_notifications.has_pending(session):
+        ecp_notifications.push_pending(session, dependency(request, get_wallet))
     if ecp_content.has_pending(session):
         ecp_content.push_pending(session, dependency(request, get_wallet), base_url=base_url(request))
 

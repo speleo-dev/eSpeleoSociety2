@@ -99,6 +99,13 @@ class WalletClient(Protocol):
 
     def save_url(self, object_id: str) -> str: ...
 
+    def add_message(self, object_id: str, message_id: str, header: str, body: str) -> None: ...
+
+
+def _message(message_id: str, header: str, body: str) -> dict:
+    """A message shown in the pass; TEXT_AND_NOTIFY also notifies the phone (Google: at most 3 a day)."""
+    return {"message": {"id": message_id, "header": header, "body": body, "messageType": "TEXT_AND_NOTIFY"}}
+
 
 class GoogleWalletClient:
     """Real client; credentials come from the runtime service account (no key file)."""
@@ -141,6 +148,15 @@ class GoogleWalletClient:
             raise WalletError("patch: connection failed") from None
         self._check(response, "patch")
 
+    def add_message(self, object_id: str, message_id: str, header: str, body: str) -> None:
+        session, _ = self._session("https://www.googleapis.com/auth/wallet_object.issuer")
+        try:
+            response = session.post(f"{WALLET_API}/genericObject/{object_id}/addMessage",
+                                    json=_message(message_id, header, body), timeout=20)
+        except OSError:
+            raise WalletError("message: connection failed") from None
+        self._check(response, "message")
+
     def save_url(self, object_id: str) -> str:
         session, email = self._session("https://www.googleapis.com/auth/cloud-platform")
         claims = {"iss": email, "aud": "google", "typ": "savetowallet", "iat": int(time.time()), "origins": [],
@@ -174,6 +190,11 @@ class MemoryWalletClient:
 
     def save_url(self, object_id: str) -> str:
         return SAVE_URL + "test-" + object_id
+
+    def add_message(self, object_id: str, message_id: str, header: str, body: str) -> None:
+        if object_id not in self.objects:
+            raise WalletError("message: HTTP 404")
+        self.objects[object_id].setdefault("messages", []).append(_message(message_id, header, body)["message"])
 
 
 @lru_cache
