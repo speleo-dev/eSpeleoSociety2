@@ -186,8 +186,11 @@ def home(request: Request, session: Db):
     session.commit()  # last use of the device
     member = session.get(Member, current.member_id)
     offer = request.session.pop("portal_offer_passkey", False) or passkeys.count(session, member.id) == 0
+    from ess.services import cave_trips
+
     return _page(request, "portal/home.html", home=portal.home(session, member), offer_passkey=offer,
-                 devices=portal_auth.devices(session, member.id), current_device=current.id)
+                 devices=portal_auth.devices(session, member.id), current_device=current.id,
+                 trip=cave_trips.open_trip(session, member.id), flash=request.session.pop("portal_flash", None))
 
 
 @router.post("/portal/logout", dependencies=[Depends(verify_public_csrf)])
@@ -333,3 +336,74 @@ def club_resign(request: Request, club_id: uuid.UUID, session: Db):
 
     return _club_action(request, session, club_id, lambda actor: delegations.resign(session, actor, club_id),
                         "Administráciu skupiny ste zrušili, práva má znova predseda.")
+
+
+# --- cave trips (R41) ----------------------------------------------------------------------------------
+
+
+def _local_datetime(value: str):
+    """<input type=datetime-local> in Slovak time -> aware datetime (UTC)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    try:
+        return datetime.fromisoformat(value).replace(tzinfo=ZoneInfo("Europe/Bratislava"))
+    except ValueError:
+        raise DomainError("invalid_return_time") from None
+
+
+def _trip_action(request: Request, session: Session, action, success: str):
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    try:
+        action(member)
+        session.commit()
+        request.session["portal_flash"] = {"kind": "ok", "text": success}
+    except DomainError as exc:
+        session.rollback()
+        request.session["portal_flash"] = {"kind": "error", "text": ERRORS.get(exc.code, exc.code)}
+    return RedirectResponse("/portal#jaskyna", status_code=303)
+
+
+@router.post("/portal/cave", dependencies=[Depends(verify_public_csrf)])
+def cave_start(request: Request, session: Db, cave: Annotated[str, Form()] = "",
+               companions: Annotated[str, Form()] = "", planned_return: Annotated[str, Form()] = ""):
+    from ess.services import cave_trips
+
+    return _trip_action(request, session, lambda m: cave_trips.start(session, m.id, cave, companions,
+                                                                     _local_datetime(planned_return)),
+                        "Vstup do jaskyne je nahlásený. Po návrate kliknite na „Som vonku“.")
+
+
+@router.post("/portal/cave/extend", dependencies=[Depends(verify_public_csrf)])
+def cave_extend(request: Request, session: Db, planned_return: Annotated[str, Form()] = ""):
+    from ess.services import cave_trips
+
+    return _trip_action(request, session, lambda m: cave_trips.extend(session, m.id, _local_datetime(planned_return)),
+                        "Čas návratu bol predĺžený.")
+
+
+@router.post("/portal/cave/finish", dependencies=[Depends(verify_public_csrf)])
+def cave_finish(request: Request, session: Db):
+    from ess.services import cave_trips
+
+    return _trip_action(request, session, lambda m: cave_trips.finish(session, m.id), "Vitajte späť!")
+
+
+# --- scheduler -----------------------------------------------------------------------------------------
+
+
+@router.post("/internal/tick")
+def scheduler_tick(request: Request, session: Db):
+    """Called by Cloud Scheduler every 5 minutes: cave trip reminders, then waiting Wallet batches."""
+    from ess.services import cave_trips
+
+    token = get_settings().scheduler_token
+    given = request.headers.get("x-ess-scheduler-token", "")
+    if not token or not secrets.compare_digest(given, token):
+        raise HTTPException(status_code=404)
+    result = cave_trips.check(session)
+    session.commit()
+    after_commit(request, session)
+    return JSONResponse({"reminders": result.reminders, "alerts": result.alerts, "no_chair": result.no_chair})

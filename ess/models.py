@@ -681,3 +681,24 @@ class EcpNotificationDelivery(Base):
         Index("ix_ecp_notification_deliveries_waiting", "notification_id",
               postgresql_where=text("sent_at IS NULL AND failed_at IS NULL")),
     )
+
+
+class CaveTrip(Base):
+    """A member reports going into a cave (R41). Reminder to the member 30 min after the planned return,
+    alert to the chair of the primary club 30 min later, unless the member confirms being out."""
+
+    __tablename__ = "cave_trips"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    cave_enc: Mapped[bytes] = mapped_column(LargeBinary)  # where (with the time it says where the person is)
+    companions_enc: Mapped[bytes | None] = mapped_column(LargeBinary)  # names of other people
+    planned_return_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    alert_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index("uq_cave_trips_open", "member_id", unique=True, postgresql_where=text("returned_at IS NULL")),
+    )

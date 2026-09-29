@@ -1,0 +1,9 @@
+Dobrý deň {{ first_name }},
+
+podľa hlásenia na portáli eSS ste sa mali vrátiť z jaskyne {{ cave }} do {{ planned|local_time }}.
+Ak ste už vonku, potvrďte to prosím na portáli tlačidlom „Som vonku“: {{ link }}
+Ak potrebujete viac času, predĺžte tam čas návratu.
+
+Ak návrat nepotvrdíte do 30 minút, upozorníme predsedu vašej skupiny.
+
+Slovenská speleologická spoločnosť

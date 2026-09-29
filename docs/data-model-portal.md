@@ -33,4 +33,8 @@ Hotové (krok 5): notifikácie do eCP (R41) – `ecp_notifications`, `ecp_notifi
 `ess/services/ecp_notifications.py`, administrácia **Notifikácie** (`/admin/notifications`). Len administrátor, celej SSS,
 len členom s aktívnym eCP a súhlasom „oznámenia“ (posledný záznam v `consents`); najviac 3 za 24 hodín; odosiela sa
 po dávkach 50, chybné doručenie sa skúša 5-krát.
-Zostáva: hlásenie vstupu do jaskyne.
+Hotové (krok 6): hlásenie vstupu do jaskyne (R41) – `cave_trips` (migrácia `0023`; jaskyňa a spolulezci šifrovane),
+`ess/services/cave_trips.py`; na portáli „Nahlásiť vstup“, „Som vonku“, „Predĺžiť návrat“. Pripomienka členovi 30 min
+a upozornenie predsedovi primárnej skupiny 60 min po plánovanom návrate; kontrolu spúšťa Cloud Scheduler
+(`POST /internal/tick` s hlavičkou `X-ESS-Scheduler-Token`, `docs/gcp-setup.md` krok 18), ktorý zároveň posiela
+čakajúce dávky do Google Wallet.

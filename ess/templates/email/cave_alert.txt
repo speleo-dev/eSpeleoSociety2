@@ -1,0 +1,13 @@
+Dobrý deň {{ chair_name }},
+
+člen vašej skupiny {{ full_name }} nahlásil na portáli eSS vstup do jaskyne a nepotvrdil návrat.
+
+Jaskyňa: {{ cave }}
+Spolulezci: {{ companions or "neuvedení" }}
+Plánovaný návrat: {{ planned|local_time }}
+Telefón člena: {{ phone or "neuvedený" }}
+
+Pripomienku sme mu poslali pred 30 minútami. Skúste ho kontaktovať; ak sa ho nepodarí zastihnúť,
+zvážte privolanie Speleologickej záchrannej služby (tel. 112).
+
+Slovenská speleologická spoločnosť

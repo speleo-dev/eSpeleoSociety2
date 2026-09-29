@@ -13,6 +13,35 @@
   <button class="primary" data-passkey-register hidden>Nastaviť prihlásenie odtlačkom / tvárou</button>
 </section>
 {% endif %}
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<h2 id="jaskyna">Vstup do jaskyne</h2>
+{% if trip %}
+<section class="box">
+  <p>Ste v jaskyni <strong>{{ trip.cave }}</strong>{% if trip.companions %} ({{ trip.companions }}){% endif %}.
+     Plánovaný návrat: <strong>{{ trip.trip.planned_return_at|local_time }}</strong>.</p>
+  <form method="post" action="/portal/cave/finish">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="primary">Som vonku</button>
+  </form>
+  <form method="post" action="/portal/cave/extend" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>Nový čas návratu<input type="datetime-local" name="planned_return" required></label>
+    <button>Predĺžiť návrat</button>
+  </form>
+  <p class="muted">Ak návrat nepotvrdíte, 30 minút po plánovanom čase vám príde pripomienka e-mailom a o ďalších 30 minút
+     upozorníme predsedu vašej primárnej skupiny.</p>
+</section>
+{% else %}
+<details><summary>Nahlásiť vstup do jaskyne</summary>
+<form method="post" action="/portal/cave" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label>Jaskyňa *<input name="cave" required maxlength="200"></label>
+  <label>Spolulezci<input name="companions" maxlength="500"></label>
+  <label>Plánovaný návrat *<input type="datetime-local" name="planned_return" required></label>
+  <button class="primary">Nahlásiť vstup</button>
+  <p class="muted">Ak do 30 minút po plánovanom návrate nekliknete na „Som vonku“, príde vám pripomienka; o ďalších
+     30 minút upozorníme predsedu vašej primárnej skupiny.</p>
+</form></details>
+{% endif %}
 <h2>Členstvo</h2>
 <ul>
   {% for club, status, primary in home.clubs %}<li>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>

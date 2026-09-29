@@ -430,6 +430,29 @@ ESS_MEDIA_BUCKET=ess-media-espeleosociety \
 Výsledok: `Clubs created: …, already present: …, logos uploaded: …`. Kódy skupín si môžete skontrolovať
 a upraviť v administrácii (Skupiny → detail skupiny).
 
+## 18. Plánovaná úloha (Cloud Scheduler) – pripomienky jaskyne a dávky do eCP
+
+Aplikácia sa sama „nezobudí“. Cloud Scheduler ju každých 5 minút zavolá na `/internal/tick`: pošle pripomienky
+k hláseniam vstupu do jaskyne (R41) a odošle čakajúce dávky do Google Wallet (notifikácie, platobné odkazy).
+Bezplatne sú 3 úlohy na účet.
+
+```bash
+gcloud config set project espeleosociety
+gcloud services enable cloudscheduler.googleapis.com
+# náhodný token – len do Secret Manager, nikam ho nekopírujte
+openssl rand -hex 32 | tr -d '\n' | gcloud secrets create ess-scheduler-token --data-file=-
+gcloud secrets add-iam-policy-binding ess-scheduler-token \
+  --member="serviceAccount:116532825256-compute@developer.gserviceaccount.com" --role=roles/secretmanager.secretAccessor
+gcloud run services update ess --region europe-west3 --update-secrets ESS_SCHEDULER_TOKEN=ess-scheduler-token:latest
+URL=$(gcloud run services describe ess --region europe-west3 --format='value(status.url)')
+gcloud scheduler jobs create http ess-tick --location europe-west3 --schedule "*/5 * * * *" \
+  --time-zone "Europe/Bratislava" --uri "$URL/internal/tick" --http-method POST \
+  --headers "X-ESS-Scheduler-Token=$(gcloud secrets versions access latest --secret ess-scheduler-token)"
+```
+
+Kontrola: `gcloud scheduler jobs run ess-tick --location europe-west3` a v Cloud Run → Logs má byť požiadavka
+`POST /internal/tick` s kódom 200. Kód 404 = token v úlohe a v službe sa nezhoduje.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).

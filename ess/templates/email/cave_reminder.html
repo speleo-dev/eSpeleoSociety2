@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="sk"><head><meta charset="utf-8"><title>Ste už vonku z jaskyne?</title></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+<div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:5px">
+  <h2>Dobrý deň {{ first_name }},</h2>
+  <p>podľa hlásenia na portáli eSS ste sa mali vrátiť z jaskyne <strong>{{ cave }}</strong> do {{ planned|local_time }}.</p>
+  <p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#0B4A46;color:#fff;text-decoration:none;border-radius:4px">Som vonku / predĺžiť návrat</a></p>
+  <p>Ak návrat nepotvrdíte do 30 minút, upozorníme predsedu vašej skupiny.</p>
+  <p>Slovenská speleologická spoločnosť</p>
+</div>
+</body></html>

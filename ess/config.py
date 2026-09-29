@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     mail_from: str = "Slovenská speleologická spoločnosť <ess@sss.sk>"
 
+    # Shared secret of the Cloud Scheduler job that calls /internal/tick (cave trip reminders, batches).
+    scheduler_token: str | None = None
+
     @property
     def wallet_class_id(self) -> str:
         """Full Google Wallet class id, e.g. 3388000000022877308.member."""

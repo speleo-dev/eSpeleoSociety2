@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="sk"><head><meta charset="utf-8"><title>Člen sa nevrátil z jaskyne</title></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+<div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:5px">
+  <h2>Dobrý deň {{ chair_name }},</h2>
+  <p>člen vašej skupiny <strong>{{ full_name }}</strong> nahlásil na portáli eSS vstup do jaskyne a <strong>nepotvrdil návrat</strong>.</p>
+  <ul>
+    <li>Jaskyňa: {{ cave }}</li>
+    <li>Spolulezci: {{ companions or "neuvedení" }}</li>
+    <li>Plánovaný návrat: {{ planned|local_time }}</li>
+    <li>Telefón člena: {{ phone or "neuvedený" }}</li>
+  </ul>
+  <p>Pripomienku sme mu poslali pred 30 minútami. Skúste ho kontaktovať; ak sa ho nepodarí zastihnúť,
+     zvážte privolanie Speleologickej záchrannej služby (tel. 112).</p>
+  <p>Slovenská speleologická spoločnosť</p>
+</div>
+</body></html>
