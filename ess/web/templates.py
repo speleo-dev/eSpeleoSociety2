@@ -91,6 +91,15 @@ ERRORS = {
     "already_expelled": "Člen už je vylúčený.",
     "member_edit": "Na úpravu údajov tohto člena nemáte oprávnenie.",
     "reduced_fee": "Zľavnené členské môže nastaviť len administrátor.",
+    "member_not_found": "Člen neexistuje.",
+    "club_not_found": "Skupina neexistuje.",
+    "member_payment": "Na túto akciu nemáte oprávnenie.",
+    "fee_already_paid": "Členské na tento rok už je zaplatené.",
+    "payment_account_not_configured": "Nie je nastavený IBAN pre členské (Nastavenia → Členské).",
+    "no_members_selected": "Vyberte aspoň jedného člena.",
+    "member_not_payable": "Niektorý z vybraných členov už má zaplatené alebo je v inej hromadnej platbe.",
+    "reference_not_open": "Platobný odkaz už nie je otvorený (je zaplatený alebo zrušený).",
+    "note_required": "Doplňte poznámku.",
 }
 
 
@@ -189,6 +198,17 @@ templates.env.filters["ecp_state_label"] = lambda state: ECP_STATE_LABELS.get(st
 CARD_REASON_LABELS = {"lost": "nahlásená ako stratená", "stolen": "nahlásená ako ukradnutá",
                       "damaged": "nahradená (poškodená)", None: "neplatná"}
 templates.env.filters["card_reason_label"] = lambda reason: CARD_REASON_LABELS.get(reason, "neplatná")
+PAYMENT_STATUS_LABELS = {"open": "čaká na platbu", "partial": "zaplatené čiastočne", "paid": "zaplatené",
+                         "cancelled": "zrušený"}
+templates.env.filters["payment_status_label"] = lambda status: PAYMENT_STATUS_LABELS.get(status, status)
+
+
+def money(value) -> str:
+    """Amount in Slovak format, e.g. 15,00 €."""
+    return f"{value:.2f}".replace(".", ",") + " €" if value is not None else ""
+
+
+templates.env.filters["money"] = money
 templates.env.filters["task_label"] = task_label
 templates.env.filters["resolution_label"] = resolution_label
 templates.env.filters["task_description"] = task_description

@@ -21,8 +21,7 @@ from ess import audit
 from ess.cards import CardContent
 from ess.models import Club, Member, Membership, SssCard
 from ess.security import pii
-from ess.services import members
-from ess.services import settings
+from ess.services import members, payments
 from ess.services.access import PUBLIC, Actor, DomainError, PermissionDenied, can_manage_club, require_admin
 
 REPLACE_REASONS = ("lost", "stolen", "damaged")
@@ -79,11 +78,8 @@ def _new_card(session: Session, actor: Actor, member: Member, year: int, base_ur
 
 
 def allowed_years(session: Session, today: date | None = None) -> list[int]:
-    """This year; the next year too during the payment period (renewal window before the year end, R27)."""
-    today = today or date.today()
-    window = settings.get_int(session, "renewal_window_days")
-    next_year_opens = date(today.year, 12, 31).toordinal() - window
-    return [today.year, today.year + 1] if today.toordinal() >= next_year_opens else [today.year]
+    """This year; the next year too during the payment period (R27, R33)."""
+    return payments.payment_years(session, today)
 
 
 def can_issue(session: Session, member_id: uuid.UUID, year: int) -> bool:

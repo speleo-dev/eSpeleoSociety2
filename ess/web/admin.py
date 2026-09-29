@@ -42,7 +42,10 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
     issuable = [y for y in sss_cards.allowed_years(session) if sss_cards.can_issue(session, member_id, y)]
+    from ess.web.admin_payments import member_fee_rows
+
     return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, issuable_years=issuable,
+                   **member_fee_rows(session, detail.member),
                    clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
                    cert_types=certificates.active_types(session))
 

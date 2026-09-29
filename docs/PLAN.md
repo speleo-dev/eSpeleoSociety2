@@ -163,6 +163,9 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     referenciou). Pri ďalšej platbe sa sumy sčítajú; keď sedí, pokračuje sa ako pri úplnej platbe.
   - Administrátor môže členské označiť ako zaplatené aj ručne (s poznámkou, audit).
   - Vyrubená suma (plné / zľavnené) sa ukladá pri členskom na rok – história ostane správna aj po zmene sadzby.
+  - **Preplatok:** členské sa označí ako zaplatené a preplatok ide do Požiadaviek administrátorovi.
+  - Hromadná platba ponúkne len členov, ktorí ešte nemajú zaplatené a nie sú v inej otvorenej hromadnej platbe.
+  - Model: `docs/data-model-payments.md`.
 
 ## 4. Architektúra
 

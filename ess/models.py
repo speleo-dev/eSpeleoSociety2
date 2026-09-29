@@ -7,6 +7,7 @@ indexes. Never read or write them directly - use the helpers in `ess.services`.
 import enum
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
@@ -17,6 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     LargeBinary,
+    Numeric,
     String,
     Text,
     func,
@@ -272,6 +274,8 @@ class TaskType(str, enum.Enum):
     MEMBER_ACTIVATION = "member_activation"  # new member / promoted candidate proposed by a club chair
     SSS_DECISION = "sss_decision"  # member left all clubs; presidium decides about SSS membership
     ECP_ISSUE = "ecp_issue"  # submitted eCP application waiting for approval
+    PAYMENT_UNMATCHED = "payment_unmatched"  # bank payment with an unknown reference (no member)
+    PAYMENT_OVERPAID = "payment_overpaid"  # more was paid than owed: refund or gift
 
 
 class TaskStatus(str, enum.Enum):
@@ -294,8 +298,9 @@ class Task(Base):
     id: Mapped[uuid.UUID] = _uuid_pk()
     task_type: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(16), default=TaskStatus.OPEN.value)
-    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    member_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("members.id"), index=True)
     membership_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("memberships.id"))
+    bank_transaction_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("bank_transactions.id"))
     club_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clubs.id"))
     context: Mapped[dict | None] = mapped_column(JSONB)  # e.g. {"from_status": "candidate"}; no personal data
     requested_by: Mapped[str | None] = mapped_column(String(64))
@@ -468,3 +473,103 @@ class SssCard(Base):
     __table_args__ = (
         Index("uq_sss_cards_member_year", "member_id", "year", unique=True, postgresql_where=text("revoked_at IS NULL")),
     )
+
+
+# --- phase 3: payments (docs/data-model-payments.md) ---------------------------------------------------------
+
+
+class Fee(TimestampMixin, Base):
+    """Membership fee of a member for one year. The amount is fixed when the fee is assessed."""
+
+    __tablename__ = "fees"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    year: Mapped[int]
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    reduced: Mapped[bool] = mapped_column(Boolean, default=False)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    payment_reference_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("payment_references.id"))
+    paid_manually_by: Mapped[str | None] = mapped_column(String(64))
+    note: Mapped[str | None] = mapped_column(Text)
+
+    __table_args__ = (Index("uq_fees_member_year", "member_id", "year", unique=True),)
+
+
+class PaymentReferenceKind(str, enum.Enum):
+    MEMBER = "member"  # a member pays for themselves (link in the eCP)
+    BULK = "bulk"  # a club chair pays for selected members
+
+
+class PaymentReferenceStatus(str, enum.Enum):
+    OPEN = "open"
+    PARTIAL = "partial"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+class PaymentReference(TimestampMixin, Base):
+    """Code sent in the "payer reference" field (R35); maps a payment to fees."""
+
+    __tablename__ = "payment_references"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    code: Mapped[str] = mapped_column(String(12), unique=True)
+    kind: Mapped[str] = mapped_column(String(8))
+    year: Mapped[int]
+    club_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clubs.id"))
+    created_by: Mapped[str | None] = mapped_column(String(64))
+    expected_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    paid_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
+    status: Mapped[str] = mapped_column(String(10), default=PaymentReferenceStatus.OPEN.value)
+
+    items: Mapped[list["PaymentReferenceItem"]] = relationship(back_populates="reference")
+
+    __table_args__ = (
+        Index("ix_payment_references_status", "status"),
+        CheckConstraint("kind IN ('member', 'bulk')", name="ck_payment_references_kind"),
+        CheckConstraint("status IN ('open', 'partial', 'paid', 'cancelled')", name="ck_payment_references_status"),
+    )
+
+
+class PaymentReferenceItem(Base):
+    __tablename__ = "payment_reference_items"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    reference_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("payment_references.id"), index=True)
+    fee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("fees.id"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+
+    reference: Mapped[PaymentReference] = relationship(back_populates="items")
+    fee: Mapped[Fee] = relationship()
+
+
+class BankStatement(Base):
+    """An uploaded bank statement; the same file cannot be uploaded twice."""
+
+    __tablename__ = "bank_statements"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    file_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    file_format: Mapped[str] = mapped_column(String(16))
+    uploaded_by: Mapped[str | None] = mapped_column(String(64))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BankTransaction(Base):
+    """An incoming payment from a bank statement."""
+
+    __tablename__ = "bank_transactions"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    statement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bank_statements.id"), index=True)
+    bank_ref: Mapped[str] = mapped_column(String(100), unique=True)
+    booked_on: Mapped[date] = mapped_column(Date)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    currency: Mapped[str] = mapped_column(String(3))
+    payer_reference: Mapped[str | None] = mapped_column(String(140))
+    payer_name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    payer_iban_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    payment_reference_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("payment_references.id"))
+    result: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

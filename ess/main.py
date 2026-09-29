@@ -11,7 +11,7 @@ from starlette.staticfiles import StaticFiles
 from pathlib import Path
 
 from ess.config import get_settings
-from ess.web import admin, admin_ecp, admin_members, admin_org, auth, public
+from ess.web import admin, admin_ecp, admin_members, admin_org, admin_payments, auth, public
 from ess.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_members.router)
     app.include_router(admin_org.router)
     app.include_router(admin_ecp.router)
+    app.include_router(admin_payments.router)
     app.include_router(admin.router)
     app.include_router(public.router)
     app.include_router(public.verify_router)

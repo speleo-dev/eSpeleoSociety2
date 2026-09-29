@@ -1,0 +1,40 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Platobný odkaz {{ ref.code }}{% endblock %}
+{% block body %}
+<h1>{% if ref.kind == "bulk" %}Hromadná platba{% else %}Platba člena{% endif %} – členské {{ ref.year }}</h1>
+<dl>
+  <dt>Referencia platiteľa</dt><dd><code>{{ ref.code }}</code></dd>
+  {% if club %}<dt>Skupina</dt><dd><a href="/admin/clubs/{{ club.id }}">{{ club.name }}</a></dd>{% endif %}
+  <dt>Suma</dt><dd>{{ ref.expected_amount|money }}</dd>
+  <dt>Prijaté</dt><dd>{{ ref.paid_amount|money }}</dd>
+  <dt>Stav</dt><dd>{{ ref.status|payment_status_label }}</dd>
+  <dt>Vytvorený</dt><dd>{{ ref.created_at|local_time }}</dd>
+</dl>
+
+{% if link %}
+<h2>Zaplatiť {{ remaining|money }}</h2>
+<p><a href="{{ link }}" target="_blank" rel="noopener noreferrer"><button class="primary">Otvoriť platobný odkaz PAYMe</button></a></p>
+<p><input readonly value="{{ link }}" aria-label="Platobný odkaz" onclick="this.select()" style="width:100%"></p>
+<p class="muted">Odkaz otvorí platbu v mobilnej aplikácii banky. Na počítači payme.sk zobrazí QR kód na zaplatenie.
+  Pri platbe prevodom zadajte do poľa <strong>referencia platiteľa</strong> kód <code>{{ ref.code }}</code>.</p>
+{% elif link_error %}<div class="flash error">{{ link_error }}</div>{% endif %}
+
+<h2>Členovia</h2>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Meno</th><th>Suma</th><th>Členské</th></tr></thead>
+  <tbody>
+  {% for l in lines %}
+    <tr><td><a href="/admin/members/{{ l.member_id }}">{{ l.name }}</a></td><td data-label="Suma">{{ l.amount|money }}</td>
+        <td data-label="Členské">{% if l.fee_paid_at %}zaplatené{% else %}nezaplatené{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if ref.status == "open" %}
+<form method="post" action="/admin/payments/{{ ref.id }}/cancel" onsubmit="return confirm('Zrušiť platobný odkaz?')">
+  {% include "admin/_csrf.html" %}
+  <button>Zrušiť platobný odkaz</button>
+</form>
+<p class="muted">Zrušte, len ak sa platba ešte neuskutočnila (napr. treba vybrať iných členov).</p>
+{% endif %}
+{% endblock %}

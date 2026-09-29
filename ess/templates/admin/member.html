@@ -26,6 +26,36 @@
   {% if d.member.sss_ended_at %}<dt>Členstvo v SSS ukončené</dt><dd>{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</dd>{% endif %}
 </dl>
 
+<h2>Členské</h2>
+{% if fees %}
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Rok</th><th>Suma</th><th>Stav</th></tr></thead>
+  <tbody>
+  {% for f in fees %}
+    <tr><td>{{ f.year }}</td>
+        <td data-label="Suma">{{ f.amount|money }}{% if f.reduced %} (zľavnené){% endif %}</td>
+        <td data-label="Stav">{% if f.paid_at %}zaplatené {{ f.paid_at|local_time }}{% if f.paid_manually_by %} – ručne: {{ f.note }}{% elif f.payment_reference_id %} – <a href="/admin/payments/{{ f.payment_reference_id }}">platba</a>{% endif %}{% else %}nezaplatené{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="muted">Zatiaľ bez záznamu o členskom.</p>{% endif %}
+{% if payable_years %}
+<form class="inline" method="post" action="/admin/members/{{ d.member.id }}/payment-link">
+  {% include "admin/_csrf.html" %}
+  <label>Rok<select name="year">{% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+  <button>Platobný odkaz člena</button>
+</form>
+<details><summary>Označiť členské ako zaplatené</summary>
+<form method="post" action="/admin/members/{{ d.member.id }}/fee-paid" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Rok<select name="year">{% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+    <label>Poznámka * (napr. zaplatené v hotovosti)<input name="note" required></label>
+  </div>
+  <button class="primary">Označiť ako zaplatené</button>
+</form></details>
+{% endif %}
+
 <h2>Kartička SSS</h2>
 {% if d.cards %}
 <div class="table-wrap"><table class="stack">

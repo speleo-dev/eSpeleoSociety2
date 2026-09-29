@@ -15,6 +15,19 @@ def _colour(value: str) -> str:
     return value.upper()
 
 
+def _iban(value: str) -> str:
+    """Empty (not configured yet) or a valid IBAN (ISO 13616 check digits)."""
+    iban = "".join(value.split()).upper()
+    if not iban:
+        return ""
+    if not re.fullmatch(r"[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}", iban):
+        raise ValueError(value)
+    digits = "".join(str(int(c, 36)) for c in iban[4:] + iban[:4])
+    if int(digits) % 97 != 1:
+        raise ValueError(value)
+    return iban
+
+
 def _background(value: str) -> str:
     return "transparent" if value.lower() == "transparent" else _colour(value)
 
@@ -25,6 +38,8 @@ _KNOWN: dict[str, type] = {
     "reduced_fee_amount": Decimal,
     "reduced_fee_age": int,
     "fee_currency": str,
+    "payment_iban": _iban,  # account for membership fees (PAYMe link)
+    "payment_account_name": str,  # beneficiary name in the PAYMe link
     "renewal_window_days": int,  # payment link for the next year appears this many days before year end
     # eCP (phase 2): positive whole numbers
     "ecp_link_valid_hours": int,  # validity of one-time links in e-mails
@@ -39,11 +54,13 @@ _KNOWN: dict[str, type] = {
     "sticker_year": int,
 }
 
-# Built-in defaults (also inserted by migrations 0008 and 0009).
+# Built-in defaults (also inserted by migrations 0008, 0009 and 0013).
 DEFAULTS = {
     "sticker_text_color": "#FFFFFF",
     "sticker_bg_color": "transparent",
     "renewal_window_days": "60",
+    "payment_iban": "",
+    "payment_account_name": "Slovenská speleologická spoločnosť",
     "ecp_link_valid_hours": "24",
     "ecp_application_expiry_days": "14",
     "ecp_qr_grace_minutes": "15",

@@ -11,7 +11,10 @@
     <label>Vek pre zľavu (rokov)<input name="reduced_fee_age" inputmode="numeric" value="{{ values.reduced_fee_age }}"></label>
     <label>Mena<input name="fee_currency" value="{{ values.fee_currency }}"></label>
     <label>Platba na ďalší rok od (dní pred koncom roka)<input name="renewal_window_days" inputmode="numeric" value="{{ values.renewal_window_days }}"></label>
+    <label>IBAN pre členské<input name="payment_iban" value="{{ values.payment_iban }}" autocomplete="off"></label>
+    <label>Názov príjemcu<input name="payment_account_name" value="{{ values.payment_account_name }}"></label>
   </div>
+  <p class="muted">IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.</p>
   <h2>eCP</h2>
   <div class="grid">
     <label>Platnosť odkazu v e-maile (hodín)<input name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}"></label>
