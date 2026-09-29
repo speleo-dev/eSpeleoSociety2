@@ -111,7 +111,7 @@ def test_web_login_flow(migrated_db, client):
     assert r.headers["location"] == "/portal" and "ess_member=" in cookie and "HttpOnly" in cookie
     assert "Max-Age=7776000" in cookie  # 90 days
     home = client.get("/portal").text
-    assert "Ján Žiadateľ" in home and "JS Žiadosť (primárna)" in home
+    assert "Ján Žiadateľ" in home and "JS Žiadosť</a> (primárna)" in home
     assert client.get(f"/p/{key}", follow_redirects=False).headers["location"] == "/portal"
     r = client.post("/portal/logout", data={"csrf_token": token})
     assert "Boli ste odhlásený" in r.text and client.get("/portal").status_code == 401
