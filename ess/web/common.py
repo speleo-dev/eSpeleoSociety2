@@ -37,13 +37,15 @@ def dependency(request: Request, provider):
 
 
 def push_ecp_changes(request: Request, session: Session) -> None:
-    """After a commit: send changed eCP states to Google Wallet (R25). Failures are retried next time."""
-    from ess.services import ecp_state
+    """After a commit: send changed eCP states and content to Google Wallet (R25, R36). Failures are retried next time."""
+    from ess.services import ecp_content, ecp_state
     from ess.storage import get_media_store
     from ess.wallet import get_wallet
 
     if ecp_state.has_pending(session):
         ecp_state.push_pending(session, dependency(request, get_wallet), dependency(request, get_media_store))
+    if ecp_content.has_pending(session):
+        ecp_content.push_pending(session, dependency(request, get_wallet))
 
 
 def base_url(request: Request) -> str:
@@ -64,7 +66,8 @@ def after_commit(request: Request, session: Session) -> bool:
         context = dict(item.context)
         if "link_path" in context:
             context["link"] = base_url(request) + context.pop("link_path")
-        ok = send(mailer, render_mail(item.to, item.subject, item.template, attachments=item.attachments,
+        attachments = [a(base_url(request)) if callable(a) else a for a in item.attachments]
+        ok = send(mailer, render_mail(item.to, item.subject, item.template, attachments=attachments,
                                       **context)) and ok
     push_ecp_changes(request, session)
     return ok

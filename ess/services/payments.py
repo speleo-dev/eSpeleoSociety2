@@ -259,7 +259,15 @@ def _set_paid(session: Session, actor: Actor, fee: Fee, reference: PaymentRefere
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="fee.paid",
                  entity_type="fee", entity_id=str(fee.id),
                  details={"year": fee.year, "reference_id": str(reference.id) if reference else None})
-    session.info.setdefault("paid_fees", []).append(fee.id)  # effects after payment (eCP, card)
+    _after_paid(session, fee)
+
+
+def _after_paid(session: Session, fee: Fee) -> None:
+    """R33, R36: the eCP shows the paid year and its sticker; a member with a card gets the year's card."""
+    from ess.services import ecp_content, sss_cards
+
+    ecp_content.mark_stale(session, fee.member_id)
+    sss_cards.issue_after_payment(session, fee.member_id, fee.year)
 
 
 def mark_paid(session: Session, actor: Actor, member_id: uuid.UUID, year: int, note: str) -> Fee:

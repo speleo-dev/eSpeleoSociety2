@@ -79,7 +79,7 @@ def get_int(session: Session, key: str) -> int:
 
 def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
     require_system_admin(actor)
-    kind = _KNOWN.get(key)
+    kind = _KNOWN.get(key) or (str if re.fullmatch(r"sticker_url_\d{4}", key) else None)  # sticker of a year
     if kind is None:
         raise DomainError("unknown_setting")
     try:

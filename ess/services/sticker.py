@@ -31,8 +31,12 @@ def current(session: Session) -> StickerSettings:
 
 def hero_url(session: Session, year: int | None = None) -> str | None:
     """Sticker for the pass: only the one made for the given (current) year."""
-    s = current(session)
-    return s.url if s.url and s.year == (year or date.today().year) else None
+    year = year or date.today().year
+    url = settings.get_setting(session, f"sticker_url_{year}")
+    if url:
+        return url
+    s = current(session)  # deployed before stickers were kept per year
+    return s.url if s.url and s.year == year else None
 
 
 def _template(session: Session, store) -> bytes:
@@ -58,6 +62,7 @@ def deploy(session: Session, actor: Actor, store, year: int, text_color: str, bg
     url = store.put(f"stickers/{year}-{secrets.token_hex(16)}.png", png, "image/png")
     settings.set_setting(session, actor, "sticker_url", url)
     settings.set_setting(session, actor, "sticker_year", str(year))
+    settings.set_setting(session, actor, f"sticker_url_{year}", url)  # passes paid for that year use it
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="sticker.deploy",
                  entity_type="setting", entity_id="sticker_url", details={"year": year})
     return url

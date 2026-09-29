@@ -38,7 +38,7 @@ class PassContent:
     birth_date: date | None
     photo_url: str
     check_url: str
-    valid_until: date | None = None  # end of the last paid year (phase 3)
+    valid_until: date | None = None  # end of the last paid year (R36)
     hero_url: str | None = None  # yearly sticker
     state: str = "ACTIVE"
 
@@ -67,7 +67,6 @@ def build_pass_object(content: PassContent) -> dict:
     barcode = {"type": "QR_CODE", "value": content.check_url}
     if content.valid_until:
         modules.append({"id": "valid_until", "header": "Platný do", "body": _date(content.valid_until)})
-        barcode["alternateText"] = f"Platnosť do {_date(content.valid_until)}"
     return {
         "id": content.object_id,
         "classId": s.wallet_class_id,

@@ -4,7 +4,12 @@ Stav: odsúhlasené 2026-09-29, tabuľky v migrácii `0013`.
 Hotové (krok 1): členské, referencie člena a hromadnej platby, PAYMe odkaz, ručné označenie „zaplatené“, pripísanie
 platby k referencii (úplná, čiastočná, preplatok) – `ess/services/payments.py`, administrácia `ess/web/admin_payments.py`
 (detail člena → Členské, detail skupiny → Hromadná platba, Nastavenia → IBAN).
-Zostáva: účinky zaplatenia (eCP „Platný do“ a ročná známka, kartička e-mailom), odkaz v eCP, výpis a Požiadavky. Pravidlá: R7, R27, R30, R33–R36 v `docs/PLAN.md`.
+Hotové (krok 2): po zaplatení sa v eCP nastaví „Platný do“ (koniec posledného zaplateného roka) a ročná známka toho roka
+(`ess/services/ecp_content.py`, príznak `ecp_passes.content_stale`, migrácia `0014`, odoslanie po uložení ako pri stave);
+členovi s kartičkou (`members.card_format`) sa vydá kartička na zaplatený rok a pošle e-mailom (R33).
+Zostáva: platobný odkaz v eCP, bankový výpis a Požiadavky (neznáma referencia, preplatok).
+
+Pravidlá: R7, R27, R30, R33–R36 v `docs/PLAN.md`.
 Konvencie ako v `docs/data-model.md`.
 
 ## Členské

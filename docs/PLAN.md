@@ -148,6 +148,7 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   šablóna 256 × 256 (predvolená `static/sticker-template.png` alebo nahratá), náhodné farby, rok rozdelený okolo
   znaku. Systémový administrátor si pozrie náhľad, môže vygenerovať iné farby a nasadí ju (rovnaký obrázok ako
   náhľad). Použije sa v nových eCP, ak je na aktuálny rok; vo vydaných eCP sa vymení po zaplatení členského (fáza 3).
+  Známka sa ukladá pre každý rok zvlášť (`sticker_url_<rok>`): eCP ukazuje známku posledného zaplateného roka.
 - **R35** – **Platobná referencia** je 12 náhodných znakov (A–Z bez I a O, 2–9), napr. `97PQQPTDHRC3`. Posiela sa
   v poli **referencia platiteľa** (podporujú ho všetky slovenské banky) – v PAYMe odkaze ako parameter `PI`.
   Kde banka PAYMe odkaz nepodporuje, payme.sk zobrazí QR kód na platbu, ktorý podporujú všetky banky.

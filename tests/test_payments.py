@@ -80,7 +80,7 @@ def test_partial_then_full_payment(session):
     out = payments.apply_payment(session, SYSTEM, ref, Decimal("5"))
     fee = payments.get_fee(session, member_id, YEAR)
     assert out.result == "paid" and ref.status == "paid" and fee.paid_at and fee.payment_reference_id == ref.id
-    assert out.paid_fee_ids == [fee.id] and session.info["paid_fees"] == [fee.id]
+    assert out.paid_fee_ids == [fee.id]
     with pytest.raises(DomainError):
         payments.member_reference(session, SYSTEM, member_id, YEAR)
 
@@ -180,3 +180,93 @@ def test_admin_pages_member_link_manual_payment_and_bulk(migrated_db, google, cl
     assert r.status_code == 303 and r.headers["location"].startswith("/admin/payments/")
     page = client.get(r.headers["location"]).text
     assert "Hromadná platba" in page and "Boris" in page and "Zrušiť platobný odkaz" in page
+
+
+@pytest.mark.db
+def test_paid_fee_updates_ecp_with_year_and_sticker(session):
+    from ess.models import EcpPass
+    from ess.services import ecp_content
+    from tests.test_ecp_verification import _issued
+
+    wallet, ecp_pass, member_id = _issued(session)
+    obj = wallet.objects[ecp_pass.wallet_object_id]
+    assert "valid_until" not in {m["id"] for m in obj["textModulesData"]} and "heroImage" not in obj
+    settings.set_setting(session, SYSTEM, f"sticker_url_{YEAR}", "https://storage.example/stickers/y.png")
+    qr = obj["barcode"]["value"]
+
+    payments.mark_paid(session, SYSTEM, member_id, YEAR, "hotovosť")
+    assert ecp_pass.content_stale and ecp_content.has_pending(session)
+    session.commit()
+    assert ecp_content.push_pending(session, wallet) == 1
+    obj = wallet.objects[ecp_pass.wallet_object_id]
+    assert {"id": "valid_until", "header": "Platný do", "body": f"31.12.{YEAR}"} in obj["textModulesData"]
+    assert obj["heroImage"]["sourceUri"]["uri"].endswith("/y.png")
+    assert obj["barcode"]["value"] == qr  # the one-time QR is not touched
+    assert not session.get(EcpPass, ecp_pass.id).content_stale and not ecp_content.has_pending(session)
+
+
+@pytest.mark.db
+def test_failed_content_push_is_retried(session):
+    from ess.services import ecp_content
+    from ess.wallet import MemoryWalletClient, WalletError
+    from tests.test_ecp_verification import _issued
+
+    wallet, ecp_pass, member_id = _issued(session)
+    payments.mark_paid(session, SYSTEM, member_id, YEAR, "hotovosť")
+    session.commit()
+
+    class Broken(MemoryWalletClient):
+        def patch_object(self, object_id, fields):
+            raise WalletError("patch: HTTP 503")
+
+    assert ecp_content.push_pending(session, Broken()) == 0 and ecp_content.has_pending(session)
+    assert ecp_content.push_pending(session, wallet) == 1
+
+
+@pytest.mark.db
+def test_card_is_sent_after_payment(session):
+    from ess.models import SssCard
+    from ess.services import outbox, sss_cards
+
+    club_id = _club(session)
+    with_card = _member(session, club_id, first_name="Karol", card_number="5")
+    without = _member(session, club_id, first_name="Peter", card_number="6")
+    no_email = _member(session, club_id, first_name="Bez", card_number="7", email=None)
+    this_year = date.today().year
+    sss_cards.issue(session, SYSTEM, with_card, this_year, "https://ess", "png")
+    sss_cards.issue(session, SYSTEM, no_email, this_year, "https://ess")
+    outbox.discard(session)
+
+    for m in (with_card, without, no_email):
+        payments.mark_paid(session, SYSTEM, m, this_year + 1, "hotovosť")
+    payments.mark_paid(session, SYSTEM, with_card, this_year, "hotovosť")  # this year's card already issued
+
+    cards = {c.member_id: c for c in session.scalars(select(SssCard).where(SssCard.year == this_year + 1))}
+    assert set(cards) == {with_card, no_email}  # a member without a card format gets none
+    [mail] = outbox.take(session)
+    assert mail.template == "sss_card" and mail.context == {"first_name": "Karol", "year": this_year + 1}
+    name, data, mime = mail.attachments[0]("https://ess.example")
+    assert mime == "image/png" and name == f"karticka-sss-{this_year + 1}.png" and data.startswith(b"\x89PNG")
+    code = sss_cards.again(session, SYSTEM, cards[with_card].id, "https://x").content.verify_url.rsplit("/", 1)[1]
+    assert sss_cards.verify(session, code).year == this_year + 1
+
+
+@pytest.mark.db
+def test_web_sends_card_after_manual_payment(migrated_db, google, client):
+    from ess.mail import MemoryMailer, get_mailer
+    from ess.services import sss_cards
+
+    mailer = MemoryMailer()
+    client.app.dependency_overrides[get_mailer] = lambda: mailer
+    this_year = date.today().year
+    with migrated_db() as session:
+        club_id = _club(session)
+        m = _member(session, club_id)
+        sss_cards.issue(session, SYSTEM, m, this_year, "https://ess")
+        session.commit()
+    login(client, google)
+    r = client.post(f"/admin/members/{m}/fee-paid",
+                    data={"csrf_token": csrf(client), "year": this_year + 1, "note": "hotovosť"})
+    assert "označené ako zaplatené" in r.text
+    [mail] = mailer.sent
+    assert mail.subject == f"Kartička SSS na rok {this_year + 1}" and mail.attachments[0][2] == "application/pdf"

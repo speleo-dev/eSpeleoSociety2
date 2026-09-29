@@ -29,7 +29,7 @@ from ess.models import (
     VerificationToken,
 )
 from ess.security import pii
-from ess.services import members, sticker, tasks
+from ess.services import ecp_content, members, tasks
 from ess.services.access import Actor, DomainError, require_admin
 from ess.services.ecp_applications import random_photo_name
 from ess.wallet import PassContent, WalletClient, WalletError, build_pass_object
@@ -156,7 +156,7 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
         club_name=_primary_club_name(session, member.id), card_number=data.card_number,
         member_since=data.member_since, birth_date=data.birth_date,
         photo_url=store.url(application.photo_cropped), check_url=f"{base_url.rstrip('/')}/v/{token}",
-        hero_url=sticker.hero_url(session))
+        valid_until=ecp_content.valid_until(session, member.id), hero_url=ecp_content.hero_url(session, member.id))
     try:
         wallet.upsert_object(build_pass_object(content))
         save_url = wallet.save_url(ecp_pass.wallet_object_id)

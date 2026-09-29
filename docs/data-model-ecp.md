@@ -59,7 +59,7 @@ e-mail s odkazom `/ecp/photo/<token>` (platí počet dní ako prepadnutie žiado
 E-maily zo služieb idú cez `ess/services/outbox.py` – odošlú sa až po uložení.
 Hotové (krok 7, R31): kartička SSS – `ess/cards.py` (PDF, písmo DejaVu), `ess/services/sss_cards.py`, overenie `/k/<kód>`.
 Hotové (krok 8, R34): ročná známka – `ess/stickers.py`, `ess/services/sticker.py`, Nastavenia → Ročná známka eCP.
-Zostáva: stav členského (fáza 3).
+Stav členského v eCP: fáza 3 (`docs/data-model-payments.md`).
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.
@@ -79,6 +79,7 @@ prihláška u predsedu). Odvolanie = nový záznam, nič sa nemaže.
 | `wallet_object_id` | `3388000000022877308.<náhodné id>` – bez osobných údajov |
 | `state` | `active` (aj keď člen nie je v žiadnej skupine a čaká na rozhodnutie, R30), `inactive` (pozastavený vo všetkých skupinách alebo ukončené členstvo v SSS – obnoviteľné), `revoked` (vylúčenie, natrvalo, R25) |
 | `wallet_state` | posledný stav odoslaný do Google Wallet (migrácia `0010`); rozdiel = čaká na odoslanie |
+| `content_stale` | obsah (zaplatený rok, ročná známka) sa zmenil a ešte nie je v Google Wallet (migrácia `0014`) |
 | `photo` | názov fotky v buckete; pri `revoked` sa fotka zmaže |
 | `application_id`, `issued_at`, `revoked_at` | pôvod a priebeh |
 

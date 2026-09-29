@@ -2,7 +2,7 @@
 
 - The first card is issued once, manually, by the club chair or an administrator (when the member is
   added or becomes a member of SSS) – for this year, or for the next year during the payment period.
-- Later years: the card is e-mailed automatically when the fee is marked as paid (phase 3).
+- Later years: the card is e-mailed automatically when the fee is paid (`issue_after_payment`).
 - The same card can be downloaded or sent again; a new one only as a replacement of a lost, stolen or
   damaged card, and only by an administrator – the old code then shows that state.
 """
@@ -11,6 +11,7 @@ import enum
 import hashlib
 import secrets
 import uuid
+import dataclasses
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
@@ -18,11 +19,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess import audit
-from ess.cards import CardContent
+from ess.cards import CardContent, render_card
 from ess.models import Club, Member, Membership, SssCard
 from ess.security import pii
-from ess.services import members, payments
-from ess.services.access import PUBLIC, Actor, DomainError, PermissionDenied, can_manage_club, require_admin
+from ess.services import members, outbox, payments
+from ess.services.access import PUBLIC, SYSTEM, Actor, DomainError, PermissionDenied, can_manage_club, require_admin
 
 REPLACE_REASONS = ("lost", "stolen", "damaged")
 FORMATS = ("pdf", "png")
@@ -103,6 +104,31 @@ def issue(session: Session, actor: Actor, member_id: uuid.UUID, year: int, base_
         raise DomainError("card_already_issued")
     member.card_format = card_format  # the member receives cards (next years automatically after payment)
     return _new_card(session, actor, member, year, base_url)
+
+
+def issue_after_payment(session: Session, member_id: uuid.UUID, year: int) -> SssCard | None:
+    """The fee of the year was paid: a member who receives cards gets the year's card by e-mail (R33).
+
+    Nothing happens when the member has no card format or the year's card was already issued. Without
+    an e-mail the card is only issued (the chair or an administrator downloads it).
+    """
+    member = session.get(Member, member_id)
+    if member is None or not member.card_format or member.expelled_at or member.sss_ended_at:
+        return None
+    if not can_issue(session, member_id, year):
+        return None
+    issued = _new_card(session, SYSTEM, member, year, base_url="")  # the URL is completed after commit
+    if issued.email:
+        content, fmt = issued.content, issued.card_format
+
+        def attachment(base: str):
+            data, mime, filename = render_card(dataclasses.replace(content, verify_url=base + content.verify_url), fmt)
+            return filename, data, mime
+
+        outbox.queue(session, outbox.QueuedMail(to=issued.email, subject=f"Kartička SSS na rok {year}",
+                                                template="sss_card", attachments=(attachment,),
+                                                context={"first_name": issued.first_name, "year": year}))
+    return issued.card
 
 
 def again(session: Session, actor: Actor, card_id: uuid.UUID, base_url: str) -> IssuedCard:

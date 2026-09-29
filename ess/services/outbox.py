@@ -17,7 +17,7 @@ class QueuedMail:
     subject: str
     template: str  # templates/email/<template>.txt and .html
     context: dict = field(default_factory=dict)  # "link_path" is completed with the public base URL
-    attachments: tuple = ()  # (file name, data, MIME type)
+    attachments: tuple = ()  # (file name, data, MIME type), or a function base_url -> such a tuple
 
 
 def queue(session: Session, mail: QueuedMail) -> None:
