@@ -51,7 +51,7 @@ platné dokumenty; stránka sa neukladá do cache ani neindexuje. Jednorazový Q
 a aktualizuje QR v Google Wallet; ak to nejde (denný limit, chyba Wallet), token sa nespotrebuje.
 Hotové (krok 5, R25): stav eCP sa prepočíta automaticky pri každej zmene člena alebo členstva
 (`ess/services/ecp_state.py`, udalosti SQLAlchemy) a po uložení sa odošle do Google Wallet (aktívny / neaktívny;
-zrušený = EXPIRED bez osobných údajov a fotky). Neodoslaná zmena sa skúsi pri ďalšej akcii administrátora;
+zrušený pri vylúčení = EXPIRED bez osobných údajov a fotky). Neodoslaná zmena sa skúsi pri ďalšej akcii administrátora;
 v detaile člena je stav eCP.
 Zostáva: stav členského (fáza 3), kartička PDF, cesta nového člena (R23).
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
@@ -71,7 +71,7 @@ prihláška u predsedu). Odvolanie = nový záznam, nič sa nemaže.
 |---|---|
 | `member_id` | najviac jeden neukončený eCP na člena |
 | `wallet_object_id` | `3388000000022877308.<náhodné id>` – bez osobných údajov |
-| `state` | `active` (aj keď člen nie je v žiadnej skupine a čaká na rozhodnutie, R30), `inactive` (pozastavený vo všetkých skupinách), `revoked` (vylúčenie / ukončenie členstva v SSS, R25) |
+| `state` | `active` (aj keď člen nie je v žiadnej skupine a čaká na rozhodnutie, R30), `inactive` (pozastavený vo všetkých skupinách alebo ukončené členstvo v SSS – obnoviteľné), `revoked` (vylúčenie, natrvalo, R25) |
 | `wallet_state` | posledný stav odoslaný do Google Wallet (migrácia `0010`); rozdiel = čaká na odoslanie |
 | `photo` | názov fotky v buckete; pri `revoked` sa fotka zmaže |
 | `application_id`, `issued_at`, `revoked_at` | pôvod a priebeh |

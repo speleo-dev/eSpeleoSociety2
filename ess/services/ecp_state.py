@@ -4,7 +4,8 @@
 - left all clubs, waiting for the administrator's decision -> still `active` (a club decides only for
   itself; the member may have paid the SSS fee, R30)
 - suspended in every club where the member still is -> `inactive`
-- expelled or SSS membership ended -> `revoked` (final)
+- SSS membership ended by the administrator -> `inactive` (can be restored; the eCP becomes active again)
+- expelled -> `revoked` (final: personal data removed from the wallet, photo deleted)
 
 The state is recalculated automatically whenever a member or a membership changes (SQLAlchemy flush
 events), so no service can forget it. Google Wallet is updated after the commit by `push_pending`
@@ -30,8 +31,10 @@ WALLET_STATES = {EcpPassState.ACTIVE.value: "ACTIVE", EcpPassState.INACTIVE.valu
 
 
 def desired_state(session: Session, member: Member) -> str:
-    if member.expelled_at or member.sss_ended_at:
+    if member.expelled_at:
         return EcpPassState.REVOKED.value
+    if member.sss_ended_at:
+        return EcpPassState.INACTIVE.value
     statuses = set(session.scalars(select(Membership.status).where(
         Membership.member_id == member.id, Membership.valid_to.is_(None))))
     if not statuses or MembershipStatus.MEMBER in statuses:

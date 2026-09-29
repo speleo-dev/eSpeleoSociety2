@@ -39,24 +39,24 @@ def test_active_while_member_in_another_club(session):
     assert ecp_pass.state == "active"
 
 
-def test_leaving_sss_revokes_for_good(session):
+def test_ended_sss_membership_is_restorable(session):
     wallet, ecp_pass, member_id = _issued(session)
     memberships.terminate(session, SYSTEM, _membership(session, member_id).id)
     session.flush()
     assert ecp_pass.state == "active"  # a club decides only for itself; the administrator decides about SSS (R30)
     members.end_sss_membership(session, SYSTEM, member_id, "rozhodnutie")
     session.flush()
-    assert ecp_pass.state == "revoked" and ecp_pass.revoked_at
+    assert ecp_pass.state == "inactive" and ecp_pass.revoked_at is None
     members.restore_to_unaffiliated(session, SYSTEM, member_id)
     session.flush()
-    assert ecp_pass.state == "revoked"  # final; a new eCP needs a new application
+    assert ecp_pass.state == "active"  # restored without a new application
 
 
-def test_expulsion_revokes(session):
+def test_expulsion_revokes_for_good(session):
     wallet, ecp_pass, member_id = _issued(session)
     members.expel_member(session, SYSTEM, member_id, "porušenie kódexu")
     session.flush()
-    assert ecp_pass.state == "revoked"
+    assert ecp_pass.state == "revoked" and ecp_pass.revoked_at
 
 
 def test_push_pending_updates_wallet_and_removes_personal_data(session):

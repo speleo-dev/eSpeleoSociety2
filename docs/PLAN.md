@@ -99,9 +99,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - eCP sa vydá aj **bez zaplateného členského**; overovacia stránka ukáže, či je členské na aktuálny rok
     zaplatené. „Platný do“ = koniec posledného zaplateného roka (do fázy 3 sa neukazuje).
   - Pozastavenie vo všetkých skupinách: eCP sa v Google Wallet prepne na neaktívny, po obnovení sa aktivuje.
-  - **Vylúčenie alebo ukončenie členstva v SSS: eCP sa zruší úplne** (objekt v Google Wallet sa zneplatní
-    a odstránia sa z neho údaje; API objekty nemaže). Jeho tokeny ďalej vedú na overovaciu stránku
-    s výrazným upozornením, že nejde o člena SSS.
+  - **Vylúčenie: eCP sa zruší úplne** (objekt v Google Wallet sa zneplatní a odstránia sa z neho údaje;
+    API objekty nemaže). Jeho tokeny ďalej vedú na overovaciu stránku s upozornením, že nejde o člena SSS.
+  - **Ukončenie členstva v SSS administrátorom** (obnoviteľné): eCP je neaktívny; po obnovení člena
+    sa sám znova aktivuje, bez novej žiadosti.
 - **R26** – Fotku pri žiadosti oreže žiadateľ v prehliadači; **administrátor ju pri schvaľovaní môže orezať
   znova** z originálu (originál sa po rozhodnutí zmaže). Automatická kontrola tváre príde neskôr.
   E-mail `ess@sss.sk` sa posiela cez SMTP WebSupportu (heslo v Secret Manager).
@@ -320,3 +321,6 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 4. Gmail druhého hlavného admina (zadá sa do konfigurácie, nie do repozitára).
 5. Aké osobné údaje presne zobraziť na overovacej stránke (návrh: meno, fotka, skupina)?
 6. Potrebuje aj povýšenie čakateľa na člena aktiváciu administrátorom? (návrh: áno)
+7. **Členstvo v SSS a zaplatené členské** (prejedná Lad'o s predsedom SSS): člen so zaplateným členským je členom
+   SSS do konca roka, na ktorý zaplatil – má to IS zohľadniť pri ukončení členstva v SSS alebo pri odchode zo
+   skupín? Zatiaľ platí R30 (rozhoduje administrátor, nič automaticky).
