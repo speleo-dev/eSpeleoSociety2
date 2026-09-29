@@ -51,6 +51,8 @@ ERRORS = {
     "application_not_found": "Žiadosť neexistuje.",
     "ecp_needs_email": "Na vydanie eCP treba e-mail člena.",
     "card_needs_email": "Člen nemá e-mail – kartičku stiahnite a vytlačte.",
+    "card_already_issued": "Na tento rok už kartička vydaná je. Stiahnite ju znova, alebo vydajte náhradnú (stratená / ukradnutá / poškodená).",
+    "card_not_available": "Kartička už neplatí alebo ju nemožno znova stiahnuť.",
     "invalid_card_year": "Kartičku možno vydať len na minulý, aktuálny alebo nasledujúci rok.",
     "ecp_member_not_eligible": "eCP môže dostať len člen (nie čakateľ).",
     "member_not_in_sss": "Člen už nie je členom SSS – eCP nemožno vydať.",
@@ -182,6 +184,10 @@ templates.env.filters["local_time"] = local_time
 
 ECP_STATE_LABELS = {"active": "aktívny", "inactive": "neaktívny", "revoked": "zrušený"}
 templates.env.filters["ecp_state_label"] = lambda state: ECP_STATE_LABELS.get(state, state)
+
+CARD_REASON_LABELS = {"lost": "nahlásená ako stratená", "stolen": "nahlásená ako ukradnutá",
+                      "damaged": "nahradená (poškodená)", None: "neplatná"}
+templates.env.filters["card_reason_label"] = lambda reason: CARD_REASON_LABELS.get(reason, "neplatná")
 templates.env.filters["task_label"] = task_label
 templates.env.filters["resolution_label"] = resolution_label
 templates.env.filters["task_description"] = task_description

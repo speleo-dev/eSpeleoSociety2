@@ -22,8 +22,12 @@ def test_pdf_renders_slovak_text():
     assert pdf.startswith(b"%PDF") and b"DejaVu" in pdf and len(pdf) < 200_000
 
 
+def _code(issued) -> str:
+    return issued.content.verify_url.rsplit("/", 1)[1]
+
+
 @pytest.mark.db
-def test_issue_verify_and_replace(session):
+def test_one_card_per_year_again_and_replacement(session):
     club_id = _club(session)
     member_id = _member(session, club_id)
     with pytest.raises(PermissionDenied):
@@ -31,19 +35,30 @@ def test_issue_verify_and_replace(session):
     with pytest.raises(DomainError):
         sss_cards.issue(session, SYSTEM, member_id, YEAR + 2, "https://ess")
     first = sss_cards.issue(session, SYSTEM, member_id, YEAR, "https://ess/")
-    assert first.content.verify_url == f"https://ess/k/{first.code}" and first.content.club_name == "JS Žiadosť"
-    assert first.card.code_hash == sss_cards.hash_code(first.code)
-    check = sss_cards.verify(session, first.code)
-    assert check.outcome == sss_cards.CardOutcome.VALID and check.year == YEAR
-    second = sss_cards.issue(session, SYSTEM, member_id, YEAR, "https://ess")
-    assert sss_cards.verify(session, first.code).outcome == sss_cards.CardOutcome.INVALID  # replaced
-    assert sss_cards.verify(session, second.code).outcome == sss_cards.CardOutcome.VALID
-    last_year = sss_cards.issue(session, SYSTEM, member_id, YEAR - 1, "https://ess")
-    assert sss_cards.verify(session, last_year.code).outcome == sss_cards.CardOutcome.OTHER_YEAR
-    members.expel_member(session, SYSTEM, member_id, "test")
-    assert sss_cards.verify(session, second.code).outcome == sss_cards.CardOutcome.INVALID
-    with pytest.raises(DomainError):
+    code = _code(first)
+    assert first.content.verify_url == f"https://ess/k/{code}" and first.content.club_name == "JS Žiadosť"
+    assert first.card.code_hash == sss_cards.hash_code(code) and code.encode() not in first.card.code_enc
+    assert sss_cards.verify(session, code).outcome == sss_cards.CardOutcome.VALID
+
+    with pytest.raises(DomainError) as exc:  # a second card of the same year only as a replacement
         sss_cards.issue(session, SYSTEM, member_id, YEAR, "https://ess")
+    assert exc.value.code == "card_already_issued"
+    assert _code(sss_cards.again(session, SYSTEM, first.card.id, "https://ess")) == code  # same QR
+
+    with pytest.raises(DomainError):
+        sss_cards.replace(session, SYSTEM, first.card.id, "whatever", "https://ess")
+    new = sss_cards.replace(session, SYSTEM, first.card.id, "stolen", "https://ess")
+    assert sss_cards.verify(session, code).outcome == sss_cards.CardOutcome.STOLEN
+    assert sss_cards.verify(session, _code(new)).outcome == sss_cards.CardOutcome.VALID
+    with pytest.raises(DomainError):
+        sss_cards.again(session, SYSTEM, first.card.id, "https://ess")  # the old card is gone
+
+    last_year = sss_cards.issue(session, SYSTEM, member_id, YEAR - 1, "https://ess")
+    assert sss_cards.verify(session, _code(last_year)).outcome == sss_cards.CardOutcome.OTHER_YEAR
+    members.expel_member(session, SYSTEM, member_id, "test")
+    assert sss_cards.verify(session, _code(new)).outcome == sss_cards.CardOutcome.INVALID
+    with pytest.raises(DomainError):
+        sss_cards.issue(session, SYSTEM, member_id, YEAR + 1, "https://ess")
 
 
 @pytest.mark.db
@@ -76,18 +91,22 @@ def test_web_download_email_and_public_page(migrated_db, monkeypatch):
     assert response.headers["content-type"] == "application/pdf" and response.content.startswith(b"%PDF")
     page = client.post(f"/admin/members/{member_id}/card",
                        data={"csrf_token": csrf, "year": YEAR, "delivery": "email"}).text
-    assert "odoslaná e-mailom" in page and f"vydaná na rok {YEAR}" in page
+    assert "Na tento rok už kartička vydaná je" in page and mailer.sent == []
+    with migrated_db() as s:
+        card = s.scalar(select(SssCard))
+        code = _code(sss_cards.again(s, SYSTEM, card.id, "https://ess"))
+    page = client.post(f"/admin/cards/{card.id}/again",
+                       data={"csrf_token": csrf, "member_id": str(member_id), "delivery": "email"}).text
+    assert "odoslaná e-mailom" in page
     [mail] = mailer.sent
     assert mail.attachments[0][0] == f"karticka-sss-{YEAR}.pdf"
-    with migrated_db() as s:
-        assert len(s.scalars(select(SssCard).where(SssCard.revoked_at.is_(None))).all()) == 1
-
-    card = sss_cards.issue  # the code is only inside the PDF; issue one directly for the public page
-    with migrated_db() as s:
-        issued = card(s, SYSTEM, member_id, YEAR, "https://ess")
-        s.commit()
-    public = client.get(f"/k/{issued.code}")
+    public = client.get(f"/k/{code}")
     assert "Člen Slovenskej speleologickej spoločnosti" in public.text
     assert f"Členské zaplatené na rok {YEAR}" in public.text and "Ján" not in public.text
     assert public.headers["cache-control"] == "no-store"
     assert "nepodarilo overiť" in client.get("/k/nonsense").text
+    response = client.post(f"/admin/cards/{card.id}/replace",
+                           data={"csrf_token": csrf, "member_id": str(member_id), "reason": "lost"})
+    assert response.headers["content-type"] == "application/pdf"
+    assert "nahlásená ako stratená" in client.get(f"/k/{code}").text
+    assert "nahlásená ako stratená" in client.get(f"/admin/members/{member_id}").text

@@ -88,7 +88,9 @@ prihláška u predsedu). Odvolanie = nový záznam, nič sa nemaže.
 | Stĺpec | Význam |
 |---|---|
 | `member_id`, `year` | pre koho a na ktorý rok (najviac jedna platná na člena a rok) |
-| `code_hash` | SHA-256 kódu z QR kartičky |
+| `code_hash` | SHA-256 kódu z QR kartičky (vyhľadanie) |
+| `code_enc` | kód šifrovaný – na opätovné stiahnutie tej istej kartičky (migrácia `0011`) |
+| `revoke_reason` | `lost`, `stolen`, `damaged` – dôvod náhrady; overenie ho zobrazí (R32) |
 | `issued_at`, `issued_by`, `revoked_at` | kto a kedy ju vydal (žiadosť, administrátor, predseda) |
 
 ## QR a overovanie (R18)

@@ -457,9 +457,11 @@ class SssCard(Base):
     member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
     year: Mapped[int]
     code_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    code_enc: Mapped[bytes | None] = mapped_column(LargeBinary)  # encrypted code: download / send the same card again
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     issued_by: Mapped[str | None] = mapped_column(String(64))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoke_reason: Mapped[str | None] = mapped_column(String(16))  # lost, stolen, damaged
 
     __table_args__ = (
         Index("uq_sss_cards_member_year", "member_id", "year", unique=True, postgresql_where=text("revoked_at IS NULL")),

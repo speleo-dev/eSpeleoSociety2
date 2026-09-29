@@ -128,10 +128,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Vylúčiť zo SSS môže len administrátor (predseda SSS).
 - **R31** – **Kartičku SSS** (PDF, rozmer platobnej karty na A4 s rámčekom na vystrihnutie) vydáva administrátor
   v detaile člena na zvolený rok – po overení, že členské do SSS na ten rok je zaplatené (do fázy 3 ručne).
-  Stiahne sa na tlač alebo pošle e-mailom. V DB je len odtlačok kódu; nové vydanie na ten istý rok zruší
-  predchádzajúcu kartičku. Overenie `/k/<kód>` ukáže len „Člen Slovenskej speleologickej spoločnosti“ a
+  Stiahne sa na tlač alebo pošle e-mailom (pravidlá opätovného vydania: R32). Overenie `/k/<kód>` ukáže len „Člen Slovenskej speleologickej spoločnosti“ a
   „Členské zaplatené na rok XXXX“ (kartička na iný rok = upozornenie). Voľba kartičky v žiadosti o eCP je
   pre administrátora len informácia.
+- **R32** – **Na každý rok jedna kartička.** Vydáva ju len administrátor (predseda skupiny nie). Tú istú kartičku
+  (rovnaký QR) možno stiahnuť alebo poslať znova. Druhú na ten istý rok možno vydať len ako **náhradu** s dôvodom
+  *stratená / ukradnutá / poškodená*: pôvodná okamžite prestane platiť a jej overenie ukáže „nahlásená ako
+  stratená/ukradnutá“ (resp. „nahradená novou“). Kód kartičky je v DB šifrovaný (kvôli opätovnému stiahnutiu)
+  a vyhľadáva sa podľa odtlačku (migrácia `0011`).
 
 ## 4. Architektúra
 

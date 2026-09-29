@@ -11,6 +11,12 @@
 {% elif r.outcome == O.OTHER_YEAR %}
   <div class="verdict warn">⚠ Kartička platí na rok {{ r.year }}</div>
   <p>Na aktuálny rok nie je vydaná.</p>
+{% elif r.outcome in (O.LOST, O.STOLEN) %}
+  <div class="verdict bad">✖ Kartička bola nahlásená ako {{ "stratená" if r.outcome == O.LOST else "ukradnutá" }}</div>
+  <p>Kartička neplatí. Držiteľ nemusí byť jej majiteľom.</p>
+{% elif r.outcome == O.REPLACED %}
+  <div class="verdict bad">✖ Kartička bola nahradená novou</div>
+  <p>Táto kartička už neplatí.</p>
 {% else %}
   <div class="verdict bad">✖ Kartičku sa nepodarilo overiť</div>
 {% endif %}
