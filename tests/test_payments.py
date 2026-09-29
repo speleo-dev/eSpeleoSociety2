@@ -326,3 +326,43 @@ def test_payments_admin_page(migrated_db, google, client):
     assert "Zverejniť platobné odkazy" in page and "Všetky eCP sú aktuálne" in page
     r = client.post("/admin/payments/publish-links", data={"csrf_token": csrf(client)})
     assert "odosielajú do eCP" in r.text
+
+
+@pytest.mark.db
+def test_overview_counts_members_and_payments(session):
+    club_id = _club(session)
+    a = _member(session, club_id, first_name="Anna", card_number="2")
+    b = _member(session, club_id, first_name="Boris", card_number="3", reduced_fee=True)
+    _member(session, club_id, MembershipStatus.CANDIDATE, first_name="Čakateľ", card_number="4")
+    other = _club(session, "JS Iná")
+    c = _member(session, other, first_name="Cyril", card_number="5")
+    payments.mark_paid(session, SYSTEM, a, YEAR, "hotovosť")
+    bulk = payments.create_bulk(session, SYSTEM, other, YEAR, [c])
+    payments.apply_payment(session, SYSTEM, bulk, Decimal("15"))
+
+    rows = payments.overview(session, SYSTEM, YEAR)
+    assert [(r.first_name, r.method) for r in rows] == [("Cyril", "bulk"), ("Anna", "manual"), ("Boris", None)]
+    assert rows[2].amount == Decimal("7.00") and rows[2].reduced
+    [inna, ziadost] = payments.summarize(rows)
+    assert (inna.club_name, inna.members, inna.paid) == ("JS Iná", 1, 1)
+    assert (ziadost.members, ziadost.paid, ziadost.unpaid, ziadost.paid_amount) == (2, 1, 1, Decimal("15.00"))
+
+    with pytest.raises(PermissionDenied):
+        payments.overview(session, Actor(kind="member", id=str(a)), YEAR)
+    assert [r.member_id for r in payments.overview(session, SYSTEM, YEAR, club_id)] == [a, b]
+
+
+@pytest.mark.db
+def test_overview_page_and_csv(migrated_db, google, client):
+    with migrated_db() as session:
+        club_id = _club(session)
+        a = _member(session, club_id, first_name="Anna", card_number="2")
+        this_year = max(payments.payment_years(session))
+        payments.mark_paid(session, SYSTEM, a, this_year, "hotovosť")
+        session.commit()
+    login(client, google)
+    page = client.get(f"/admin/payments?year={this_year}&club={club_id}").text
+    assert "Zaplatilo <strong>1</strong> z 1" in page and "Žiadateľ Anna" in page and "ručne" in page
+    r = client.get(f"/admin/payments/export.csv?year={this_year}")
+    assert r.headers["content-type"].startswith("text/csv") and "no-store" in r.headers["cache-control"]
+    assert f"JS Žiadosť;Žiadateľ;Anna;2;15,00;;" in r.text and "ručne" in r.text

@@ -350,3 +350,91 @@ def reference_lines(session: Session, reference: PaymentReference) -> list[Refer
         member = session.get(Member, item.fee.member_id)
         lines.append(ReferenceLine(member.id, members.read_member(member).full_name(), item.amount, item.fee.paid_at))
     return sorted(lines, key=lambda line: line.name.casefold())
+
+
+# --- overview -----------------------------------------------------------------------------------------
+
+
+@dataclass
+class FeeRow:
+    """One member's fee of a year for the overview (decrypted, in memory only)."""
+
+    member_id: uuid.UUID
+    last_name: str
+    first_name: str
+    card_number: str | None
+    club_id: uuid.UUID | None  # primary club
+    club_name: str
+    amount: Decimal
+    reduced: bool
+    paid_at: datetime | None
+    method: str | None  # member (own link), bulk, manual; None = unpaid
+
+
+def overview(session: Session, actor: Actor, year: int, club_id: uuid.UUID | None = None) -> list[FeeRow]:
+    """Who should pay (members of SSS with status "member") and who paid the fee of the year.
+
+    An administrator sees everybody; a club manager only members of the club.
+    """
+    if club_id is None:
+        require_admin(actor)
+    else:
+        club = session.get(Club, club_id)
+        if club is None:
+            raise DomainError("club_not_found")
+        require_club_manager(session, actor, club)
+    clubs = {c.id: c.name for c in session.scalars(select(Club))}
+    open_ms: dict[uuid.UUID, list[Membership]] = {}
+    for m in session.scalars(select(Membership).where(Membership.valid_to.is_(None))):
+        open_ms.setdefault(m.member_id, []).append(m)
+    fees = {f.member_id: f for f in session.scalars(select(Fee).where(Fee.year == year))}
+    ref_ids = [f.payment_reference_id for f in fees.values() if f.payment_reference_id]
+    kinds = dict(session.execute(select(PaymentReference.id, PaymentReference.kind).where(
+        PaymentReference.id.in_(ref_ids))).all()) if ref_ids else {}
+    full = _money(settings.get_setting(session, "fee_amount"))
+    reduced_amount = _money(settings.get_setting(session, "reduced_fee_amount"))
+    rows = []
+    for member in session.scalars(select(Member)):
+        memberships = open_ms.get(member.id, [])
+        fee = fees.get(member.id)
+        paid = fee is not None and fee.paid_at is not None
+        active = (not member.expelled_at and not member.sss_ended_at
+                  and any(m.status == MembershipStatus.MEMBER for m in memberships))
+        if not (active or paid):
+            continue
+        if club_id is not None and not any(m.club_id == club_id for m in memberships):
+            continue
+        primary = next((m.club_id for m in memberships if m.is_primary), None)
+        data = members.read_member(member)
+        method = None
+        if paid:
+            method = "manual" if fee.payment_reference_id is None else kinds.get(fee.payment_reference_id, "member")
+        rows.append(FeeRow(
+            member.id, data.last_name, data.first_name, data.card_number, primary, clubs.get(primary, ""),
+            fee.amount if fee else (reduced_amount if member.reduced_fee else full),
+            fee.reduced if fee else bool(member.reduced_fee), fee.paid_at if paid else None, method))
+    return sorted(rows, key=lambda r: (r.club_name.casefold(), r.last_name.casefold(), r.first_name.casefold()))
+
+
+@dataclass
+class ClubSummary:
+    club_id: uuid.UUID | None
+    club_name: str
+    members: int = 0
+    paid: int = 0
+    paid_amount: Decimal = Decimal("0")
+
+    @property
+    def unpaid(self) -> int:
+        return self.members - self.paid
+
+
+def summarize(rows: list[FeeRow]) -> list[ClubSummary]:
+    by_club: dict[uuid.UUID | None, ClubSummary] = {}
+    for row in rows:
+        summary = by_club.setdefault(row.club_id, ClubSummary(row.club_id, row.club_name or "bez skupiny"))
+        summary.members += 1
+        if row.paid_at:
+            summary.paid += 1
+            summary.paid_amount += row.amount
+    return sorted(by_club.values(), key=lambda s: s.club_name.casefold())

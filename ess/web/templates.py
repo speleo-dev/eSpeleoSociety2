@@ -233,6 +233,8 @@ def money(value) -> str:
 
 
 templates.env.filters["money"] = money
+FEE_METHOD_LABELS = {"member": "odkaz člena", "bulk": "hromadná platba", "manual": "ručne"}
+templates.env.filters["fee_method_label"] = lambda method: FEE_METHOD_LABELS.get(method, "")
 templates.env.filters["task_label"] = task_label
 templates.env.filters["resolution_label"] = resolution_label
 templates.env.filters["task_description"] = task_description

@@ -1,10 +1,13 @@
 """Administration: membership fees, payment links (member and bulk) and manual payment (phase 3)."""
 
+import csv
+import io
 import uuid
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import select
 
 from ess.models import Club, Member, PaymentReference
@@ -12,6 +15,7 @@ from ess.services import payments
 from ess.services.access import DomainError, PermissionDenied
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, after_commit, error_text, render
+from ess.web.templates import FEE_METHOD_LABELS
 
 router = APIRouter(prefix="/admin")
 MAX_STATEMENT = 10 * 1024 * 1024  # bytes
@@ -30,11 +34,49 @@ def _create_and_show(request: Request, session: Db, back: str, create) -> Redire
 
 
 @router.get("/payments")
-def payments_page(request: Request, admin: Admin, session: Db):
+def payments_page(request: Request, admin: Admin, session: Db, year: int | None = None, club: str = ""):
     from ess.services import ecp_content
 
+    years = _overview_years(session)
+    year = year if year in years else years[0]
+    club_id = _club_id(club)
+    rows = payments.overview(session, admin.actor, year)
     return render(request, "admin/payments.html", admin, session, due_year=max(payments.payment_years(session)),
-                  pending=ecp_content.pending_count(session))
+                  pending=ecp_content.pending_count(session), year=year, years=years, club=club,
+                  summary=payments.summarize(rows),
+                  rows=[r for r in rows if club_id and r.club_id == club_id] if club else [],
+                  paid_total=sum((r.amount for r in rows if r.paid_at), Decimal("0")),
+                  paid_count=sum(1 for r in rows if r.paid_at), total_count=len(rows))
+
+
+def _overview_years(session) -> list[int]:
+    """Newest first: the payment period years and the previous few years."""
+    newest = max(payments.payment_years(session))
+    return list(range(newest, newest - 5, -1))
+
+
+def _club_id(value: str) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(value) if value else None
+    except ValueError:
+        return None
+
+
+@router.get("/payments/export.csv")
+def payments_export(request: Request, admin: Admin, session: Db, year: int, club: str = ""):
+    """Fee overview of a year for a spreadsheet (personal data: administrators only, not logged)."""
+    club_id = _club_id(club)
+    rows = [r for r in payments.overview(session, admin.actor, year) if not club_id or r.club_id == club_id]
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
+    writer.writerow(["Skupina", "Priezvisko", "Meno", "Číslo preukazu", "Suma", "Zľavnené", "Zaplatené", "Spôsob"])
+    for r in rows:
+        writer.writerow([r.club_name, r.last_name, r.first_name, r.card_number or "", f"{r.amount:.2f}".replace(".", ","),
+                         "áno" if r.reduced else "", r.paid_at.strftime("%d.%m.%Y") if r.paid_at else "",
+                         FEE_METHOD_LABELS.get(r.method, "")])
+    return Response("\ufeff" + out.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="clenske_{year}.csv"',
+                             "Cache-Control": "no-store"})
 
 
 @router.get("/statements")

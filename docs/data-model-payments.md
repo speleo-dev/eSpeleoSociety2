@@ -14,6 +14,8 @@ Požiadavky „Nespárovaná platba“ (priradiť k referencii / vybavené) a �
 pri neúplnej platbe (`payment_partial`). Referencia sa hľadá v referencii platiteľa aj v správe pre prijímateľa.
 Parser **camt.053** (`ess/banking/camt053.py`) je **predbežný** – referencia platiteľa = `EndToEndId`; overí sa na
 vzorovom výpise (otázka 3 v `docs/PLAN.md`). Správa pre prijímateľa sa ukladá šifrovaná (`message_enc`, migrácia `0016`).
+Hotové (krok 5): prehľad zaplateného členského na stránke **Členské** – rok, súhrn podľa primárnej skupiny, zoznam
+členov skupiny, export CSV (`payments.overview`). Počítajú sa členovia SSS so stavom „člen“ a každý, kto na rok zaplatil.
 
 Pravidlá: R7, R27, R30, R33–R36 v `docs/PLAN.md`.
 Konvencie ako v `docs/data-model.md`.
