@@ -30,9 +30,6 @@ MALE_LAST = ["Novák", "Horváth", "Kováč", "Varga", "Tóth", "Nagy", "Baláž
              "Kráľ", "Hudák", "Polák", "Šimko", "Gregor", "Mikuš", "Blaho", "Kučera", "Ondrejka", "Hric"]
 FEMALE_LAST = ["Nováková", "Horváthová", "Kováčová", "Vargová", "Tóthová", "Balážová", "Lukáčová",
                "Kráľová", "Hudáková", "Poláková", "Šimková", "Gregorová", "Mikušová", "Blahová", "Hricová"]
-PLACES = ["Demänová", "Plavecký kras", "Muránska planina", "Slovenský raj", "Strážovské vrchy", "Horehronie",
-          "Liptov", "Orava", "Malé Karpaty", "Veľká Fatra", "Slovenský kras", "Súľov", "Tribeč", "Považie",
-          "Zemplín", "Spiš", "Gemer", "Tatry", "Čierny Hron", "Harmanec"]
 TOWNS = ["Bratislava", "Košice", "Žilina", "Banská Bystrica", "Liptovský Mikuláš", "Rožňava", "Poprad",
          "Martin", "Trenčín", "Brezno", "Ružomberok", "Prešov", "Nitra", "Trnava"]
 STREETS = ["Hlavná", "Školská", "Záhradná", "Lipová", "Jaskyniarska", "Horská", "Krátka", "Nová"]
@@ -76,12 +73,14 @@ def seed(member_count: int, rng_seed: int) -> None:
 def _seed(session, rng: random.Random, member_count: int) -> None:
 
     start = date(2026, 1, 1)
-    clubs = []
-    for index, place in enumerate(PLACES, start=1):
-        club = Club(id=uuid.uuid4(), name=f"Jaskyniarska skupina {place}", short_name=f"JS {place}", code=f"JS{index:02d}",
-                    is_unaffiliated=False, uses_candidates=rng.random() < 0.7, active=True)
-        session.add(club)
-        clubs.append(club)
+    # The real SSS clubs (public names, ess/data/clubs); members are fictional.
+    from ess.tools.load_clubs import load
+
+    load(session, None)
+    session.flush()
+    clubs = list(session.scalars(select(Club).where(Club.is_unaffiliated.is_(False)).order_by(Club.code)))
+    for club in clubs:
+        club.uses_candidates = rng.random() < 0.7
     unaffiliated = session.scalars(select(Club).where(Club.is_unaffiliated)).one()
     session.flush()
 

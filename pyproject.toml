@@ -38,7 +38,7 @@ build-backend = "setuptools.build_meta"
 include = ["ess*"]
 
 [tool.setuptools.package-data]
-ess = ["templates/**/*", "static/**/*"]
+ess = ["templates/**/*", "static/**/*", "data/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -3,6 +3,13 @@
 Návod pre toho, kto pripravuje zjednotený zoznam skupín a členov SSS. Import sa robí v administrácii
 v časti **Import**.
 
+## Skupiny SSS pripravené v aplikácii
+
+Zoznam všetkých skupín SSS s kódmi a logami je v `ess/data/clubs/` (`clubs.csv`, `logos/`). Do databázy ich
+nahrá nástroj `ess.tools.load_clubs` (postup pre produkciu: `docs/gcp-setup.md`, krok 17). Nástroj sa dá
+spustiť opakovane – existujúcu skupinu (rovnaký kód alebo názov) nechá tak a doplní len chýbajúce logo.
+Kódy skupín z `clubs.csv` sa potom použijú v importe členov.
+
 ## Postup
 
 1. **Skupiny:** pripravte zoznam skupín s kódmi a naimportujte ho.

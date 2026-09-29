@@ -414,6 +414,22 @@ Návrat na WebSupport: `--remove-env-vars ESS_SMTP_HOST,ESS_SMTP_USER,ESS_MAIL_F
   Ak je iný, nastav ho bez nového zostavenia:
   `gcloud run services update ess --region europe-west3 --update-env-vars ESS_SMTP_HOST=<server>`.
 
+## 17. Skupiny SSS a ich logá (jednorazovo, v Cloud Shell)
+
+Nahrá všetky skupiny SSS z `ess/data/clubs/clubs.csv` a ich logá do úložiska. Dá sa spustiť aj opakovane –
+existujúce skupiny (rovnaký kód alebo názov, napr. tie, ktorým ste už logo nahrali ručne) ostanú bez zmeny,
+doplní sa len chýbajúce logo.
+
+```bash
+cd ~/eSpeleoSociety2 && git pull --ff-only && .venv/bin/pip install -q .
+ESS_DATABASE_URL="$(gcloud secrets versions access latest --secret=ess-database-url --project espeleosociety)" \
+ESS_MEDIA_BUCKET=ess-media-espeleosociety \
+  .venv/bin/python -m ess.tools.load_clubs
+```
+
+Výsledok: `Clubs created: …, already present: …, logos uploaded: …`. Kódy skupín si môžete skontrolovať
+a upraviť v administrácii (Skupiny → detail skupiny).
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).

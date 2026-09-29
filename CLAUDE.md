@@ -136,7 +136,8 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"   # inštalácia
 .venv/bin/pytest -q                                          # testy (DB testy sa bez DB preskočia)
 ESS_DATABASE_URL=... .venv/bin/alembic upgrade head          # migrácie DB
 .venv/bin/alembic revision -m "popis"                         # nová migrácia (autogenerate len ako návrh, vždy skontrolovať)
-.venv/bin/python -m ess.tools.seed_test_data                  # fiktívne testovacie dáta do PRÁZDNEJ dev DB
+.venv/bin/python -m ess.tools.seed_test_data                  # fiktívne testovacie dáta do PRÁZDNEJ dev DB (skupiny sú skutočné)
+.venv/bin/python -m ess.tools.load_clubs                      # skupiny SSS a ich logá (ess/data/clubs), aj do produkcie
 ```
 
 DB testy: `ESS_TEST_DATABASE_URL` (prázdna testovacia DB, testy ju mažú!) a `ESS_DB_SSLMODE=disable` pre
