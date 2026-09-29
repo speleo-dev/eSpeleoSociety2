@@ -199,6 +199,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   zariadenie = prihlásený prehliadač (relácia) spolu s passkey nastaveným na ňom. Keď sa člen po overení kódom
   alebo passkey prihlasuje na treťom zariadení, vyberie jedno zo svojich zariadení, ktoré sa odhlási (aj jeho passkey).
   Na portáli vidí svoje zariadenia a môže ich odhlásiť. Stratený telefón: administrátor „Odhlásiť zo všetkých zariadení“.
+- **R41** – **Notifikácie do eCP a hlásenie vstupu do jaskyne** (odsúhlasené 2026-09-29):
+  - Notifikácie posiela **len administrátor** (aj systémový) **celej SSS** – nie po skupinách; odhad do 30 za rok.
+    Dostanú ich len členovia so súhlasom „Chcem dostávať oznámenia“ (zo žiadosti o eCP). Google Wallet: najviac
+    3 upozornenia na preukaz za 24 hodín.
+  - **Novinky sa v eSS nerobia** – sú na portáli SSS (sss.sk). Portál eSS ukazuje dokumenty.
+  - Hlásenie vstupu do jaskyne: jaskyňa, spolulezci (voľný text), plánovaný návrat; „Som vonku“. Bez potvrdenia
+    návratu **30 minút** po plánovanom čase pripomienka e-mailom členovi, po ďalších **30 minútach** e-mail predsedovi
+    jeho primárnej skupiny (ďalšie kontakty prejedná predsedníctvo). Kontrolu spúšťa Cloud Scheduler každých 5 minút.
 
 ## 4. Architektúra
 
@@ -278,7 +286,7 @@ Prehliadač ────┼─► Webová aplikácia (Cloud Run, FastAPI) ─►
 - `certificates` – typ (SRT1, SRT2, záchranár, hasič, …), platnosť.
 - `ecp_requests`, `ecp_cards` – žiadosti a vydané preukazy (Wallet objekt, QR, PDF kartička).
 - `consents` – GDPR a notifikácie, s dátumom a verziou textu.
-- `news` – novinky (rovnaký obsah ako notifikácie eCP).
+- ~~`news`~~ – novinky sa v eSS neriešia (sú na webe SSS, R41).
 - `documents` – názov, dátum platnosti, odkaz (R11).
 - `cave_trips` – hlásenie vstupu do jaskyne.
 - `passkeys`, `sessions`, `one_time_tokens`, `audit_log`.
@@ -367,7 +375,7 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 
 ### Fáza 4 – Portál člena
 - Prihlásenie cez eCP (R5).
-- Novinky, vlastné údaje, odkazy na dokumenty, zaplatené členské.
+- Vlastné údaje, odkazy na dokumenty, zaplatené členské (novinky nie – R41).
 - Skupina a jej členovia (R37): bežný člen vidí meno, priezvisko, telefón a e-mail; tlačidlá „Prevziať správu“
   (predseda) a „Zrušiť administráciu klubu“ (zástupca, s potvrdením).
 - Odosielanie notifikácií do eCP z administrácie.

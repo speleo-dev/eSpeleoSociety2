@@ -60,7 +60,7 @@ Inventúra nastavení a funkcií pôvodnej aplikácie: [docs/old-app-inventory.m
 | Rola | Prístup |
 |---|---|
 | Verejnosť | žiadosť o eCP, overovacia stránka eCP/kartičky |
-| Člen (s eCP) | len čítanie: novinky, vlastná identita, dokumenty, zaplatené členské, hlásenie vstupu do jaskyne, odkaz na národnú databázu jaskýň |
+| Člen (s eCP) | len čítanie: vlastná identita, dokumenty, zaplatené členské, hlásenie vstupu do jaskyne, odkaz na národnú databázu jaskýň |
 | Predseda skupiny | + členovia vlastnej skupiny, pridanie čakateľa/člena, pozastavenie/ukončenie, hromadná platba |
 | Zástupca predsedu | práva predsedu namiesto neho, kým ho predseda neodvolá (R37); predseda vtedy len číta |
 | Administrátor (`admin`) | evidencia členov a skupín, aktivácia členov, žiadosti o eCP, bankové výpisy |
@@ -158,7 +158,7 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`, fáza 3: `docs/data-model-payments.md`, fáza 4: `docs/data-model-portal.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `delegations` – zastupovanie predsedu, R37, `certificates`, `documents`,
-  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám; `portal_auth` – prihlásenie člena na portál, R38; `portal` – čo vidí člen na portáli; `news` – novinky). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám; `portal_auth` – prihlásenie člena na portál, R38; `portal` – čo vidí člen na portáli). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
 - `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `common.py` (spoločné pomocné
   funkcie), `admin.py` (prehľad, zoznamy, požiadavky), `admin_members.py` (formuláre a akcie nad členom),

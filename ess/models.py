@@ -649,18 +649,3 @@ class MemberPasskey(Base):
     sign_count: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
-class News(TimestampMixin, Base):
-    """A news item for members on the portal (public within SSS, no personal data expected)."""
-
-    __tablename__ = "news"
-
-    id: Mapped[uuid.UUID] = _uuid_pk()
-    title: Mapped[str] = mapped_column(String(200))
-    body: Mapped[str] = mapped_column(Text)  # plain text; empty lines separate paragraphs
-    published_on: Mapped[date] = mapped_column(Date)
-    visible: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_by: Mapped[str | None] = mapped_column(String(64))
-
-    __table_args__ = (Index("ix_news_published_on", "published_on"),)

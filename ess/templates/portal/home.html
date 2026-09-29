@@ -13,15 +13,6 @@
   <button class="primary" data-passkey-register hidden>Nastaviť prihlásenie odtlačkom / tvárou</button>
 </section>
 {% endif %}
-{% if home.news %}
-<h2>Novinky</h2>
-{% for n in home.news %}
-<article>
-  <h3>{{ n.title }} <small class="muted">{{ n.published_on|date }}</small></h3>
-  {% for p in n.body|paragraphs %}<p>{{ p }}</p>{% endfor %}
-</article>
-{% endfor %}
-{% endif %}
 <h2>Členstvo</h2>
 <ul>
   {% for club, status, primary in home.clubs %}<li>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
