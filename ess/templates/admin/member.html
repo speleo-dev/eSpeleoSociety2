@@ -24,7 +24,20 @@
   <dt>eCP</dt><dd>{% if d.ecp_pass %}{{ d.ecp_pass.state|ecp_state_label }} (vydaný {{ d.ecp_pass.issued_at|date }}){% if d.ecp_pass.wallet_state != d.ecp_pass.state %} <span class="muted">– zmena ešte nebola odoslaná do Google Wallet</span>{% endif %}{% else %}nemá{% endif %}</dd>
   {% if d.member.expelled_at %}<dt>Vylúčený</dt><dd>{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</dd>{% endif %}
   {% if d.member.sss_ended_at %}<dt>Členstvo v SSS ukončené</dt><dd>{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</dd>{% endif %}
+  <dt>Kartička SSS</dt><dd>{% if d.card_years %}vydaná na rok {{ d.card_years|join(", ") }}{% else %}nemá{% endif %}</dd>
 </dl>
+{% if not d.member.expelled_at and not d.member.sss_ended_at %}
+<details>
+  <summary>Vydať kartičku SSS (PDF)</summary>
+  <form method="post" action="/admin/members/{{ d.member.id }}/card" class="form">
+    <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+    <label>Rok<input type="number" name="year" value="{{ this_year }}" min="{{ this_year - 1 }}" max="{{ this_year + 1 }}" required></label>
+    <p class="muted">Vydajte, keď je členské do SSS na tento rok zaplatené. Nové vydanie na ten istý rok zruší predchádzajúcu kartičku.</p>
+    <p><button name="delivery" value="download" class="primary">Stiahnuť PDF na tlač</button>
+       {% if d.data.email %}<button name="delivery" value="email">Poslať e-mailom</button>{% endif %}</p>
+  </form>
+</details>
+{% endif %}
 
 <h2>Platné členstvá</h2>
 <div class="table-wrap"><table class="stack">

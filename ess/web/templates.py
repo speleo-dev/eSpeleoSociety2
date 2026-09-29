@@ -50,6 +50,8 @@ ERRORS = {
     "application_not_open": "Žiadosť už bola vybavená alebo vypršala.",
     "application_not_found": "Žiadosť neexistuje.",
     "ecp_needs_email": "Na vydanie eCP treba e-mail člena.",
+    "card_needs_email": "Člen nemá e-mail – kartičku stiahnite a vytlačte.",
+    "invalid_card_year": "Kartičku možno vydať len na minulý, aktuálny alebo nasledujúci rok.",
     "ecp_member_not_eligible": "eCP môže dostať len člen (nie čakateľ).",
     "member_not_in_sss": "Člen už nie je členom SSS – eCP nemožno vydať.",
     "member_has_ecp": "Člen už má vydaný eCP.",

@@ -126,6 +126,12 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Keď člen nie je v žiadnej skupine, **ostáva členom SSS a jeho eCP platí**, kým administrátor nerozhodne
     (zaradiť do „SSS – nezaradení“ alebo ukončiť členstvo v SSS – požiadavka „Rozhodnutie o členstve v SSS“).
   - Vylúčiť zo SSS môže len administrátor (predseda SSS).
+- **R31** – **Kartičku SSS** (PDF, rozmer platobnej karty na A4 s rámčekom na vystrihnutie) vydáva administrátor
+  v detaile člena na zvolený rok – po overení, že členské do SSS na ten rok je zaplatené (do fázy 3 ručne).
+  Stiahne sa na tlač alebo pošle e-mailom. V DB je len odtlačok kódu; nové vydanie na ten istý rok zruší
+  predchádzajúcu kartičku. Overenie `/k/<kód>` ukáže len „Člen Slovenskej speleologickej spoločnosti“ a
+  „Členské zaplatené na rok XXXX“ (kartička na iný rok = upozornenie). Voľba kartičky v žiadosti o eCP je
+  pre administrátora len informácia.
 
 ## 4. Architektúra
 

@@ -4,14 +4,19 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
 from ess.models import Member, MembershipStatus
-from ess.services import certificates, directory, ecp_applications, members, memberships, outbox, positions
+from ess.cards import render_card_pdf
+from ess.mail import Mailer, get_mailer
+from ess.services import certificates, directory, ecp_applications, members, memberships, outbox, positions, sss_cards
 from ess.services.access import DomainError, PermissionDenied
 from ess.services.members import MemberData
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act, after_commit, error_text, parse_date, render
+from ess.web.common import Admin, Db, act, after_commit, base_url, error_text, parse_date, render
+from ess.web.mailing import render_mail, send
+
+MailerDep = Annotated[Mailer | None, Depends(get_mailer)]
 
 router = APIRouter(prefix="/admin")
 
@@ -195,3 +200,30 @@ def certificate_delete(
 ):
     return act(request, session, back, lambda: certificates.remove_certificate(session, admin.actor, certificate_id),
                "Certifikát bol odstránený.")
+
+
+@router.post("/members/{member_id}/card", dependencies=[Depends(verify_csrf)])
+def issue_card(request: Request, member_id: uuid.UUID, admin: Admin, session: Db, mailer: MailerDep,
+               year: Annotated[int, Form()], delivery: Annotated[str, Form()] = "download"):
+    """Issue the SSS card for a year: download the PDF (to print) or send it by e-mail."""
+    back = f"/admin/members/{member_id}"
+    try:
+        issued = sss_cards.issue(session, admin.actor, member_id, year, base_url(request))
+        if delivery == "email" and not issued.email:
+            raise DomainError("card_needs_email")
+        pdf = render_card_pdf(issued.content)
+        session.commit()
+    except (DomainError, PermissionDenied) as exc:
+        session.rollback()
+        request.session["flash"] = {"kind": "error", "text": error_text(exc)}
+        return RedirectResponse(back, status_code=303)
+    filename = f"karticka-sss-{year}.pdf"
+    if delivery == "email":
+        sent = send(mailer, render_mail(issued.email, f"Kartička SSS na rok {year}", "sss_card",
+                                        attachments=[(filename, pdf, "application/pdf")],
+                                        first_name=issued.first_name, year=year))
+        request.session["flash"] = ({"kind": "ok", "text": f"Kartička na rok {year} bola odoslaná e-mailom."} if sent
+                                    else {"kind": "error", "text": "Kartička je vydaná, ale e-mail sa nepodarilo odoslať."})
+        return RedirectResponse(back, status_code=303)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "no-store"})

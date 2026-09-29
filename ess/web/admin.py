@@ -1,6 +1,7 @@
 """Administration pages (Google sign-in required)."""
 
 import uuid
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -41,7 +42,7 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     detail = directory.member_detail(session, member_id)
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
-    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus,
+    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, this_year=date.today().year,
                    clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
                    cert_types=certificates.active_types(session))
 

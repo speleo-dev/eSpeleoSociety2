@@ -148,11 +148,12 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/storage.py` – úložisko obrázkov (GCS, náhodné názvy; `MemoryMediaStore` pre testy); `ess/images.py` –
   kontrola a prevod nahratých obrázkov (Pillow, len rastrové formáty, bez EXIF); `ess/mail.py` – odosielanie
   e-mailov cez SMTP (`MemoryMailer` pre testy; adresy nikdy do logov); `ess/wallet.py` – Google Wallet
-  (objekt preukazu, odkaz „Pridať do Peňaženky Google“ podpísaný cez IAM bez kľúča; `MemoryWalletClient` pre testy)
+  (objekt preukazu, odkaz „Pridať do Peňaženky Google“ podpísaný cez IAM bez kľúča; `MemoryWalletClient` pre testy);
+  `ess/cards.py` – PDF kartička SSS (reportlab, písmo DejaVu v `static/fonts`)
 - `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `certificates`, `documents`,
-  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `outbox` – e-maily odoslané až po commite). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
 - `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `common.py` (spoločné pomocné
   funkcie), `admin.py` (prehľad, zoznamy, požiadavky), `admin_members.py` (formuláre a akcie nad členom),

@@ -13,7 +13,7 @@ from ess.config import get_settings
 from ess.db import get_session
 from ess.images import MAX_UPLOAD_BYTES
 from ess.mail import Mailer, get_mailer
-from ess.services import directory, ecp_applications, ecp_verification
+from ess.services import directory, ecp_applications, ecp_verification, sss_cards
 from ess.services.access import DomainError
 from ess.services.ecp_applications import ApplicationForm
 from ess.storage import MediaStore, get_media_store
@@ -176,5 +176,16 @@ def verification_page(request: Request, token: str, session: Session = Depends(g
     response = _page(request, "public/verify.html", r=result, O=ecp_verification.Outcome, photo_url=photo_url)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+@verify_router.get("/k/{code}")
+def card_verification_page(request: Request, code: str, session: Session = Depends(get_session)):
+    """Target of the QR code on the printed SSS card: only membership and the paid year."""
+    result = sss_cards.verify(session, code)
+    session.commit()
+    response = _page(request, "public/card_verify.html", r=result, O=sss_cards.CardOutcome)
+    response.headers["Cache-Control"] = "no-store"
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response

@@ -19,6 +19,8 @@ dependencies = [
     "pillow>=11",
     "google-cloud-storage>=2.18",
     "tzdata",
+    "reportlab>=4",
+    "qrcode>=7.4",
 ]
 
 [project.optional-dependencies]

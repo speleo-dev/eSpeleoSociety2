@@ -1,0 +1,7 @@
+Dobrý deň {{ first_name }},
+
+v prílohe je vaša členská kartička Slovenskej speleologickej spoločnosti na rok {{ year }}.
+Vytlačte ju a vystrihnite po prerušovanej čiare. QR kód na kartičke slúži na overenie členstva.
+
+S pozdravom
+Slovenská speleologická spoločnosť

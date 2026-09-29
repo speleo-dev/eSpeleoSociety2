@@ -8,9 +8,9 @@ from ess.web.templates import templates
 log = logging.getLogger(__name__)
 
 
-def render_mail(to: str, subject: str, name: str, **context) -> Mail:
+def render_mail(to: str, subject: str, name: str, attachments=(), **context) -> Mail:
     return Mail(to=to, subject=subject, text=templates.get_template(f"email/{name}.txt").render(context),
-                html=templates.get_template(f"email/{name}.html").render(context))
+                html=templates.get_template(f"email/{name}.html").render(context), attachments=tuple(attachments))
 
 
 def send(mailer: Mailer | None, mail: Mail) -> bool:

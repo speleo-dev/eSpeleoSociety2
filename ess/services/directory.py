@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ess.models import (
     EcpPass,
+    SssCard,
     CertificateType,
     Club,
     Member,
@@ -126,6 +127,7 @@ class MemberDetail:
     certificates: list[CertificateView]
     shared_email_with: list[tuple[uuid.UUID, str]]
     ecp_pass: "EcpPass | None" = None  # the newest eCP (also a revoked one)
+    card_years: list[int] = field(default_factory=list)  # years with a valid SSS card
 
 
 def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None:
@@ -145,8 +147,11 @@ def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None
     )
     ecp_pass = session.scalar(select(EcpPass).where(EcpPass.member_id == member_id)
                               .order_by(EcpPass.issued_at.desc()).limit(1))
+    card_years = sorted(session.scalars(select(SssCard.year).where(SssCard.member_id == member_id,
+                                                                   SssCard.revoked_at.is_(None))))
     return MemberDetail(
         ecp_pass=ecp_pass,
+        card_years=card_years,
         member=member,
         data=read_member(member),
         sss_status=_sss_status(member, any(v.membership.valid_to is None for v in views), bool(views)),

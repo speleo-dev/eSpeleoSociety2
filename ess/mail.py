@@ -24,6 +24,7 @@ class Mail:
     subject: str
     text: str
     html: str | None = None
+    attachments: tuple[tuple[str, bytes, str], ...] = ()  # (file name, data, MIME type)
 
 
 class MailError(Exception):
@@ -48,6 +49,9 @@ class SmtpMailer:
         msg.set_content(mail.text)
         if mail.html:
             msg.add_alternative(mail.html, subtype="html")
+        for filename, data, mime in mail.attachments:
+            maintype, subtype = mime.split("/", 1)
+            msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=filename)
         return msg
 
     def send(self, mail: Mail) -> None:

@@ -1,0 +1,17 @@
+{% extends "public/_layout.html" %}
+{% block title %}Overenie kartičky SSS{% endblock %}
+{% block content %}
+<style>
+  .verdict { border-radius:.6rem; padding:1rem 1.2rem; margin:1rem 0; font-size:1.25rem; font-weight:700; color:#fff; }
+  .verdict.ok { background:#1e7a3a; } .verdict.bad { background:#b3261e; } .verdict.warn { background:#b26a00; }
+</style>
+{% if r.outcome == O.VALID %}
+  <div class="verdict ok">✔ Člen Slovenskej speleologickej spoločnosti</div>
+  <p><strong>Členské zaplatené na rok {{ r.year }}</strong></p>
+{% elif r.outcome == O.OTHER_YEAR %}
+  <div class="verdict warn">⚠ Kartička platí na rok {{ r.year }}</div>
+  <p>Na aktuálny rok nie je vydaná.</p>
+{% else %}
+  <div class="verdict bad">✖ Kartičku sa nepodarilo overiť</div>
+{% endif %}
+{% endblock %}
