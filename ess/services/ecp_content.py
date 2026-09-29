@@ -1,6 +1,9 @@
-"""What the eCP shows besides its state: paid year ("Platný do") and the yearly sticker (R34, R36).
+"""What the eCP shows besides its state: paid year ("Platný do"), the yearly sticker and the payment link
+(R34, R36).
 
-After a fee is paid the pass is marked `content_stale`; the web layer sends the new content to Google
+The payment link is shown for the latest year of the payment period (R27) until its fee is paid. When the
+period opens, an administrator publishes the links (`publish_payment_links`) – every pass is marked stale
+and sent in batches. After a fee is paid the pass is marked `content_stale`; the web layer sends the new content to Google
 Wallet after the commit (`push_pending`), like state changes in `ecp_state`. A failed push is retried
 on the next call. The QR code is not touched here (it holds a one-time token, see ecp_verification).
 """
@@ -9,11 +12,13 @@ import logging
 import uuid
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from ess import audit
 from ess.models import EcpPass, EcpPassState, Fee, Member
-from ess.services import members, sticker
+from ess.services import members, payments, sticker
+from ess.services.access import SYSTEM, Actor, DomainError, require_admin
 from ess.wallet import PassContent, WalletClient, WalletError, build_pass_object
 
 log = logging.getLogger(__name__)
@@ -39,6 +44,19 @@ def hero_url(session: Session, member_id: uuid.UUID) -> str | None:
     return sticker.hero_url(session)
 
 
+def payment_link(session: Session, member_id: uuid.UUID) -> tuple[str, str] | None:
+    """(PAYMe URL, label) for the member's own reference of the due year; None when paid or not possible."""
+    year = max(payments.payment_years(session))
+    fee = payments.get_fee(session, member_id, year)
+    if fee is not None and fee.paid_at is not None:
+        return None
+    try:
+        reference = payments.member_reference(session, SYSTEM, member_id, year)
+        return payments.payme_url(session, reference), f"Zaplatiť členské SSS na rok {year}"
+    except DomainError:  # e.g. IBAN not configured, member left SSS
+        return None
+
+
 def current_pass(session: Session, member_id: uuid.UUID) -> EcpPass | None:
     return session.scalar(select(EcpPass).where(EcpPass.member_id == member_id,
                                                 EcpPass.state != EcpPassState.REVOKED.value))
@@ -58,6 +76,22 @@ def has_pending(session: Session) -> bool:
     return session.scalar(_pending_query().with_only_columns(EcpPass.id).limit(1)) is not None
 
 
+def pending_count(session: Session) -> int:
+    return session.scalar(_pending_query().with_only_columns(func.count()))
+
+
+def publish_payment_links(session: Session, actor: Actor) -> int:
+    """The payment period opened: every eCP gets its payment link (sent in batches after commits)."""
+    require_admin(actor)
+    passes = session.scalars(select(EcpPass).where(EcpPass.state != EcpPassState.REVOKED.value)).all()
+    for ecp_pass in passes:
+        ecp_pass.content_stale = True
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="ecp.publish_payment_links",
+                 entity_type="ecp_pass", entity_id="*",
+                 details={"year": max(payments.payment_years(session)), "passes": len(passes)})
+    return len(passes)
+
+
 def content_patch(session: Session, ecp_pass: EcpPass) -> dict:
     """Fields of the Wallet object that follow the register and payments (not the QR code)."""
     from ess.services.ecp_issuance import _primary_club_name
@@ -69,15 +103,19 @@ def content_patch(session: Session, ecp_pass: EcpPass) -> dict:
         club_name=_primary_club_name(session, member.id), card_number=data.card_number,
         member_since=data.member_since, birth_date=data.birth_date,
         photo_url="", check_url="",  # not patched
-        valid_until=valid_until(session, member.id), hero_url=hero_url(session, member.id))
+        valid_until=valid_until(session, member.id), hero_url=hero_url(session, member.id),
+        payment=payment_link(session, member.id))
     obj = build_pass_object(content)
-    return {k: obj[k] for k in ("header", "textModulesData", "heroImage") if k in obj}
+    return {k: obj[k] for k in ("header", "textModulesData", "heroImage", "linksModuleData") if k in obj}
 
 
-def push_pending(session: Session, wallet: WalletClient) -> int:
+BATCH = 50  # passes per request (Cloud Run request time); the rest follows on the next requests
+
+
+def push_pending(session: Session, wallet: WalletClient, limit: int = BATCH) -> int:
     """Send changed content to Google Wallet. Commits each pass separately; returns the number pushed."""
     done = 0
-    for ecp_pass in session.scalars(_pending_query()).all():
+    for ecp_pass in session.scalars(_pending_query().order_by(EcpPass.id).limit(limit)).all():
         try:
             wallet.patch_object(ecp_pass.wallet_object_id, content_patch(session, ecp_pass))
         except WalletError:

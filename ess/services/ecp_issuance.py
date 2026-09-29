@@ -156,7 +156,8 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
         club_name=_primary_club_name(session, member.id), card_number=data.card_number,
         member_since=data.member_since, birth_date=data.birth_date,
         photo_url=store.url(application.photo_cropped), check_url=f"{base_url.rstrip('/')}/v/{token}",
-        valid_until=ecp_content.valid_until(session, member.id), hero_url=ecp_content.hero_url(session, member.id))
+        valid_until=ecp_content.valid_until(session, member.id), hero_url=ecp_content.hero_url(session, member.id),
+        payment=ecp_content.payment_link(session, member.id))
     try:
         wallet.upsert_object(build_pass_object(content))
         save_url = wallet.save_url(ecp_pass.wallet_object_id)

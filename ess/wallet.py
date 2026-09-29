@@ -40,6 +40,7 @@ class PassContent:
     check_url: str
     valid_until: date | None = None  # end of the last paid year (R36)
     hero_url: str | None = None  # yearly sticker
+    payment: tuple[str, str] | None = None  # (PAYMe URL, label) while the fee is due (R36)
     state: str = "ACTIVE"
 
 
@@ -65,6 +66,9 @@ def build_pass_object(content: PassContent) -> dict:
         {"id": "birth_date", "header": "Dátum narodenia", "body": _date(content.birth_date)},
     ]
     barcode = {"type": "QR_CODE", "value": content.check_url}
+    links = [{"id": "homepage", "uri": "https://www.speleology.sk", "description": "Web SSS"}]
+    if content.payment:
+        links.insert(0, {"id": "payment", "uri": content.payment[0], "description": content.payment[1]})
     if content.valid_until:
         modules.append({"id": "valid_until", "header": "Platný do", "body": _date(content.valid_until)})
     return {
@@ -78,7 +82,7 @@ def build_pass_object(content: PassContent) -> dict:
         "barcode": barcode,
         "imageModulesData": [{"id": "photo", "mainImage": {"sourceUri": {"uri": content.photo_url}}}],
         "textModulesData": modules,
-        "linksModuleData": {"uris": [{"id": "homepage", "uri": "https://www.speleology.sk", "description": "Web SSS"}]},
+        "linksModuleData": {"uris": links},
         **({"heroImage": {"sourceUri": {"uri": content.hero_url}}} if content.hero_url else {}),
     }
 

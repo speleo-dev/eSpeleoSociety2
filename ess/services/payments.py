@@ -303,6 +303,10 @@ def apply_payment(session: Session, actor: Actor, reference: PaymentReference, a
     reference.paid_amount += amount
     if reference.paid_amount < reference.expected_amount:
         reference.status = RS.PARTIAL.value
+        if reference.kind == K.MEMBER.value:  # the link in the eCP asks for the rest
+            from ess.services import ecp_content
+
+            ecp_content.mark_stale(session, reference.items[0].fee.member_id)
         audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="payment_reference.partial",
                      entity_type="payment_reference", entity_id=str(reference.id))
         return PaymentOutcome("partial", remaining=remaining(reference))

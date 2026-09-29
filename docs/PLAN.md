@@ -167,6 +167,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - **Preplatok:** členské sa označí ako zaplatené a preplatok ide do Požiadaviek administrátorovi.
   - Hromadná platba ponúkne len členov, ktorí ešte nemajú zaplatené a nie sú v inej otvorenej hromadnej platbe.
   - Model: `docs/data-model-payments.md`.
+  - **Platobný odkaz v eCP** (variant A, odsúhlasené 2026-09-29): v eCP je odkaz „Zaplatiť členské SSS na rok X“
+    (X = posledný rok obdobia platby), kým nie je zaplatené; po zaplatení zmizne, pri čiastočnej platbe žiada zvyšok.
+    Nové eCP ho dostanú hneď. Keď sa začne obdobie platby, administrátor v časti **Členské** klikne na „Zverejniť
+    platobné odkazy“ – eCP sa do Google Wallet odošlú po dávkach (50 na požiadavku). Neskôr to môže robiť plánovaná úloha.
+- **R37** – **Zastupovanie predsedu skupiny** (návrh, 2026-09-29): predseda môže práva správy skupiny preniesť
+  na iného člena, ktorý je v skupine v stave „člen“ a má ju ako primárnu. Počas zastupovania predseda skupinu
+  nemení, má len tlačidlo **„Prevziať správu“**, ktoré zastupovanie ukončí; potom môže znova určiť kohokoľvek
+  (aj toho istého). Upresnenie: otázka 8.
 
 ## 4. Architektúra
 
@@ -368,3 +376,6 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 7. **Členstvo v SSS a zaplatené členské** (prejedná Lad'o s predsedom SSS): člen so zaplateným členským je členom
    SSS do konca roka, na ktorý zaplatil – má to IS zohľadniť pri ukončení členstva v SSS alebo pri odchode zo
    skupín? Zatiaľ platí R30 (rozhoduje administrátor, nič automaticky).
+8. **Zastupovanie predsedu (R37):** môže zástupcu určiť aj administrátor (predseda bez eCP sa do portálu neprihlási)?
+   Končí zastupovanie samo pri zmene predsedu alebo keď zástupca prestane byť členom skupiny? Môže predseda počas
+   zastupovania aspoň čítať zoznam členov? Je naraz najviac jeden zástupca?

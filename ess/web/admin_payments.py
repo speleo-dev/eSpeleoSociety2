@@ -27,6 +27,28 @@ def _create_and_show(request: Request, session: Db, back: str, create) -> Redire
     return RedirectResponse(f"/admin/payments/{reference.id}", status_code=303)
 
 
+@router.get("/payments")
+def payments_page(request: Request, admin: Admin, session: Db):
+    from ess.services import ecp_content
+
+    return render(request, "admin/payments.html", admin, session, due_year=max(payments.payment_years(session)),
+                  pending=ecp_content.pending_count(session))
+
+
+@router.post("/payments/publish-links", dependencies=[Depends(verify_csrf)])
+def publish_links(request: Request, admin: Admin, session: Db):
+    from ess.services import ecp_content
+
+    return act(request, session, "/admin/payments", lambda: ecp_content.publish_payment_links(session, admin.actor),
+                "Platobné odkazy sa odosielajú do eCP.")
+
+
+@router.post("/payments/push", dependencies=[Depends(verify_csrf)])
+def push_links(request: Request, admin: Admin, session: Db):
+    """Send the next batch (after_commit sends it; nothing else changes)."""
+    return act(request, session, "/admin/payments", lambda: None, "Ďalšia dávka eCP bola odoslaná.")
+
+
 @router.post("/members/{member_id}/payment-link", dependencies=[Depends(verify_csrf)])
 def member_payment_link(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
                         year: Annotated[int, Form()]):

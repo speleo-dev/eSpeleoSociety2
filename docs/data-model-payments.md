@@ -7,7 +7,9 @@ platby k referencii (úplná, čiastočná, preplatok) – `ess/services/payment
 Hotové (krok 2): po zaplatení sa v eCP nastaví „Platný do“ (koniec posledného zaplateného roka) a ročná známka toho roka
 (`ess/services/ecp_content.py`, príznak `ecp_passes.content_stale`, migrácia `0014`, odoslanie po uložení ako pri stave);
 členovi s kartičkou (`members.card_format`) sa vydá kartička na zaplatený rok a pošle e-mailom (R33).
-Zostáva: platobný odkaz v eCP, bankový výpis a Požiadavky (neznáma referencia, preplatok).
+Hotové (krok 3): platobný odkaz v eCP (R36, variant A) – `ecp_content.payment_link`, stránka **Členské**
+(`/admin/payments`) so zverejnením odkazov a odosielaním po dávkach.
+Zostáva: bankový výpis a Požiadavky (neznáma referencia, preplatok).
 
 Pravidlá: R7, R27, R30, R33–R36 v `docs/PLAN.md`.
 Konvencie ako v `docs/data-model.md`.

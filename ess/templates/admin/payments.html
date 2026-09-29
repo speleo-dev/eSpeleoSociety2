@@ -1,0 +1,21 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Členské{% endblock %}
+{% block body %}
+<h1>Členské</h1>
+<h2>Platobné odkazy v eCP</h2>
+<p>V eCP sa zobrazuje platobný odkaz na členské na rok <strong>{{ due_year }}</strong>, kým nie je zaplatené.
+  Nové eCP ho dostanú hneď. Keď sa začne obdobie platby na ďalší rok, zverejnite odkazy vo všetkých vydaných eCP.</p>
+<form method="post" action="/admin/payments/publish-links" onsubmit="return confirm('Aktualizovať platobný odkaz vo všetkých eCP?')">
+  {% include "admin/_csrf.html" %}
+  <button class="primary">Zverejniť platobné odkazy na rok {{ due_year }}</button>
+</form>
+{% if pending %}
+<p>Na odoslanie do Google Wallet čaká <strong>{{ pending }}</strong> eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.</p>
+<form method="post" action="/admin/payments/push">
+  {% include "admin/_csrf.html" %}
+  <button>Odoslať ďalšiu dávku</button>
+</form>
+{% else %}<p class="muted">Všetky eCP sú aktuálne.</p>{% endif %}
+<p class="muted">Obdobie platby na ďalší rok začína podľa nastavenia „Platba na ďalší rok od (dní pred koncom roka)“.
+  Hromadnú platbu nájdete v detaile skupiny.</p>
+{% endblock %}

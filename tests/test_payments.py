@@ -270,3 +270,59 @@ def test_web_sends_card_after_manual_payment(migrated_db, google, client):
     assert "označené ako zaplatené" in r.text
     [mail] = mailer.sent
     assert mail.subject == f"Kartička SSS na rok {this_year + 1}" and mail.attachments[0][2] == "application/pdf"
+
+
+def _links(wallet, ecp_pass) -> dict:
+    return {u["id"]: u for u in wallet.objects[ecp_pass.wallet_object_id]["linksModuleData"]["uris"]}
+
+
+@pytest.mark.db
+def test_payment_link_in_ecp_until_paid(session):
+    from ess.services import ecp_content
+    from tests.test_ecp_verification import _issued
+
+    wallet, ecp_pass, member_id = _issued(session)  # IBAN not configured: no payment link
+    assert set(_links(wallet, ecp_pass)) == {"homepage"}
+
+    settings.set_setting(session, SYSTEM, "payment_iban", EXAMPLE_IBAN)
+    assert ecp_content.publish_payment_links(session, SYSTEM) == 1
+    session.commit()
+    ecp_content.push_pending(session, wallet)
+    due = max(payments.payment_years(session))
+    link = _links(wallet, ecp_pass)["payment"]
+    ref = payments.member_reference(session, SYSTEM, member_id, due)
+    assert f"PI={ref.code}" in link["uri"] and "AM=15.00" in link["uri"] and str(due) in link["description"]
+
+    payments.apply_payment(session, SYSTEM, ref, Decimal("10"))  # partial: the link asks for the rest
+    session.commit()
+    ecp_content.push_pending(session, wallet)
+    assert "AM=5.00" in _links(wallet, ecp_pass)["payment"]["uri"]
+
+    payments.apply_payment(session, SYSTEM, ref, Decimal("5"))
+    session.commit()
+    ecp_content.push_pending(session, wallet)
+    assert set(_links(wallet, ecp_pass)) == {"homepage"}  # paid: the link disappears
+
+
+@pytest.mark.db
+def test_push_in_batches(session):
+    from ess.services import ecp_content
+    from tests.test_ecp_verification import _issued
+
+    wallet, ecp_pass, _ = _issued(session)
+    ecp_content.publish_payment_links(session, SYSTEM)
+    session.commit()
+    assert ecp_content.pending_count(session) == 1
+    assert ecp_content.push_pending(session, wallet, limit=0) == 0 and ecp_content.pending_count(session) == 1
+    assert ecp_content.push_pending(session, wallet) == 1 and ecp_content.pending_count(session) == 0
+    with pytest.raises(PermissionDenied):
+        ecp_content.publish_payment_links(session, Actor(kind="member", id=str(ecp_pass.member_id)))
+
+
+@pytest.mark.db
+def test_payments_admin_page(migrated_db, google, client):
+    login(client, google)
+    page = client.get("/admin/payments").text
+    assert "Zverejniť platobné odkazy" in page and "Všetky eCP sú aktuálne" in page
+    r = client.post("/admin/payments/publish-links", data={"csrf_token": csrf(client)})
+    assert "odosielajú do eCP" in r.text
