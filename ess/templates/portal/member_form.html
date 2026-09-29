@@ -1,0 +1,24 @@
+{% extends "public/_layout.html" %}
+{% block title %}{% if member_id %}Úprava údajov{% else %}Nový člen{% endif %} – {{ club.name }}{% endblock %}
+{% block content %}
+<p><a href="/portal/clubs/{{ club.id }}">← {{ club.name }}</a></p>
+<h1>{% if member_id %}Úprava údajov člena{% else %}Pridať do skupiny{% endif %}</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<form method="post" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  {% include "_member_fields.html" %}
+  {% if not member_id %}
+  <label>Pridať ako
+    <select name="status">
+      {% if club.uses_candidates %}<option value="candidate" {% if status == "candidate" %}selected{% endif %}>čakateľa</option>{% endif %}
+      <option value="pending_activation" {% if status == "pending_activation" %}selected{% endif %}>nového člena (aktivuje administrátor po doručení prihlášky)</option>
+    </select></label>
+  <label class="check"><input type="checkbox" name="issue_ecp" {% if issue_ecp %}checked{% endif %}>
+    Vydať eCP – na papierovej prihláške je súhlas so spracovaním údajov. Po aktivácii príde členovi e-mail na nahratie
+    fotky. Vyžaduje e-mail; čakateľ eCP nedostane.</label>
+  {% endif %}
+  <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
+  <p><button class="primary">Uložiť</button>
+     <a href="{% if member_id %}/portal/clubs/{{ club.id }}/members/{{ member_id }}{% else %}/portal/clubs/{{ club.id }}{% endif %}">Zrušiť</a></p>
+</form>
+{% endblock %}

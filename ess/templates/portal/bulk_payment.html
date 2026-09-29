@@ -1,0 +1,25 @@
+{% extends "public/_layout.html" %}
+{% block title %}Hromadná platba – {{ club.name }}{% endblock %}
+{% block content %}
+<p><a href="/portal/clubs/{{ club.id }}/payments">← Členské</a></p>
+<h1>Hromadná platba {{ ref.year }}</h1>
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<dl>
+  <dt>Suma</dt><dd>{{ ref.expected_amount|money }}</dd>
+  <dt>Prijaté</dt><dd>{{ ref.paid_amount|money }}</dd>
+  <dt>Stav</dt><dd>{{ ref.status|payment_status_label }}</dd>
+  <dt>Referencia platiteľa</dt><dd><code>{{ ref.code }}</code></dd>
+</dl>
+{% if link %}
+<p><a href="{{ link }}" target="_blank" rel="noopener noreferrer"><button class="primary">Zaplatiť {{ remaining|money }}</button></a></p>
+<p class="muted">Na telefóne sa otvorí aplikácia banky; na počítači payme.sk ukáže QR kód na zaplatenie.
+   Pri platbe prevodom zadajte do poľa „referencia platiteľa“ kód <code>{{ ref.code }}</code>.</p>
+{% elif link_error %}<div class="flash error">{{ link_error }}</div>{% endif %}
+<h2>Členovia</h2>
+<ul>{% for l in lines %}<li>{{ l.name }} – {{ l.amount|money }}{% if l.fee_paid_at %} (zaplatené){% endif %}</li>{% endfor %}</ul>
+{% if ref.status == "open" %}
+<form method="post" action="/portal/clubs/{{ club.id }}/payments/{{ ref.id }}/cancel" onsubmit="return confirm('Zrušiť platobný odkaz? Zrušte ho len vtedy, ak ste ešte neplatili.')">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Zrušiť platobný odkaz</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,112 @@
+"""Phase 5: the chair (or delegate) manages the club on the portal."""
+
+import re
+from datetime import date
+
+import pytest
+from sqlalchemy import select
+
+from ess.models import EcpPass, Membership, Task
+from ess.services import delegations, memberships, portal_auth, positions, settings
+from ess.services.access import SYSTEM
+from tests.test_ecp_application import _club, _member
+from tests.test_payments import EXAMPLE_IBAN
+from tests.test_web_admin import client  # noqa: F401 (fixture)
+
+pytestmark = pytest.mark.db
+
+
+@pytest.fixture
+def club(migrated_db, client):
+    with migrated_db() as session:
+        club_id = _club(session)
+        chair = _member(session, club_id, first_name="Predseda", card_number="1")
+        positions.assign_position(session, SYSTEM, "club_chair", chair, club_id)
+        helper = _member(session, club_id, first_name="Pomocník", card_number="2")
+        plain = _member(session, club_id, first_name="Bežný", card_number="3")
+        for m in (chair, helper, plain):
+            session.add(EcpPass(member_id=m, wallet_object_id=f"i.{m}", state="active"))
+        settings.set_setting(session, SYSTEM, "payment_iban", EXAMPLE_IBAN)
+        tokens = {name: portal_auth.open_session(session, m, "email_code").token
+                  for name, m in (("chair", chair), ("helper", helper), ("plain", plain))}
+        session.commit()
+    return {"id": club_id, "chair": chair, "helper": helper, "plain": plain, "tokens": tokens}
+
+
+def _as(client, club, who) -> str:
+    client.cookies.set("ess_member", club["tokens"][who])
+    page = client.get("/portal").text
+    return re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+
+
+def test_chair_adds_candidate_and_proposes_member(migrated_db, client, club):
+    token = _as(client, club, "chair")
+    base = f"/portal/clubs/{club['id']}"
+    r = client.post(f"{base}/members/new", data={"csrf_token": token, "first_name": "Nový", "last_name": "Čakateľ",
+                                                 "status": "candidate"})
+    assert "Čakateľ bol pridaný" in r.text and "Navrhnúť za člena" in r.text
+    member_id = r.url.path.rsplit("/", 1)[1]
+    with migrated_db() as session:
+        ms = session.scalar(select(Membership).where(Membership.member_id == member_id, Membership.valid_to.is_(None)))
+    r = client.post(f"{base}/memberships/{ms.id}/status", data={"csrf_token": token, "new_status": "pending_activation"})
+    assert "Stav členstva bol zmenený" in r.text
+    with migrated_db() as session:
+        assert session.scalar(select(Task).where(Task.task_type == "member_activation")) is not None
+    # a chair cannot activate
+    with migrated_db() as session:
+        ms = session.scalar(select(Membership).where(Membership.member_id == member_id, Membership.valid_to.is_(None)))
+    r = client.post(f"{base}/memberships/{ms.id}/status", data={"csrf_token": token, "new_status": "member"})
+    assert "Na túto akciu nemáte oprávnenie" in r.text
+
+    r = client.post(f"{base}/members/{member_id}/edit", data={"csrf_token": token, "first_name": "Nový",
+                                                              "last_name": "Upravený"})
+    assert "Údaje boli uložené" in r.text and "Nový Upravený" in r.text
+
+
+def test_suspend_terminate_and_card(migrated_db, client, club):
+    token = _as(client, club, "chair")
+    base = f"/portal/clubs/{club['id']}"
+    with migrated_db() as session:
+        ms = memberships.open_memberships(session, club["plain"])[0]
+    r = client.post(f"{base}/memberships/{ms.id}/status", data={"csrf_token": token, "new_status": "suspended"})
+    assert "Obnoviť členstvo" in r.text
+    r = client.post(f"{base}/members/{club['helper']}/card", data={"csrf_token": token,
+                                                                    "year": str(date.today().year),
+                                                                    "card_format": "pdf"})
+    assert r.headers["content-type"] == "application/pdf"
+    with migrated_db() as session:
+        ms = memberships.open_memberships(session, club["plain"])[0]
+    r = client.post(f"{base}/memberships/{ms.id}/terminate", data={"csrf_token": token})
+    assert "Členstvo v skupine bolo ukončené" in r.text
+
+
+def test_only_manager_and_own_club(migrated_db, client, club):
+    base = f"/portal/clubs/{club['id']}"
+    token = _as(client, club, "plain")
+    assert client.get(f"{base}/members/new").status_code == 403
+    assert client.get(f"{base}/payments").status_code == 403
+    with migrated_db() as session:
+        other = _club(session, "JS Iná")
+        stranger = _member(session, other, first_name="Cudzí", card_number="9")
+        session.commit()
+    token = _as(client, club, "chair")
+    assert client.get(f"{base}/members/{stranger}").status_code == 403  # not in the club
+    with migrated_db() as session:
+        delegations.delegate(session, SYSTEM, club["id"], club["helper"])
+        session.commit()
+    assert client.get(f"{base}/members/new").status_code == 403  # represented chair only reads
+    token = _as(client, club, "helper")
+    assert client.get(f"{base}/members/new").status_code == 200
+    assert token
+
+
+def test_bulk_payment_on_portal(migrated_db, client, club):
+    token = _as(client, club, "chair")
+    base = f"/portal/clubs/{club['id']}"
+    page = client.get(f"{base}/payments").text
+    assert "Zaplatilo <strong>0</strong> z 3" in page and "Pomocník" in page
+    r = client.post(f"{base}/payments", data={"csrf_token": token, "year": re.search(r'name="year" value="(\d+)"', page).group(1),
+                                              "member_id": [str(club["helper"]), str(club["plain"])]})
+    assert "Hromadná platba" in r.text and "30,00 €" in r.text and "payme.sk" in r.text
+    r = client.post(r.url.path + "/cancel", data={"csrf_token": token})
+    assert "Platobný odkaz bol zrušený" in r.text

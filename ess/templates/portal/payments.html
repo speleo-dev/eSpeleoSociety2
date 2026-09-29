@@ -1,0 +1,36 @@
+{% extends "public/_layout.html" %}
+{% block title %}Členské – {{ club.name }}{% endblock %}
+{% block content %}
+<p><a href="/portal/clubs/{{ club.id }}">← {{ club.name }}</a></p>
+<h1>Členské {{ year }}</h1>
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+{% if years|length > 1 %}<p>Rok: {% for y in years %}{% if y == year %}<strong>{{ y }}</strong>{% else %}<a href="?year={{ y }}">{{ y }}</a>{% endif %} {% endfor %}</p>{% endif %}
+<p>Zaplatilo <strong>{{ paid }}</strong> z {{ rows|length }} členov.</p>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Meno</th><th>Suma</th><th>Stav</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.last_name }} {{ r.first_name }}</td><td data-label="Suma">{{ r.amount|money }}{% if r.reduced %} (zľavnené){% endif %}</td>
+        <td data-label="Stav">{% if r.paid_at %}zaplatené {{ r.paid_at|date }}{% else %}nezaplatené{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if open_refs %}
+<h2>Otvorené hromadné platby</h2>
+<ul>{% for r in open_refs %}<li><a href="/portal/clubs/{{ club.id }}/payments/{{ r.id }}">{{ r.year }} – {{ r.expected_amount|money }}</a> ({{ r.status|payment_status_label }})</li>{% endfor %}</ul>
+{% endif %}
+
+<h2>Hromadná platba za členov</h2>
+{% if candidates %}
+<form method="post" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="year" value="{{ year }}">
+  {% for c in candidates %}
+  <label class="check"><input type="checkbox" name="member_id" value="{{ c.member_id }}" checked> {{ c.name }} – {{ c.amount|money }}{% if c.reduced %} (zľavnené){% endif %}</label>
+  {% endfor %}
+  <p><button class="primary">Vytvoriť platobný odkaz</button></p>
+</form>
+<p class="muted">Ponúkajú sa členovia, ktorí na rok {{ year }} ešte nemajú zaplatené a nie sú v inej otvorenej hromadnej platbe.
+   Zaplatíte jednou platbou; po spárovaní sa členské označí všetkým vybraným.</p>
+{% else %}<p class="muted">Všetci členovia majú zaplatené alebo sú v otvorenej hromadnej platbe.</p>{% endif %}
+{% endblock %}

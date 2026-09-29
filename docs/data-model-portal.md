@@ -38,3 +38,13 @@ Hotové (krok 6): hlásenie vstupu do jaskyne (R41) – `cave_trips` (migrácia 
 a upozornenie predsedovi primárnej skupiny 60 min po plánovanom návrate; kontrolu spúšťa Cloud Scheduler
 (`POST /internal/tick` s hlavičkou `X-ESS-Scheduler-Token`, `docs/gcp-setup.md` krok 18), ktorý zároveň posiela
 čakajúce dávky do Google Wallet.
+
+## Fáza 5 – portál predsedu
+
+Hotové (`ess/web/portal_chair.py`, `/portal/clubs/<id>/…`), len pre toho, kto skupinu práve spravuje
+(`access.can_manage_club` – predseda bez zástupcu alebo zástupca):
+- pridanie čakateľa alebo návrh nového člena (aktivuje administrátor), voliteľne „Vydať eCP“ (súhlas z papierovej prihlášky),
+- detail člena skupiny, úprava údajov (zľavnené členské nemení), zmeny stavu: navrhnúť čakateľa za člena, vrátiť návrh,
+  pozastaviť, obnoviť; ukončenie členstva v skupine (o členstve v SSS rozhodne administrátor),
+- vydanie prvej kartičky SSS na rok (stiahnutie PDF/PNG, R33),
+- členské skupiny na rok (kto zaplatil) a hromadná platba (výber členov, PAYMe odkaz, zrušenie nezaplatenej).

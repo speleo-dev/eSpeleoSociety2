@@ -1,0 +1,44 @@
+{% extends "public/_layout.html" %}
+{% block title %}{{ data.full_name() }} – {{ club.name }}{% endblock %}
+{% block content %}
+<p><a href="/portal/clubs/{{ club.id }}">← {{ club.name }}</a></p>
+<h1>{{ data.full_name() }}</h1>
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<p>Stav v skupine: <strong>{{ m.status|label }}</strong> (od {{ m.valid_from|date }}){% if m.is_primary %}, primárna skupina{% endif %}</p>
+<dl>
+  <dt>Dátum narodenia</dt><dd>{{ data.birth_date|date or "—" }}</dd>
+  <dt>E-mail</dt><dd>{{ data.email or "—" }}</dd>
+  <dt>Telefón</dt><dd>{{ data.phone or "—" }}</dd>
+  <dt>Bydlisko</dt><dd>{{ data.full_address() or "—" }}</dd>
+  <dt>Číslo preukazu</dt><dd>{{ data.card_number or "—" }}</dd>
+  <dt>Člen SSS od</dt><dd>{{ data.member_since|date or "—" }}</dd>
+  <dt>Členské</dt><dd>{% for y in fee_years %}{{ y }}: {% if fees.get(y) and fees[y].paid_at %}zaplatené{% else %}nezaplatené{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+</dl>
+<p><a href="/portal/clubs/{{ club.id }}/members/{{ target.id }}/edit"><button>Upraviť údaje</button></a></p>
+
+<h2>Členstvo v skupine</h2>
+{% for new_status, text in transitions %}
+<form class="inline" method="post" action="/portal/clubs/{{ club.id }}/memberships/{{ m.id }}/status" onsubmit="return confirm('{{ text }}?')">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="new_status" value="{{ new_status.value }}">
+  <button>{{ text }}</button>
+</form>
+{% endfor %}
+<form class="inline" method="post" action="/portal/clubs/{{ club.id }}/memberships/{{ m.id }}/terminate" onsubmit="return confirm('Ukončiť členstvo v skupine? Platí len pre vašu skupinu; o členstve v SSS rozhodne administrátor.')">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Ukončiť členstvo v skupine</button>
+</form>
+{% if m.status.value == "pending_activation" %}<p class="muted">Návrh čaká na aktiváciu administrátorom.</p>{% endif %}
+
+{% if card_years and m.status.value == "member" %}
+<h2>Kartička SSS</h2>
+<form method="post" action="/portal/clubs/{{ club.id }}/members/{{ target.id }}/card" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <div class="grid">
+    <label>Rok<select name="year">{% for y in card_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+    <label>Formát<select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+  </div>
+  <button>Vydať a stiahnuť kartičku</button>
+  <p class="muted">Pre člena bez smartfónu. Kartička na rok sa vydá len raz; ďalšie roky ju člen dostane e-mailom po zaplatení
+     členského. Stratenú kartičku nahradí administrátor.</p>
+</form>
+{% endif %}
+{% endblock %}
