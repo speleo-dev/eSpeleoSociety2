@@ -152,6 +152,17 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   v poli **referencia platiteľa** (podporujú ho všetky slovenské banky) – v PAYMe odkaze ako parameter `PI`.
   Kde banka PAYMe odkaz nepodporuje, payme.sk zobrazí QR kód na platbu, ktorý podporujú všetky banky.
   Tvar vo výpise sa overí testovacou platbou (vzorový výpis).
+- **R36** – **Platby členského:**
+  - **Primárne platí každý člen za seba.** V období platby (R27) sa v eCP zobrazí platobný odkaz (PAYMe, vlastná
+    referencia člena na rok). Po spárovaní platby odkaz z eCP zmizne a objaví sa nová ročná známka.
+  - **Hromadná platba predsedu:** v správe skupiny tlačidlo „Platobný odkaz“ → zoznam členov (všetci označení,
+    dá sa odznačiť) → vygeneruje sa odkaz s jednou referenciou a súčtom súm (zaplatí z telefónu alebo cez QR
+    z payme.sk). Po spárovaní sa upravia eCP všetkých označených členov.
+  - **Neúplná suma:** platba sa spáruje len čiastočne, odkaz nezmizne a platiteľovi príde e-mail „Zaplatili ste
+    neúplnú sumu členského SSS…“ so zvyšnou sumou (predsedovi rovno s odkazom na doplatenie s tou istou
+    referenciou). Pri ďalšej platbe sa sumy sčítajú; keď sedí, pokračuje sa ako pri úplnej platbe.
+  - Administrátor môže členské označiť ako zaplatené aj ručne (s poznámkou, audit).
+  - Vyrubená suma (plné / zľavnené) sa ukladá pri členskom na rok – história ostane správna aj po zmene sadzby.
 
 ## 4. Architektúra
 
