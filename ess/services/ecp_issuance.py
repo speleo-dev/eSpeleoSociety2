@@ -29,7 +29,7 @@ from ess.models import (
     VerificationToken,
 )
 from ess.security import pii
-from ess.services import ecp_content, members, tasks
+from ess.services import ecp_content, members, portal_auth, tasks
 from ess.services.access import Actor, DomainError, require_admin
 from ess.services.ecp_applications import random_photo_name
 from ess.wallet import PassContent, WalletClient, WalletError, build_pass_object
@@ -147,7 +147,8 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
 
     ecp_pass = EcpPass(id=uuid.uuid4(), member_id=member.id, application_id=application.id,
                        wallet_object_id=f"{get_settings().wallet_issuer_id}.{secrets.token_hex(16)}",
-                       state=EcpPassState.ACTIVE.value, photo=application.photo_cropped)
+                       state=EcpPassState.ACTIVE.value, photo=application.photo_cropped,
+                       portal_key=portal_auth.new_portal_key())
     session.add(ecp_pass)
     session.flush()
     token = new_verification_token(session, ecp_pass)
@@ -157,7 +158,7 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
         member_since=data.member_since, birth_date=data.birth_date,
         photo_url=store.url(application.photo_cropped), check_url=f"{base_url.rstrip('/')}/v/{token}",
         valid_until=ecp_content.valid_until(session, member.id), hero_url=ecp_content.hero_url(session, member.id),
-        payment=ecp_content.payment_link(session, member.id))
+        payment=ecp_content.payment_link(session, member.id), portal_url=ecp_content.portal_url(ecp_pass, base_url))
     try:
         wallet.upsert_object(build_pass_object(content))
         save_url = wallet.save_url(ecp_pass.wallet_object_id)

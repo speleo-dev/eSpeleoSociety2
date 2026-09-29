@@ -1,0 +1,11 @@
+{% extends "public/_layout.html" %}
+{% block title %}Prihlásenie – portál eSS{% endblock %}
+{% block content %}
+<h1>Prihlásenie do portálu eSS</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<p>Na tomto zariadení ste ešte neboli prihlásený. Pošleme vám 6-miestny kód na e-mail, ktorý je uvedený v evidencii SSS.</p>
+<form method="post" action="/p/{{ key }}/code">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <button class="primary">Poslať kód na e-mail</button>
+</form>
+{% endblock %}

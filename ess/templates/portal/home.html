@@ -1,0 +1,28 @@
+{% extends "public/_layout.html" %}
+{% block title %}Portál eSS{% endblock %}
+{% block content %}
+{% set d = home.data %}
+<h1>{{ d.full_name() }}</h1>
+{% if home.payment %}
+<p><a href="{{ home.payment[0] }}" target="_blank" rel="noopener noreferrer"><button class="primary">{{ home.payment[1] }}</button></a></p>
+{% endif %}
+<h2>Členstvo</h2>
+<ul>
+  {% for name, status, primary in home.clubs %}<li>{{ name }}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
+  {% else %}<li class="muted">Nie ste v žiadnej skupine.</li>{% endfor %}
+</ul>
+<p>Členské zaplatené: {% if home.paid_years %}{{ home.paid_years|join(", ") }} (eCP platí do {{ home.valid_until|date }}){% else %}zatiaľ žiadny záznam{% endif %}</p>
+<h2>Moje údaje</h2>
+<dl>
+  <dt>Číslo preukazu</dt><dd>{{ d.card_number or "—" }}</dd>
+  <dt>Člen SSS od</dt><dd>{{ d.member_since|date or "—" }}</dd>
+  <dt>E-mail</dt><dd>{{ d.email or "—" }}</dd>
+  <dt>Telefón</dt><dd>{{ d.phone or "—" }}</dd>
+  <dt>Bydlisko</dt><dd>{{ d.full_address() or "—" }}</dd>
+</dl>
+<p class="muted">Zmenu údajov nahláste predsedovi svojej skupiny.</p>
+<form method="post" action="/portal/logout">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <button>Odhlásiť</button>
+</form>
+{% endblock %}

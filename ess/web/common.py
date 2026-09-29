@@ -45,7 +45,7 @@ def push_ecp_changes(request: Request, session: Session) -> None:
     if ecp_state.has_pending(session):
         ecp_state.push_pending(session, dependency(request, get_wallet), dependency(request, get_media_store))
     if ecp_content.has_pending(session):
-        ecp_content.push_pending(session, dependency(request, get_wallet))
+        ecp_content.push_pending(session, dependency(request, get_wallet), base_url=base_url(request))
 
 
 def base_url(request: Request) -> str:

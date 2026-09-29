@@ -154,16 +154,16 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
   (objekt preukazu, odkaz „Pridať do Peňaženky Google“ podpísaný cez IAM bez kľúča; `MemoryWalletClient` pre testy);
   `ess/cards.py` – PDF kartička SSS (reportlab, písmo DejaVu v `static/fonts`); `ess/banking/` – parsery bankových
   výpisov (camt.053, XML cez defusedxml)
-- `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`, fáza 3: `docs/data-model-payments.md`)
+- `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`, fáza 3: `docs/data-model-payments.md`, fáza 4: `docs/data-model-portal.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `delegations` – zastupovanie predsedu, R37, `certificates`, `documents`,
-  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám; `portal_auth` – prihlásenie člena na portál, R38; `portal` – čo vidí člen na portáli). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
 - `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `common.py` (spoločné pomocné
   funkcie), `admin.py` (prehľad, zoznamy, požiadavky), `admin_members.py` (formuláre a akcie nad členom),
   `admin_org.py` (skupiny, organizácia, prístupy, nastavenia, dokumenty), `admin_ecp.py` (posúdenie žiadostí
   o eCP), `admin_payments.py` (členské, platobné odkazy, hromadná platba, bankové výpisy), `mailing.py` (e-maily zo šablón `templates/email/`), `public.py` (verejné stránky –
-  žiadosť o eCP; vlastná CSRF kontrola), `templates.py` (Jinja2, slovenské
+  žiadosť o eCP; vlastná CSRF kontrola), `portal.py` (portál člena – prihlásenie z eCP, cookie `ess_member`), `templates.py` (Jinja2, slovenské
   popisy a chybové hlášky). Každý POST formulár musí mať `csrf_token`. Konkrétne cesty (`/members/new`)
   registruj pred parametrizovanými (`/members/{id}`).
 - `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie

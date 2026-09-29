@@ -436,6 +436,8 @@ class EcpPass(TimestampMixin, Base):
     wallet_state: Mapped[str | None] = mapped_column(String(16))  # last state sent to Google Wallet
     # Content (paid year, sticker, name) changed and is not yet in Google Wallet (retried after commits).
     content_stale: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    # Random id in the portal link of the pass (/p/<key>); says who logs in, is not a proof of identity (R38).
+    portal_key: Mapped[str | None] = mapped_column(String(43), unique=True)
     photo: Mapped[str | None] = mapped_column(String(200))  # object name in the media bucket
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -597,3 +599,35 @@ class BankTransaction(Base):
     payment_reference_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("payment_references.id"))
     result: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- phase 4: member portal (R38) ----------------------------------------------------------------------------
+
+
+class MemberLoginCode(Base):
+    """6-digit code sent by e-mail; valid only in the browser that asked for it. Only hashes are stored."""
+
+    __tablename__ = "member_login_codes"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    code_hash: Mapped[bytes] = mapped_column(LargeBinary)
+    browser_hash: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(default=0)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class MemberSession(Base):
+    """A signed-in device of a member (cookie holds the token, the database only its hash)."""
+
+    __tablename__ = "member_sessions"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    method: Mapped[str] = mapped_column(String(16))  # email_code, passkey
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

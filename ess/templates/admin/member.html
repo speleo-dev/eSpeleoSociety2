@@ -22,6 +22,9 @@
   <dt>Číslo preukazu</dt><dd>{{ d.data.card_number or "—" }}</dd>
   <dt>Člen SSS od</dt><dd>{{ d.data.member_since|date or "—" }}</dd>
   <dt>eCP</dt><dd>{% if d.ecp_pass %}{{ d.ecp_pass.state|ecp_state_label }} (vydaný {{ d.ecp_pass.issued_at|date }}){% if d.ecp_pass.wallet_state != d.ecp_pass.state %} <span class="muted">– zmena ešte nebola odoslaná do Google Wallet</span>{% endif %}{% else %}nemá{% endif %}</dd>
+  <dt>Portál</dt><dd>{% if portal_sessions %}prihlásený na {{ portal_sessions }} zariadení
+    <form class="inline" method="post" action="/admin/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach?')">
+      {% include "admin/_csrf.html" %}<button>Odhlásiť zo všetkých zariadení</button></form>{% else %}neprihlásený{% endif %}</dd>
   {% if d.member.expelled_at %}<dt>Vylúčený</dt><dd>{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</dd>{% endif %}
   {% if d.member.sss_ended_at %}<dt>Členstvo v SSS ukončené</dt><dd>{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</dd>{% endif %}
 </dl>

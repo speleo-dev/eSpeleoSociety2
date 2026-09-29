@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ess import audit
+from ess.config import get_settings
 from ess.models import EcpPass, EcpPassState, Fee, Member
 from ess.services import members, payments, sticker
 from ess.services.access import SYSTEM, Actor, DomainError, require_admin
@@ -92,7 +93,12 @@ def publish_payment_links(session: Session, actor: Actor) -> int:
     return len(passes)
 
 
-def content_patch(session: Session, ecp_pass: EcpPass) -> dict:
+def portal_url(ecp_pass: EcpPass, base_url: str | None) -> str | None:
+    base = base_url or get_settings().public_base_url
+    return f"{base.rstrip('/')}/p/{ecp_pass.portal_key}" if base and ecp_pass.portal_key else None
+
+
+def content_patch(session: Session, ecp_pass: EcpPass, base_url: str | None = None) -> dict:
     """Fields of the Wallet object that follow the register and payments (not the QR code)."""
     from ess.services.ecp_issuance import _primary_club_name
 
@@ -104,7 +110,7 @@ def content_patch(session: Session, ecp_pass: EcpPass) -> dict:
         member_since=data.member_since, birth_date=data.birth_date,
         photo_url="", check_url="",  # not patched
         valid_until=valid_until(session, member.id), hero_url=hero_url(session, member.id),
-        payment=payment_link(session, member.id))
+        payment=payment_link(session, member.id), portal_url=portal_url(ecp_pass, base_url))
     obj = build_pass_object(content)
     return {k: obj[k] for k in ("header", "textModulesData", "heroImage", "linksModuleData") if k in obj}
 
@@ -112,12 +118,12 @@ def content_patch(session: Session, ecp_pass: EcpPass) -> dict:
 BATCH = 50  # passes per request (Cloud Run request time); the rest follows on the next requests
 
 
-def push_pending(session: Session, wallet: WalletClient, limit: int = BATCH) -> int:
+def push_pending(session: Session, wallet: WalletClient, limit: int = BATCH, base_url: str | None = None) -> int:
     """Send changed content to Google Wallet. Commits each pass separately; returns the number pushed."""
     done = 0
     for ecp_pass in session.scalars(_pending_query().order_by(EcpPass.id).limit(limit)).all():
         try:
-            wallet.patch_object(ecp_pass.wallet_object_id, content_patch(session, ecp_pass))
+            wallet.patch_object(ecp_pass.wallet_object_id, content_patch(session, ecp_pass, base_url))
         except WalletError:
             log.warning("eCP content not pushed to Google Wallet; will retry")
             continue

@@ -11,7 +11,7 @@ from starlette.staticfiles import StaticFiles
 from pathlib import Path
 
 from ess.config import get_settings
-from ess.web import admin, admin_ecp, admin_members, admin_org, admin_payments, auth, public
+from ess.web import admin, admin_ecp, admin_members, admin_org, admin_payments, auth, portal, public
 from ess.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(admin.router)
     app.include_router(public.router)
     app.include_router(public.verify_router)
+    app.include_router(portal.router)
 
     @app.exception_handler(auth.LoginRequired)
     async def _login_required(request: Request, exc: auth.LoginRequired):

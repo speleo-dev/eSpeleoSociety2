@@ -282,7 +282,7 @@ def test_payment_link_in_ecp_until_paid(session):
     from tests.test_ecp_verification import _issued
 
     wallet, ecp_pass, member_id = _issued(session)  # IBAN not configured: no payment link
-    assert set(_links(wallet, ecp_pass)) == {"homepage"}
+    assert "payment" not in _links(wallet, ecp_pass)
 
     settings.set_setting(session, SYSTEM, "payment_iban", EXAMPLE_IBAN)
     assert ecp_content.publish_payment_links(session, SYSTEM) == 1
@@ -301,7 +301,7 @@ def test_payment_link_in_ecp_until_paid(session):
     payments.apply_payment(session, SYSTEM, ref, Decimal("5"))
     session.commit()
     ecp_content.push_pending(session, wallet)
-    assert set(_links(wallet, ecp_pass)) == {"homepage"}  # paid: the link disappears
+    assert "payment" not in _links(wallet, ecp_pass)  # paid: the link disappears
 
 
 @pytest.mark.db

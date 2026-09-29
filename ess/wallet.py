@@ -41,6 +41,7 @@ class PassContent:
     valid_until: date | None = None  # end of the last paid year (R36)
     hero_url: str | None = None  # yearly sticker
     payment: tuple[str, str] | None = None  # (PAYMe URL, label) while the fee is due (R36)
+    portal_url: str | None = None  # login link to the member portal (R38)
     state: str = "ACTIVE"
 
 
@@ -67,6 +68,8 @@ def build_pass_object(content: PassContent) -> dict:
     ]
     barcode = {"type": "QR_CODE", "value": content.check_url}
     links = [{"id": "homepage", "uri": "https://www.speleology.sk", "description": "Web SSS"}]
+    if content.portal_url:
+        links.insert(0, {"id": "portal", "uri": content.portal_url, "description": "Portál eSS"})
     if content.payment:
         links.insert(0, {"id": "payment", "uri": content.payment[0], "description": content.payment[1]})
     if content.valid_until:

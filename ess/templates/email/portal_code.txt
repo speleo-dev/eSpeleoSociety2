@@ -1,0 +1,8 @@
+Dobrý deň {{ first_name }},
+
+váš kód na prihlásenie do portálu eSS je: {{ code }}
+
+Kód platí 10 minút. Ak ste o prihlásenie nežiadali, správu ignorujte.
+
+S pozdravom
+Slovenská speleologická spoločnosť

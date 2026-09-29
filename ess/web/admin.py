@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from ess.models import MembershipStatus, TaskType
-from ess.services import certificates, directory, members, memberships, sss_cards, tasks
+from ess.services import certificates, directory, members, memberships, portal_auth, sss_cards, tasks
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act as _act, render as _render, safe_back as _safe_back
 
@@ -46,6 +46,7 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
 
     return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, issuable_years=issuable,
                    **member_fee_rows(session, detail.member),
+                   portal_sessions=portal_auth.active_sessions(session, member_id),
                    clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
                    cert_types=certificates.active_types(session))
 

@@ -1,0 +1,15 @@
+{% extends "public/_layout.html" %}
+{% block title %}Kód z e-mailu – portál eSS{% endblock %}
+{% block content %}
+<h1>Zadajte kód z e-mailu</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+{% if not expired %}
+<form method="post" action="/p/{{ key }}/code/verify" class="form">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label>Kód (6 číslic)<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" required autofocus></label>
+  <button class="primary">Prihlásiť</button>
+</form>
+<p class="muted">Kód platí 10 minút a dá sa použiť len v tomto prehliadači. Ak e-mail neprišiel, pozrite aj priečinok nevyžiadanej pošty.</p>
+{% endif %}
+<p><a href="/p/{{ key }}">Poslať nový kód</a></p>
+{% endblock %}

@@ -181,6 +181,16 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     alebo si zmení primárnu skupinu. Tabuľka `club_delegations` (migrácia `0015`), `ess/services/delegations.py`.
   - **Čítanie skupiny na portáli (fáza 4):** každý člen skupiny vidí skupinu a jej členov, bežný člen len meno,
     priezvisko, telefón a e-mail; predseda (aj počas zastupovania) a zástupca vidia všetko o členoch skupiny.
+- **R38** – **Prihlásenie na portál** (upresnenie R5, odsúhlasené 2026-09-29):
+  - V eCP je odkaz „Portál eSS“ s náhodným identifikátorom preukazu (`/p/<kľúč>`). Určuje len, ktorý člen sa
+    prihlasuje – nie je dôkaz identity (e-mail môžu zdieľať manželia).
+  - Na novom zariadení príde na e-mail člena z evidencie **6-miestny kód** (platí 10 minút, najviac 5 pokusov,
+    najviac 5 kódov za hodinu). Kód sa dá použiť len v prehliadači, ktorý oň požiadal.
+  - Potom portál ponúkne **passkey** (odtlačok prsta / tvár) – voliteľne; bez neho príde vždy kód e-mailom.
+  - Prihlásenie platí **90 dní** na zariadení (relácie v DB, dajú sa zrušiť). Administrátor môže v detaile člena
+    odhlásiť člena zo všetkých zariadení a zmazať jeho passkeys.
+  - Na portál sa dostane len člen s **aktívnym** eCP. Neaktívny (pozastavený, ukončené členstvo v SSS) ani zrušený
+    eCP nemá prístup; po obnovení členstva sa prístup vráti sám.
 
 ## 4. Architektúra
 

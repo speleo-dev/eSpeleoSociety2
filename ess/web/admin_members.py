@@ -269,3 +269,13 @@ def card_replace(request: Request, card_id: uuid.UUID, admin: Admin, session: Db
     return _deliver_card(request, session, mailer, f"/admin/members/{member_id}",
                          lambda: sss_cards.replace(session, admin.actor, card_id, reason, base_url(request)),
                          delivery, card_format)
+
+
+@router.post("/members/{member_id}/portal-logout", dependencies=[Depends(verify_csrf)])
+def portal_logout_all(request: Request, member_id: uuid.UUID, admin: Admin, session: Db):
+    """Lost phone etc.: end all portal sessions of the member (R38)."""
+    from ess.services import portal_auth
+
+    return act(request, session, f"/admin/members/{member_id}",
+               lambda: portal_auth.log_out_everywhere(session, admin.actor, member_id),
+               "Člen bol odhlásený z portálu na všetkých zariadeniach.")
