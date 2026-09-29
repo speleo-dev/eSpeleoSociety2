@@ -297,6 +297,41 @@ def document_save(
                "Dokument bol uložený.")
 
 
+@router.get("/news")
+def news_page(request: Request, admin: Admin, session: Db, edit: str = ""):
+    from ess.models import News
+    from ess.services import news
+
+    item = None
+    try:
+        item = session.get(News, uuid.UUID(edit)) if edit else None
+    except ValueError:
+        pass
+    return render(request, "admin/news.html", admin, session, items=news.all_news(session), item=item,
+                  today=date.today())
+
+
+@router.post("/news", dependencies=[Depends(verify_csrf)])
+def news_save(
+    request: Request, admin: Admin, session: Db, title: Annotated[str, Form()] = "", body: Annotated[str, Form()] = "",
+    published_on: Annotated[str, Form()] = "", visible: Annotated[str, Form()] = "", news_id: Annotated[str, Form()] = "",
+):
+    from ess.services import news
+
+    return act(request, session, "/admin/news",
+               lambda: news.save(session, admin.actor, title, body, parse_date(published_on), bool(visible),
+                                 uuid.UUID(news_id) if news_id else None),
+               "Novinka bola uložená.")
+
+
+@router.post("/news/{news_id}/delete", dependencies=[Depends(verify_csrf)])
+def news_delete(request: Request, news_id: uuid.UUID, admin: Admin, session: Db):
+    from ess.services import news
+
+    return act(request, session, "/admin/news", lambda: news.delete(session, admin.actor, news_id),
+               "Novinka bola odstránená.")
+
+
 @router.post("/documents/{document_id}/delete", dependencies=[Depends(verify_csrf)])
 def document_delete(request: Request, document_id: uuid.UUID, admin: Admin, session: Db):
     return act(request, session, "/admin/documents", lambda: documents.delete_document(session, admin.actor, document_id),

@@ -109,6 +109,8 @@ ERRORS = {
     "portal_not_available": "Portál nie je dostupný – odkaz je neplatný alebo váš eCP nie je aktívny.",
     "portal_needs_email": "V evidencii nemáte e-mail. Kontaktujte predsedu svojej skupiny.",
     "too_many_codes": "Kódov bolo odoslaných priveľa. Skúste to znova o hodinu.",
+    "news_required": "Vyplňte nadpis aj text novinky.",
+    "news_not_found": "Novinka neexistuje.",
     "device_not_found": "Zariadenie sa nenašlo alebo už je odhlásené.",
     "passkey_failed": "Prihlásenie passkey sa nepodarilo. Skúste to znova alebo sa prihláste kódom z e-mailu.",
     "code_wrong": "Nesprávny kód. Skúste to znova.",
@@ -240,6 +242,7 @@ def money(value) -> str:
 
 
 templates.env.filters["money"] = money
+templates.env.filters["paragraphs"] = lambda body: [p.strip() for p in (body or "").split("\n\n") if p.strip()]
 FEE_METHOD_LABELS = {"member": "odkaz člena", "bulk": "hromadná platba", "manual": "ručne"}
 templates.env.filters["fee_method_label"] = lambda method: FEE_METHOD_LABELS.get(method, "")
 templates.env.filters["task_label"] = task_label

@@ -27,4 +27,6 @@ Hotové (krok 3): skupina na portáli (R37) – `/portal/clubs/<id>` pre každé
 bežný člen vidí členov v stave „člen“ s telefónom a e-mailom; predseda (aj počas zastupovania) a zástupca všetkých
 vrátane čakateľov, bydliska a čísla preukazu. Tlačidlá „Preniesť správu“ a „Prevziať správu“ (predseda) a „Zrušiť
 administráciu klubu“ (zástupca), všetky s potvrdením.
-Zostáva: dokumenty, novinky, notifikácie, hlásenie vstupu do jaskyne.
+Hotové (krok 4): novinky – tabuľka `news` (migrácia `0020`: nadpis, text, dátum zverejnenia, zobraziť), administrácia
+**Novinky** (`/admin/news`, novinka s neskorším dátumom je naplánovaná); na portáli 5 najnovších a platné dokumenty.
+Zostáva: notifikácie do eCP, hlásenie vstupu do jaskyne.

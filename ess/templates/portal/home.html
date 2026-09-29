@@ -13,12 +13,25 @@
   <button class="primary" data-passkey-register hidden>Nastaviť prihlásenie odtlačkom / tvárou</button>
 </section>
 {% endif %}
+{% if home.news %}
+<h2>Novinky</h2>
+{% for n in home.news %}
+<article>
+  <h3>{{ n.title }} <small class="muted">{{ n.published_on|date }}</small></h3>
+  {% for p in n.body|paragraphs %}<p>{{ p }}</p>{% endfor %}
+</article>
+{% endfor %}
+{% endif %}
 <h2>Členstvo</h2>
 <ul>
   {% for club, status, primary in home.clubs %}<li>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
   {% else %}<li class="muted">Nie ste v žiadnej skupine.</li>{% endfor %}
 </ul>
 <p>Členské zaplatené: {% if home.paid_years %}{{ home.paid_years|join(", ") }} (eCP platí do {{ home.valid_until|date }}){% else %}zatiaľ žiadny záznam{% endif %}</p>
+{% if home.documents %}
+<h2>Dokumenty</h2>
+<ul>{% for d in home.documents %}<li><a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.title }}</a>{% if d.valid_until %} <span class="muted">(platné do {{ d.valid_until|date }})</span>{% endif %}</li>{% endfor %}</ul>
+{% endif %}
 <h2>Moje údaje</h2>
 <dl>
   <dt>Číslo preukazu</dt><dd>{{ d.card_number or "—" }}</dd>

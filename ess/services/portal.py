@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess.models import Club, Fee, Member, Membership, MembershipStatus
-from ess.services import delegations, ecp_content, members
+from ess.services import delegations, documents, ecp_content, members, news
 from ess.services.access import DomainError, managed_club_ids
 from ess.services.members import MemberData
 
@@ -21,6 +21,8 @@ class Home:
     paid_years: list[int] = field(default_factory=list)
     payment: tuple[str, str] | None = None  # (PAYMe URL, label) while the fee is due
     valid_until: date | None = None
+    news: list = field(default_factory=list)
+    documents: list = field(default_factory=list)
 
 
 def home(session: Session, member: Member) -> Home:
@@ -33,7 +35,8 @@ def home(session: Session, member: Member) -> Home:
                 clubs=[(club, status, primary) for club, status, primary in
                        sorted(rows, key=lambda r: (not r[2], r[0].name))],
                 paid_years=paid, payment=ecp_content.payment_link(session, member.id),
-                valid_until=date(paid[0], 12, 31) if paid else None)
+                valid_until=date(paid[0], 12, 31) if paid else None,
+                news=news.published(session, limit=5), documents=documents.valid_documents(session))
 
 
 # --- club page (R37) ---------------------------------------------------------------------------------
