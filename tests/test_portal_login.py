@@ -1,5 +1,6 @@
 """Member portal login (R38): eCP link, e-mail code bound to the browser, 90-day session, active eCP only."""
 
+import json
 import re
 
 import pytest
@@ -114,3 +115,62 @@ def test_web_login_flow(migrated_db, client):
     assert client.get(f"/p/{key}", follow_redirects=False).headers["location"] == "/portal"
     r = client.post("/portal/logout", data={"csrf_token": token})
     assert "Boli ste odhlásený" in r.text and client.get("/portal").status_code == 401
+
+
+def _login(session, key, browser, device):
+    portal_auth.send_code(session, key, browser)
+    return portal_auth.verify_code(session, key, browser, _code(session), device)
+
+
+def test_at_most_two_devices(session):
+    from ess.services import passkeys, settings
+    from tests.soft_authenticator import SoftAuthenticator
+
+    _, ecp_pass, member_id = _issued(session)
+    key = ecp_pass.portal_key
+    phone = _login(session, key, "a", "Chrome, Android")
+    laptop = _login(session, key, "b", "Firefox, Windows")
+    device = SoftAuthenticator("https://ess.example.org", "ess.example.org")
+    member = session.get(passkeys.Member, member_id)
+    options, challenge = passkeys.registration_options(session, member, "https://ess.example.org")
+    passkeys.register(session, member, json.dumps(device.create(options)), challenge, "https://ess.example.org",
+                      session_id=phone.session_id)
+
+    third = _login(session, key, "c", "Safari, iPhone")
+    assert isinstance(third, portal_auth.TooManyDevices)
+    assert [d.device for d in third.devices] == ["Chrome, Android", "Firefox, Windows"]
+    with pytest.raises(DomainError):  # only one's own device
+        portal_auth.open_session(session, member_id, "email_code", "Safari, iPhone", replace=ecp_pass.id)
+    new = portal_auth.open_session(session, member_id, "email_code", "Safari, iPhone", replace=phone.session_id)
+    assert portal_auth.current_member(session, phone.token) is None and portal_auth.current_member(session, new.token)
+    assert passkeys.count(session, member_id) == 0  # the phone's passkey went with it
+    assert portal_auth.current_member(session, laptop.token).id == member_id
+
+    settings.set_setting(session, SYSTEM, "portal_max_devices", "3")
+    assert not isinstance(_login(session, key, "d", "Edge, Windows"), portal_auth.TooManyDevices)
+    portal_auth.log_out_device(session, member_id, laptop.session_id)
+    assert portal_auth.current_member(session, laptop.token) is None
+
+
+def test_web_choose_device_to_log_out(migrated_db, client):
+    from ess.services import settings
+
+    mailer = MemoryMailer()
+    client.app.dependency_overrides[get_mailer] = lambda: mailer
+    with migrated_db() as session:
+        _, ecp_pass, member_id = _issued(session)
+        settings.set_setting(session, SYSTEM, "portal_max_devices", "1")
+        other = portal_auth.open_session(session, member_id, "email_code", "Chrome, Android")
+        session.commit()
+        key = ecp_pass.portal_key
+    page = client.get(f"/p/{key}").text
+    token = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+    client.post(f"/p/{key}/code", data={"csrf_token": token})
+    code = re.search(r"je: (\d{6})", mailer.sent[0].text).group(1)
+    r = client.post(f"/p/{key}/code/verify", data={"csrf_token": token, "code": code},
+                    headers={"user-agent": "Mozilla/5.0 (Windows NT 10.0) Firefox/130.0"})
+    assert "Chrome, Android" in r.text and "Odhlásiť toto zariadenie" in r.text
+    assert client.get("/portal").status_code == 401
+    r = client.post("/portal/devices/choose", data={"csrf_token": token, "device_id": str(other.session_id)},
+                    headers={"user-agent": "Mozilla/5.0 (Windows NT 10.0) Firefox/130.0"})
+    assert "Firefox, Windows" in r.text and "(toto zariadenie)" in r.text

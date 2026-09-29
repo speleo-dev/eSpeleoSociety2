@@ -15,6 +15,9 @@ Pravidlá: R5, R37, R38 v `docs/PLAN.md`. Konvencie ako v `docs/data-model.md`.
   `last_used_at`. Ukladá sa len verejný kľúč. RP id = hostiteľ verejnej adresy aplikácie (`ESS_PUBLIC_BASE_URL`).
   Passkey je „discoverable“ – prihlásenie funguje aj bez odkazu z eCP. Administrátorské „Odhlásiť zo všetkých
   zariadení“ passkeys zmaže.
+- Najviac `portal_max_devices` (2) prihlásených zariadení (R40, migrácia `0019`): `member_sessions.device`
+  (napr. „Chrome, Android“), `last_seen_at`; `member_passkeys.session_id` – passkey patrí zariadeniu a odhlásením
+  zariadenia (výberom pri prihlásení na ďalšom) sa zmaže. Dobrovoľné odhlásenie passkey ponechá.
 - Prístup má len člen s **aktívnym** eCP; kontroluje sa pri každej požiadavke.
 
 Hotové (krok 1): prihlásenie kódom z e-mailu, domovská stránka člena (`/portal`), odhlásenie, v administrácii

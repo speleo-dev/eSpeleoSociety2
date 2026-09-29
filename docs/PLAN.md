@@ -195,6 +195,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   odfotiť kamerou notebooku či telefónu (`static/camera.js`, getUserMedia – funguje len cez HTTPS a po povolení
   kamery v prehliadači). Záber ide do rovnakého orezu a kontroly ako vybraný súbor. Na telefóne ponúka výber súboru
   aj fotoaparát priamo.
+- **R40** – **Najviac 2 zariadenia na portáli** (požiadavka 2026-09-29; nastavenie `portal_max_devices`):
+  zariadenie = prihlásený prehliadač (relácia) spolu s passkey nastaveným na ňom. Keď sa člen po overení kódom
+  alebo passkey prihlasuje na treťom zariadení, vyberie jedno zo svojich zariadení, ktoré sa odhlási (aj jeho passkey).
+  Na portáli vidí svoje zariadenia a môže ich odhlásiť. Stratený telefón: administrátor „Odhlásiť zo všetkých zariadení“.
 
 ## 4. Architektúra
 

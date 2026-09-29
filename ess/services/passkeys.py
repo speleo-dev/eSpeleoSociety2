@@ -53,7 +53,8 @@ def registration_options(session: Session, member: Member, base_url: str) -> tup
     return webauthn.options_to_json(options), options.challenge
 
 
-def register(session: Session, member: Member, credential: str, challenge: bytes, base_url: str) -> MemberPasskey:
+def register(session: Session, member: Member, credential: str, challenge: bytes, base_url: str,
+             session_id: uuid.UUID | None = None) -> MemberPasskey:
     rp_id, origin = _rp(base_url)
     try:
         verified = webauthn.verify_registration_response(
@@ -61,7 +62,8 @@ def register(session: Session, member: Member, credential: str, challenge: bytes
             require_user_verification=True)
     except (InvalidRegistrationResponse, ValueError, KeyError, TypeError):
         raise DomainError("passkey_failed") from None
-    passkey = MemberPasskey(id=uuid.uuid4(), member_id=member.id, credential_id=verified.credential_id,
+    passkey = MemberPasskey(id=uuid.uuid4(), member_id=member.id, session_id=session_id,
+                            credential_id=verified.credential_id,
                             public_key=verified.credential_public_key, sign_count=verified.sign_count)
     session.add(passkey)
     audit.record(session, actor_type="member", actor_id=str(member.id), action="portal.passkey_add",
@@ -83,8 +85,9 @@ def authentication_options(session: Session, base_url: str, key: str | None = No
     return webauthn.options_to_json(options), options.challenge
 
 
-def authenticate(session: Session, credential: str, challenge: bytes, base_url: str) -> portal_auth.NewSession | str:
-    """Returns the new session, or an error code ("passkey_failed", "portal_not_available")."""
+def authenticate(session: Session, credential: str, challenge: bytes, base_url: str,
+                 device: str = "") -> portal_auth.NewSession | portal_auth.TooManyDevices | str:
+    """Returns the new session (or the devices to choose from), or an error code."""
     rp_id, origin = _rp(base_url)
     try:
         credential_id = base64url_to_bytes(json.loads(credential)["rawId"])
@@ -103,7 +106,10 @@ def authenticate(session: Session, credential: str, challenge: bytes, base_url: 
     if not portal_auth.may_log_in(session, passkey.member_id):
         return "portal_not_available"
     passkey.sign_count, passkey.last_used_at = verified.new_sign_count, datetime.now(UTC)
-    return portal_auth.open_session(session, passkey.member_id, "passkey")
+    result = portal_auth.open_session(session, passkey.member_id, "passkey", device)
+    if isinstance(result, portal_auth.NewSession):
+        passkey.session_id = result.session_id  # the device is signed in again with its passkey
+    return result
 
 
 def delete_all(session: Session, member_id: uuid.UUID) -> int:
@@ -113,3 +119,8 @@ def delete_all(session: Session, member_id: uuid.UUID) -> int:
     return len(rows)
 
 
+
+
+def delete_for_session(session: Session, session_id: uuid.UUID) -> None:
+    for row in session.scalars(select(MemberPasskey).where(MemberPasskey.session_id == session_id)).all():
+        session.delete(row)

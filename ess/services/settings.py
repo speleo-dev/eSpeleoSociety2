@@ -46,6 +46,7 @@ _KNOWN: dict[str, type] = {
     "ecp_application_expiry_days": int,  # unfinished application expires after
     "ecp_qr_grace_minutes": int,  # a used QR token stays valid for
     "ecp_qr_daily_limit": int,  # new QR codes per eCP and day
+    "portal_max_devices": int,  # signed-in devices per member on the portal (R40)
     # yearly sticker (hero image of the eCP)
     "sticker_text_color": _colour,
     "sticker_bg_color": _background,
@@ -54,7 +55,7 @@ _KNOWN: dict[str, type] = {
     "sticker_year": int,
 }
 
-# Built-in defaults (also inserted by migrations 0008, 0009 and 0013).
+# Built-in defaults (also inserted by migrations 0008, 0009, 0013 and 0019).
 DEFAULTS = {
     "sticker_text_color": "#FFFFFF",
     "sticker_bg_color": "transparent",
@@ -65,6 +66,7 @@ DEFAULTS = {
     "ecp_application_expiry_days": "14",
     "ecp_qr_grace_minutes": "15",
     "ecp_qr_daily_limit": "10",
+    "portal_max_devices": "2",
 }
 
 
@@ -88,7 +90,7 @@ def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
         raise DomainError("invalid_value") from None
     if kind in (Decimal, int) and parsed < 0:
         raise DomainError("invalid_value")
-    if key.startswith("ecp_") and parsed < 1:
+    if key.startswith(("ecp_", "portal_")) and parsed < 1:
         raise DomainError("invalid_value")
     setting = session.get(Setting, key)
     old = setting.value if setting else None

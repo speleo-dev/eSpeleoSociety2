@@ -28,7 +28,8 @@ router = APIRouter(prefix="/admin")
 
 SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
                 "payment_iban", "payment_account_name",
-                "ecp_link_valid_hours", "ecp_application_expiry_days", "ecp_qr_grace_minutes", "ecp_qr_daily_limit")
+                "ecp_link_valid_hours", "ecp_application_expiry_days", "ecp_qr_grace_minutes", "ecp_qr_daily_limit",
+                "portal_max_devices")
 
 
 # --- clubs --------------------------------------------------------------------------------------------

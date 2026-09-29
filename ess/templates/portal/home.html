@@ -28,6 +28,16 @@
   <dt>Bydlisko</dt><dd>{{ d.full_address() or "—" }}</dd>
 </dl>
 <p class="muted">Zmenu údajov nahláste predsedovi svojej skupiny.</p>
+<h2>Moje zariadenia</h2>
+<ul>
+{% for dev in devices %}
+  <li>{{ dev.device }}{% if dev.id == current_device %} <strong>(toto zariadenie)</strong>{% endif %} – prihlásené {{ dev.created_at|date }}
+    {% if dev.id != current_device %}
+    <form class="inline" method="post" action="/portal/devices/{{ dev.id }}/logout" onsubmit="return confirm('Odhlásiť toto zariadenie?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Odhlásiť</button></form>
+    {% endif %}</li>
+{% endfor %}
+</ul>
 <form method="post" action="/portal/logout">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <button>Odhlásiť</button>

@@ -2,6 +2,8 @@
 
 import json
 import secrets
+import time
+import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -78,13 +80,92 @@ def login_code_form(request: Request, key: str, session: Db):
 
 @router.post("/p/{key}/code/verify", dependencies=[Depends(verify_public_csrf)])
 def login_verify(request: Request, key: str, session: Db, code: Annotated[str, Form()] = ""):
-    result = portal_auth.verify_code(session, key, _browser(request), code)
+    result = portal_auth.verify_code(session, key, _browser(request), code, device_label(request))
     session.commit()  # also a failed attempt
     if isinstance(result, str):
         return _page(request, "portal/code.html", status_code=400, key=key, error=ERRORS.get(result, result),
                      expired=result == "code_expired")
     request.session["portal_offer_passkey"] = True
+    return _signed_in(request, result, RedirectResponse("/portal", status_code=303))
+
+
+PENDING_SECONDS = 600
+
+
+def _signed_in(request: Request, result, response):
+    """Set the cookie, or – when the member already uses the maximum of devices – let them pick one to log out."""
+    if isinstance(result, portal_auth.TooManyDevices):
+        request.session["portal_pending"] = {"member_id": str(result.member_id), "method": result.method,
+                                             "until": int(time.time()) + PENDING_SECONDS}
+        return RedirectResponse("/portal/devices/choose", status_code=303) if isinstance(
+            response, RedirectResponse) else JSONResponse({"ok": True, "redirect": "/portal/devices/choose"})
+    return _with_cookie(response, result)
+
+
+def device_label(request: Request) -> str:
+    """A short name of the device from the browser, e.g. "Chrome, Android" (no personal data)."""
+    ua = request.headers.get("user-agent", "")
+    browser = next((name for token, name in (("Edg/", "Edge"), ("SamsungBrowser", "Samsung Internet"),
+                                             ("Firefox/", "Firefox"), ("OPR/", "Opera"), ("Chrome/", "Chrome"),
+                                             ("Safari/", "Safari")) if token in ua), "prehliadač")
+    system = next((name for token, name in (("Android", "Android"), ("iPhone", "iPhone"), ("iPad", "iPad"),
+                                            ("Windows", "Windows"), ("Mac OS X", "macOS"), ("Linux", "Linux"))
+                   if token in ua), "")
+    return f"{browser}, {system}" if system else browser
+
+
+def _pending(request: Request) -> dict | None:
+    pending = request.session.get("portal_pending")
+    if not pending or pending.get("until", 0) < time.time():
+        request.session.pop("portal_pending", None)
+        return None
+    return pending
+
+
+@router.get("/portal/devices/choose")
+def devices_choose(request: Request, session: Db):
+    pending = _pending(request)
+    if pending is None:
+        return RedirectResponse("/portal", status_code=303)
+    return _page(request, "portal/devices_choose.html",
+                 devices=portal_auth.devices(session, uuid.UUID(pending["member_id"])))
+
+
+@router.post("/portal/devices/choose", dependencies=[Depends(verify_public_csrf)])
+def devices_replace(request: Request, session: Db, device_id: Annotated[str, Form()] = ""):
+    pending = _pending(request)
+    if pending is None:
+        return RedirectResponse("/portal", status_code=303)
+    member_id = uuid.UUID(pending["member_id"])
+    try:
+        result = portal_auth.open_session(session, member_id, pending["method"], device_label(request),
+                                          replace=uuid.UUID(device_id))
+        if isinstance(result, portal_auth.TooManyDevices):
+            raise DomainError("device_not_found")
+        session.commit()
+    except (DomainError, ValueError) as exc:
+        session.rollback()
+        return _page(request, "portal/devices_choose.html", status_code=400, error=ERRORS.get(
+            getattr(exc, "code", ""), ERRORS["device_not_found"]), devices=portal_auth.devices(session, member_id))
+    request.session.pop("portal_pending", None)
     return _with_cookie(RedirectResponse("/portal", status_code=303), result)
+
+
+@router.post("/portal/devices/{device_id}/logout", dependencies=[Depends(verify_public_csrf)])
+def device_logout(request: Request, device_id: uuid.UUID, session: Db):
+    current = portal_auth.current_session(session, request.cookies.get(COOKIE))
+    if current is None:
+        return RedirectResponse("/portal", status_code=303)
+    try:
+        portal_auth.log_out_device(session, current.member_id, device_id)
+        session.commit()
+    except DomainError:
+        session.rollback()
+    if device_id == current.id:
+        response = _page(request, "portal/logged_out.html", logged_out=True)
+        response.delete_cookie(COOKIE, path="/")
+        return response
+    return RedirectResponse("/portal", status_code=303)
 
 
 def _with_cookie(response, new: portal_auth.NewSession):
@@ -97,13 +178,16 @@ def _with_cookie(response, new: portal_auth.NewSession):
 def home(request: Request, session: Db):
     from ess.services import portal
 
-    member = _member(request, session)
-    if member is None:
+    current = portal_auth.current_session(session, request.cookies.get(COOKIE))
+    if current is None:
         response = _page(request, "portal/logged_out.html", status_code=401)
         response.delete_cookie(COOKIE, path="/")
         return response
+    session.commit()  # last use of the device
+    member = session.get(Member, current.member_id)
     offer = request.session.pop("portal_offer_passkey", False) or passkeys.count(session, member.id) == 0
-    return _page(request, "portal/home.html", home=portal.home(session, member), offer_passkey=offer)
+    return _page(request, "portal/home.html", home=portal.home(session, member), offer_passkey=offer,
+                 devices=portal_auth.devices(session, member.id), current_device=current.id)
 
 
 @router.post("/portal/logout", dependencies=[Depends(verify_public_csrf)])
@@ -151,12 +235,14 @@ async def passkey_register_options(request: Request, session: Db):
 @router.post("/portal/passkey/register")
 async def passkey_register(request: Request, session: Db):
     body = await _json_csrf(request)
-    member = _member(request, session)
+    current = portal_auth.current_session(session, request.cookies.get(COOKIE))
     challenge = _challenge(request)
-    if member is None or challenge is None:
+    if current is None or challenge is None:
         return JSONResponse({"error": ERRORS["passkey_failed"]}, status_code=400)
+    member = session.get(Member, current.member_id)
     try:
-        passkeys.register(session, member, json.dumps(body.get("credential")), challenge, base_url(request))
+        passkeys.register(session, member, json.dumps(body.get("credential")), challenge, base_url(request),
+                          session_id=current.id)
         session.commit()
     except DomainError as exc:
         session.rollback()
@@ -178,8 +264,9 @@ async def passkey_login(request: Request, session: Db):
     challenge = _challenge(request)
     if challenge is None:
         return JSONResponse({"error": ERRORS["passkey_failed"]}, status_code=400)
-    result = passkeys.authenticate(session, json.dumps(body.get("credential")), challenge, base_url(request))
+    result = passkeys.authenticate(session, json.dumps(body.get("credential")), challenge, base_url(request),
+                                   device_label(request))
     session.commit()
     if isinstance(result, str):
         return JSONResponse({"error": ERRORS.get(result, result)}, status_code=400)
-    return _with_cookie(JSONResponse({"ok": True, "redirect": "/portal"}), result)
+    return _signed_in(request, result, JSONResponse({"ok": True, "redirect": "/portal"}))

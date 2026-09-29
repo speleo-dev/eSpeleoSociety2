@@ -1,0 +1,19 @@
+{% extends "public/_layout.html" %}
+{% block title %}Príliš veľa zariadení – portál eSS{% endblock %}
+{% block content %}
+<h1>Ste prihlásený na {{ devices|length }} zariadeniach</h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<p>Na portál sa dá byť prihlásený najviac na {{ devices|length }} zariadeniach naraz. Vyberte zariadenie, ktoré sa odhlási
+   (aj s jeho prihlásením odtlačkom / tvárou), a prihlásite sa na tomto.</p>
+<ul>
+{% for d in devices %}
+  <li>{{ d.device }} – prihlásené {{ d.created_at|date }}{% if d.last_seen_at %}, naposledy použité {{ d.last_seen_at|date }}{% endif %}
+    <form class="inline" method="post" action="/portal/devices/choose">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="device_id" value="{{ d.id }}">
+      <button>Odhlásiť toto zariadenie a pokračovať</button>
+    </form></li>
+{% endfor %}
+</ul>
+<p class="muted">Ak ste stratili telefón, požiadajte administrátora SSS o odhlásenie zo všetkých zariadení.</p>
+{% endblock %}
