@@ -11,8 +11,13 @@ Pravidlá: R5, R37, R38 v `docs/PLAN.md`. Konvencie ako v `docs/data-model.md`.
   Najviac 5 kódov za hodinu na člena.
 - `member_sessions` – prihlásené zariadenie: `member_id`, `token_hash` (token je len v cookie `ess_member`),
   `method` (`email_code`, neskôr `passkey`), `expires_at` (90 dní), `revoked_at`.
+- `member_passkeys` – passkeys (WebAuthn, migrácia `0018`): `credential_id`, `public_key`, `sign_count`,
+  `last_used_at`. Ukladá sa len verejný kľúč. RP id = hostiteľ verejnej adresy aplikácie (`ESS_PUBLIC_BASE_URL`).
+  Passkey je „discoverable“ – prihlásenie funguje aj bez odkazu z eCP. Administrátorské „Odhlásiť zo všetkých
+  zariadení“ passkeys zmaže.
 - Prístup má len člen s **aktívnym** eCP; kontroluje sa pri každej požiadavke.
 
 Hotové (krok 1): prihlásenie kódom z e-mailu, domovská stránka člena (`/portal`), odhlásenie, v administrácii
 počet prihlásených zariadení a „Odhlásiť zo všetkých zariadení“.
-Zostáva: passkeys, skupina a jej členovia (R37), dokumenty, novinky, notifikácie, hlásenie vstupu do jaskyne.
+Hotové (krok 2): passkeys – `ess/services/passkeys.py`, `static/passkey.js`; ponuka po prihlásení kódom.
+Zostáva: skupina a jej členovia (R37), dokumenty, novinky, notifikácie, hlásenie vstupu do jaskyne.

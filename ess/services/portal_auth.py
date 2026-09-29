@@ -86,7 +86,7 @@ class NewSession:
     expires_at: datetime
 
 
-def _open_session(session: Session, member_id: uuid.UUID, method: str) -> NewSession:
+def open_session(session: Session, member_id: uuid.UUID, method: str) -> NewSession:
     token = secrets.token_urlsafe(32)
     expires = _now() + SESSION_VALID
     session.add(MemberSession(id=uuid.uuid4(), member_id=member_id, token_hash=_hash("session", token),
@@ -113,7 +113,7 @@ def verify_code(session: Session, key: str, browser: str, code: str) -> NewSessi
         row.attempts += 1
         return "code_wrong" if row.attempts < CODE_ATTEMPTS else "code_expired"
     row.used_at = _now()
-    return _open_session(session, ecp_pass.member_id, "email_code")
+    return open_session(session, ecp_pass.member_id, "email_code")
 
 
 # --- sessions -----------------------------------------------------------------------------------------
@@ -142,14 +142,17 @@ def log_out(session: Session, token: str | None) -> None:
 
 
 def log_out_everywhere(session: Session, actor: Actor, member_id: uuid.UUID) -> int:
-    """An administrator ends all sessions of the member (e.g. lost phone)."""
+    """An administrator ends all sessions of the member and deletes the passkeys (e.g. lost phone)."""
     require_admin(actor)
     rows = session.scalars(select(MemberSession).where(MemberSession.member_id == member_id,
                                                        MemberSession.revoked_at.is_(None))).all()
     for row in rows:
         row.revoked_at = _now()
+    from ess.services import passkeys
+
+    removed = passkeys.delete_all(session, member_id)
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="portal.logout_all",
-                 entity_type="member", entity_id=str(member_id), details={"sessions": len(rows)})
+                 entity_type="member", entity_id=str(member_id), details={"sessions": len(rows), "passkeys": removed})
     return len(rows)
 
 

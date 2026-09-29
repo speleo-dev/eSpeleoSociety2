@@ -6,6 +6,13 @@
 {% if home.payment %}
 <p><a href="{{ home.payment[0] }}" target="_blank" rel="noopener noreferrer"><button class="primary">{{ home.payment[1] }}</button></a></p>
 {% endif %}
+{% include "portal/_passkey.html" %}
+{% if offer_passkey %}
+<section class="box" data-passkey-box hidden>
+  <p>Nabudúce sa môžete prihlásiť jedným dotykom – odtlačkom prsta alebo tvárou, bez kódu z e-mailu.</p>
+  <button class="primary" data-passkey-register hidden>Nastaviť prihlásenie odtlačkom / tvárou</button>
+</section>
+{% endif %}
 <h2>Členstvo</h2>
 <ul>
   {% for name, status, primary in home.clubs %}<li>{{ name }}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>

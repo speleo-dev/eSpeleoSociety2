@@ -365,6 +365,10 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 - Odosielanie notifikácií do eCP z administrácie.
 - Hlásenie vstupu do jaskyne: kde, kto, plánovaný návrat → pripomienka členovi → e-mail predsedovi skupiny.
 
+### Na záver – upratanie použitia (poznámka Lad'a, 2026-09-29)
+- Prejsť prípady použitia a pracovné postupy: kde sú tlačidlá, kedy sú viditeľné a kedy aktívne
+  (administrácia, portál člena aj predsedu). Až keď bude aplikácia funkčne hotová.
+
 ### Fáza 5 – Portál predsedu
 - Zoznam členov skupiny, pridanie čakateľa, návrh nového člena (čaká na aktiváciu), pozastavenie, ukončenie.
 - Hromadná platba: výber členov → PAYMe odkaz/QR s jednou referenciou → po spárovaní záznam platby

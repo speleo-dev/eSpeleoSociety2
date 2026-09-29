@@ -109,6 +109,7 @@ ERRORS = {
     "portal_not_available": "Portál nie je dostupný – odkaz je neplatný alebo váš eCP nie je aktívny.",
     "portal_needs_email": "V evidencii nemáte e-mail. Kontaktujte predsedu svojej skupiny.",
     "too_many_codes": "Kódov bolo odoslaných priveľa. Skúste to znova o hodinu.",
+    "passkey_failed": "Prihlásenie passkey sa nepodarilo. Skúste to znova alebo sa prihláste kódom z e-mailu.",
     "code_wrong": "Nesprávny kód. Skúste to znova.",
     "code_expired": "Kód vypršal alebo bol viackrát zadaný nesprávne. Požiadajte o nový.",
     "statement_already_imported": "Tento výpis už bol nahratý.",

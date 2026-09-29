@@ -2,5 +2,7 @@
 {% block title %}Portál eSS{% endblock %}
 {% block content %}
 <h1>{% if logged_out %}Boli ste odhlásený{% else %}Nie ste prihlásený{% endif %}</h1>
-<p>Do portálu sa prihlásite odkazom <strong>Portál eSS</strong> vo vašom elektronickom preukaze (eCP) v Peňaženke Google.</p>
+{% include "portal/_passkey.html" %}
+<p><button class="primary" data-passkey-login hidden>Prihlásiť odtlačkom prsta / tvárou</button></p>
+<p>Prvýkrát sa do portálu prihlásite odkazom <strong>Portál eSS</strong> vo vašom elektronickom preukaze (eCP) v Peňaženke Google.</p>
 {% endblock %}
