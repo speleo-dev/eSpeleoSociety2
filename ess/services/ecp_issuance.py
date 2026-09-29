@@ -94,6 +94,9 @@ def view(session: Session, actor: Actor, application_id: uuid.UUID) -> Applicati
         member_since_year=pii.decrypt(application.member_since_enc, _CTX + "member_since") or "",
         register=register, club_name=club.name if club else "",
     )
+    if application.source == "club_chair":  # the chair entered the data; nothing to compare
+        result.first_name, result.last_name = register.first_name, register.last_name
+        result.birth_date = register.birth_date
     if not register.card_number and result.card_number:
         result.fills.append("card_number")
     if not member.member_since and result.member_since_year:

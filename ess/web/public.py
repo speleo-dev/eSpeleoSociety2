@@ -19,7 +19,7 @@ from ess.services.ecp_applications import ApplicationForm
 from ess.storage import MediaStore, get_media_store
 from ess.wallet import WalletClient, get_wallet
 from ess.web.auth import csrf_token
-from ess.web.common import parse_date
+from ess.web.common import base_url, parse_date
 from ess.web.mailing import render_mail, send
 from ess.web.templates import ERRORS, templates
 
@@ -40,10 +40,6 @@ async def verify_public_csrf(request: Request) -> None:
 def _page(request: Request, name: str, status_code: int = 200, **context):
     return templates.TemplateResponse(request, name, {"csrf": csrf_token(request), **context},
                                       status_code=status_code)
-
-
-def base_url(request: Request) -> str:
-    return (get_settings().public_base_url or str(request.base_url)).rstrip("/")
 
 
 def _send_verification(request: Request, mailer: Mailer | None, pending: ecp_applications.VerificationMail):
@@ -115,6 +111,18 @@ def _crop(form) -> tuple[float, float, float, float] | None:
     except ValueError:
         return None  # no JavaScript: automatic crop
     return values if all(0 <= v <= 1 for v in values) and values[2] > 0 else None
+
+
+@router.get("/photo/{token}")
+def photo_invite(request: Request, token: str, session: Session = Depends(get_session)):
+    """Link from the invitation e-mail for a new member (R23)."""
+    application = ecp_applications.open_photo_invite(session, token)
+    if application is None:
+        session.rollback()
+        return _page(request, "public/link_invalid.html", status_code=410)
+    session.commit()
+    request.session[SESSION_KEY] = str(application.id)
+    return RedirectResponse("/ecp/apply/photo", status_code=303)
 
 
 @router.get("/apply/photo")

@@ -53,7 +53,11 @@ Hotové (krok 5, R25): stav eCP sa prepočíta automaticky pri každej zmene čl
 (`ess/services/ecp_state.py`, udalosti SQLAlchemy) a po uložení sa odošle do Google Wallet (aktívny / neaktívny;
 zrušený pri vylúčení = EXPIRED bez osobných údajov a fotky). Neodoslaná zmena sa skúsi pri ďalšej akcii administrátora;
 v detaile člena je stav eCP.
-Zostáva: stav členského (fáza 3), kartička PDF, cesta nového člena (R23).
+Hotové (krok 6, R23): pri pridaní člena je voľba „Vydať eCP“ (súhlas z papierovej prihlášky sa uloží do `consents`,
+zdroj `paper_form`). Aktívnemu členovi hneď, navrhnutému až po aktivácii (príznak `issue_ecp` v požiadavke) príde
+e-mail s odkazom `/ecp/photo/<token>` (platí počet dní ako prepadnutie žiadosti); ďalej rovnako ako verejná žiadosť.
+E-maily zo služieb idú cez `ess/services/outbox.py` – odošlú sa až po uložení.
+Zostáva: stav členského (fáza 3), kartička PDF, ročná známka a nastavenia vzhľadu eCP.
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.

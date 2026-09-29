@@ -136,9 +136,9 @@ def _has_current_pass(session: Session, member_id: uuid.UUID) -> bool:
     ) is not None
 
 
-def _new_token(session: Session, application: EcpApplication, purpose: str) -> str:
+def _new_token(session: Session, application: EcpApplication, purpose: str, hours: int | None = None) -> str:
     token = secrets.token_urlsafe(32)
-    hours = settings.get_int(session, "ecp_link_valid_hours")
+    hours = hours or settings.get_int(session, "ecp_link_valid_hours")
     session.add(OneTimeToken(id=uuid.uuid4(), token_hash=hash_token(token), purpose=purpose,
                              application_id=application.id, expires_at=_now() + timedelta(hours=hours)))
     return token
@@ -268,3 +268,71 @@ def submit_photo(
     audit.record(session, actor_type=PUBLIC.audit_type, actor_id=None, action="ecp_application.submit",
                  entity_type="ecp_application", entity_id=str(application.id))
     return PhotoUpload(application, [original_name, portrait_name])
+
+
+# --- new member proposed with "issue eCP" (R23) ------------------------------------------------------------
+
+PURPOSE_PHOTO_INVITE = "ecp_photo"
+
+
+def request_for_new_member(session: Session, actor, member_id: uuid.UUID, club_id: uuid.UUID) -> None:
+    """The paper application form (with GDPR consent) says "issue eCP".
+
+    The consent is recorded now. An active member is invited at once; a proposed member (waiting for
+    activation) is invited when the administrator activates them (see `tasks.activate`).
+    """
+    from ess.models import Consent, Task, TaskStatus, TaskType
+
+    member = session.get(Member, member_id)
+    data = members.read_member(member)
+    if not data.email:
+        raise DomainError("ecp_needs_email")
+    session.add(Consent(id=uuid.uuid4(), member_id=member_id, kind=CONSENT_GDPR, text_version="paper",
+                        granted=True, source="paper_form", recorded_by=actor.id))
+    active = session.scalar(select(Membership.id).where(
+        Membership.member_id == member_id, Membership.valid_to.is_(None), Membership.status == MembershipStatus.MEMBER))
+    if active:
+        invite_new_member(session, member_id, club_id)
+        return
+    task = session.scalar(select(Task).where(Task.member_id == member_id, Task.status == TaskStatus.OPEN.value,
+                                             Task.task_type == TaskType.MEMBER_ACTIVATION.value))
+    if task is None:
+        raise DomainError("ecp_member_not_eligible")  # e.g. a candidate (R25)
+    task.context = {**(task.context or {}), "issue_ecp": True}
+
+
+def invite_new_member(session: Session, member_id: uuid.UUID, club_id: uuid.UUID | None) -> None:
+    """Create the application and e-mail a link to upload the photo (the link also verifies the e-mail)."""
+    from ess.services.outbox import QueuedMail, queue
+
+    if _has_current_pass(session, member_id):
+        return
+    open_app = session.scalar(select(EcpApplication).where(EcpApplication.member_id == member_id,
+                                                           EcpApplication.status.in_(OPEN_STATUSES)))
+    if open_app is not None:
+        return
+    data = members.read_member(session.get(Member, member_id))
+    if not data.email:
+        return
+    application = EcpApplication(id=uuid.uuid4(), source=EcpApplicationSource.CLUB_CHAIR.value,
+                                 status=S.PHOTO_PENDING.value, member_id=member_id, club_id=club_id,
+                                 email_enc=pii.encrypt(data.email, "ecp_applications.email"),
+                                 email_bidx=members.email_index(data.email), wants_wallet=True, wants_card=False)
+    session.add(application)
+    session.flush()
+    days = settings.get_int(session, "ecp_application_expiry_days")
+    token = _new_token(session, application, PURPOSE_PHOTO_INVITE, hours=days * 24)
+    audit.record(session, actor_type="system", actor_id="system", action="ecp_application.invite",
+                 entity_type="ecp_application", entity_id=str(application.id))
+    queue(session, QueuedMail(data.email, "Elektronický jaskyniarsky preukaz – nahrajte fotku", "ecp_invite",
+                              {"first_name": data.first_name, "link_path": f"/ecp/photo/{token}", "days": days}))
+
+
+def open_photo_invite(session: Session, token: str) -> EcpApplication | None:
+    """The new member clicked the invitation link: the e-mail is verified, the photo step follows."""
+    expire_stale(session)
+    application = use_token(session, token, PURPOSE_PHOTO_INVITE)
+    if application is None or application.status != S.PHOTO_PENDING.value:
+        return None
+    application.email_verified_at = _now()
+    return application

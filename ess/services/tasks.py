@@ -107,6 +107,10 @@ def activate(session: Session, actor: Actor, task_id: uuid.UUID, card_number: st
     if card_number.strip():
         members.set_card_number(session, actor, task.member_id, card_number)
     memberships.activate(session, actor, task.membership_id)
+    if (task.context or {}).get("issue_ecp"):  # R23: the paper form asked for an eCP
+        from ess.services import ecp_applications
+
+        ecp_applications.invite_new_member(session, task.member_id, task.club_id)
 
 
 def reject_activation(session: Session, actor: Actor, task_id: uuid.UUID, reason: str, on: date | None = None) -> None:

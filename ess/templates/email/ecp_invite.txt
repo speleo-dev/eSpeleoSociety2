@@ -1,0 +1,11 @@
+Dobrý deň {{ first_name }},
+
+vitajte v Slovenskej speleologickej spoločnosti. Na vašej prihláške ste požiadali o elektronický
+jaskyniarsky preukaz (eCP). Posledný krok je nahrať fotku tváre:
+
+{{ link }}
+
+Odkaz platí {{ days }} dní a dá sa použiť raz.
+
+S pozdravom
+Slovenská speleologická spoločnosť

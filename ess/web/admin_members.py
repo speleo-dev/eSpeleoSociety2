@@ -7,11 +7,11 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from ess.models import Member, MembershipStatus
-from ess.services import certificates, directory, members, memberships, positions
+from ess.services import certificates, directory, ecp_applications, members, memberships, outbox, positions
 from ess.services.access import DomainError, PermissionDenied
 from ess.services.members import MemberData
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act, error_text, parse_date, render
+from ess.web.common import Admin, Db, act, after_commit, error_text, parse_date, render
 
 router = APIRouter(prefix="/admin")
 
@@ -62,18 +62,26 @@ def member_new(request: Request, admin: Admin, session: Db):
 async def member_create(request: Request, admin: Admin, session: Db):
     form = await request.form()
     club_id, status = str(form.get("club_id", "")), str(form.get("status", "member"))
+    issue_ecp = form.get("issue_ecp") == "on"
     raw: dict = {}
     try:
         data, raw = await _member_form(request)
         if not club_id:
             raise DomainError("club_required")
         membership = memberships.add_new_member_to_club(session, admin.actor, data, uuid.UUID(club_id), S(status))
+        if issue_ecp:
+            ecp_applications.request_for_new_member(session, admin.actor, membership.member_id, membership.club_id)
         session.commit()
     except (DomainError, PermissionDenied) as exc:
+        outbox.discard(session)
         session.rollback()
         return render(request, "admin/member_form.html", admin, session, status_code=400, raw=raw, member_id=None,
-                      clubs=directory.active_clubs(session), S=S, club_id=club_id, status=status, error=error_text(exc))
-    request.session["flash"] = {"kind": "ok", "text": "Člen bol pridaný."}
+                      clubs=directory.active_clubs(session), S=S, club_id=club_id, status=status, error=error_text(exc),
+                      issue_ecp=issue_ecp)
+    text = "Člen bol pridaný." + (" Poslali sme mu e-mail na nahratie fotky pre eCP." if issue_ecp else "")
+    if not after_commit(request, session):
+        text = "Člen bol pridaný, ale e-mail na nahratie fotky sa nepodarilo odoslať."
+    request.session["flash"] = {"kind": "ok", "text": text}
     return RedirectResponse(f"/admin/members/{membership.member_id}", status_code=303)
 
 

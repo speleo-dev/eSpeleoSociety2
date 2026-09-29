@@ -46,14 +46,41 @@ def push_ecp_changes(request: Request, session: Session) -> None:
         ecp_state.push_pending(session, dependency(request, get_wallet), dependency(request, get_media_store))
 
 
+def base_url(request: Request) -> str:
+    from ess.config import get_settings
+
+    return (get_settings().public_base_url or str(request.base_url)).rstrip("/")
+
+
+def after_commit(request: Request, session: Session) -> bool:
+    """Send queued e-mails and changed eCP states. Returns False if some e-mail could not be sent."""
+    from ess.mail import get_mailer
+    from ess.services import outbox
+    from ess.web.mailing import render_mail, send
+
+    ok = True
+    mailer = dependency(request, get_mailer)
+    for item in outbox.take(session):
+        context = dict(item.context)
+        if "link_path" in context:
+            context["link"] = base_url(request) + context.pop("link_path")
+        ok = send(mailer, render_mail(item.to, item.subject, item.template, **context)) and ok
+    push_ecp_changes(request, session)
+    return ok
+
+
 def act(request: Request, session: Session, back: str, action, success: str) -> RedirectResponse:
     """Run a service call in one transaction and redirect back with a message (POST-redirect-GET)."""
+    from ess.services import outbox
+
     try:
         action()
         session.commit()
         request.session["flash"] = {"kind": "ok", "text": success}
-        push_ecp_changes(request, session)
+        if not after_commit(request, session):
+            request.session["flash"] = {"kind": "error", "text": success + " E-mail sa však nepodarilo odoslať."}
     except (DomainError, PermissionDenied) as exc:
+        outbox.discard(session)
         session.rollback()
         request.session["flash"] = {"kind": "error", "text": error_text(exc)}
     return RedirectResponse(safe_back(back), status_code=303)

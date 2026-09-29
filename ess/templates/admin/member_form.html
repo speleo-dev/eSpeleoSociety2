@@ -34,6 +34,9 @@
         <option value="candidate" {% if status == "candidate" %}selected{% endif %}>čakateľ</option>
       </select></label>
   </div>
+  <label class="check"><input type="checkbox" name="issue_ecp" {% if issue_ecp %}checked{% endif %}>
+    Vydať eCP – na papierovej prihláške je súhlas so spracovaním údajov. Členovi príde e-mail na nahratie fotky
+    (pri návrhu nového člena až po aktivácii). Vyžaduje e-mail; čakateľ eCP nedostane.</label>
   {% endif %}
   <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
   <p><button class="primary">Uložiť</button>

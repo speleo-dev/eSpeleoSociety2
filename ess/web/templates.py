@@ -49,6 +49,8 @@ ERRORS = {
     "gdpr_consent_required": "Bez súhlasu so spracovaním osobných údajov nie je možné eCP vydať.",
     "application_not_open": "Žiadosť už bola vybavená alebo vypršala.",
     "application_not_found": "Žiadosť neexistuje.",
+    "ecp_needs_email": "Na vydanie eCP treba e-mail člena.",
+    "ecp_member_not_eligible": "eCP môže dostať len člen (nie čakateľ).",
     "member_not_in_sss": "Člen už nie je členom SSS – eCP nemožno vydať.",
     "member_has_ecp": "Člen už má vydaný eCP.",
     "wallet_error": "Google Wallet preukaz nevytvoril. Skúste to znova neskôr.",
@@ -129,6 +131,8 @@ def resolution_label(resolution: str | None) -> str:
 def task_description(task) -> str:
     """One line saying what the administrator is asked to do."""
     if task.task_type == "member_activation":
+        if (task.context or {}).get("issue_ecp"):
+            return "Nový člen navrhnutý predsedom skupiny, žiada o eCP. Po aktivácii mu príde e-mail na nahratie fotky."
         if (task.context or {}).get("from_status") == "candidate":
             return "Predseda skupiny navrhuje povýšiť čakateľa na člena. Aktivujte po doručení podkladov."
         return "Nový člen navrhnutý predsedom skupiny. Aktivujte po doručení podkladov."
