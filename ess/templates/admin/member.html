@@ -40,6 +40,7 @@
         {% if c.code_enc %}
         <form class="inline" method="post" action="/admin/cards/{{ c.id }}/again">
           <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="member_id" value="{{ d.member.id }}">
+          <select name="card_format" aria-label="Formát">{% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}</select>
           <button name="delivery" value="download">Stiahnuť znova</button>
           {% if d.data.email %}<button name="delivery" value="email">Poslať znova</button>{% endif %}
         </form>
@@ -50,7 +51,9 @@
             <option value="">— dôvod náhrady —</option>
             <option value="lost">stratená</option><option value="stolen">ukradnutá</option><option value="damaged">poškodená</option>
           </select>
-          <button name="delivery" value="download">Vydať náhradnú</button>
+          <select name="card_format" aria-label="Formát">{% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}</select>
+          <button name="delivery" value="download">Vydať náhradnú a stiahnuť</button>
+          {% if d.data.email %}<button name="delivery" value="email">Vydať náhradnú a poslať</button>{% endif %}
         </form>
       {% endif %}</td>
     </tr>
@@ -58,16 +61,19 @@
   </tbody>
 </table></div>
 {% endif %}
-{% if not d.member.expelled_at and not d.member.sss_ended_at %}
+{% if issuable_years and not d.member.expelled_at and not d.member.sss_ended_at %}
 <details>
-  <summary>Vydať kartičku SSS (PDF)</summary>
+  <summary>Vydať kartičku SSS</summary>
   <form method="post" action="/admin/members/{{ d.member.id }}/card" class="form">
     <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-    <label>Rok<input type="number" name="year" value="{{ this_year }}" min="{{ this_year - 1 }}" max="{{ this_year + 1 }}" required></label>
-    <p class="muted">Vydajte, keď je členské do SSS na tento rok zaplatené. Na každý rok sa vydá jedna kartička;
-       ďalšiu možno vydať len ako náhradu stratenej, ukradnutej alebo poškodenej (pôvodná potom prestane platiť).</p>
-    <p><button name="delivery" value="download" class="primary">Stiahnuť PDF na tlač</button>
-       {% if d.data.email %}<button name="delivery" value="email">Poslať e-mailom</button>{% endif %}</p>
+    <div class="grid">
+      <label>Rok<select name="year">{% for y in issuable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+      <label>Formát<select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+    </div>
+    <p class="muted">Kartička na rok sa vydáva raz (pri pridaní člena alebo keď sa stane členom SSS). Ďalšie roky ju člen
+       dostane e-mailom automaticky po zaplatení členského. Novú na ten istý rok možno vydať len ako náhradu.</p>
+    <p><button name="delivery" value="download" class="primary">Vydať a stiahnuť</button>
+       {% if d.data.email %}<button name="delivery" value="email">Vydať a poslať e-mailom</button>{% endif %}</p>
   </form>
 </details>
 {% endif %}

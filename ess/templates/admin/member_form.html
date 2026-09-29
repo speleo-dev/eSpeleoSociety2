@@ -37,6 +37,14 @@
   <label class="check"><input type="checkbox" name="issue_ecp" {% if issue_ecp %}checked{% endif %}>
     Vydať eCP – na papierovej prihláške je súhlas so spracovaním údajov. Členovi príde e-mail na nahratie fotky
     (pri návrhu nového člena až po aktivácii). Vyžaduje e-mail; čakateľ eCP nedostane.</label>
+  <label class="check"><input type="checkbox" name="issue_card" {% if issue_card %}checked{% endif %}>
+    Vydať kartičku SSS (člen bez smartfónu) – vydáva sa raz; pri e-maile ju pošleme, inak ju stiahnete v detaile člena.</label>
+  <div class="grid">
+    <label>Kartička na rok
+      <select name="card_year">{% for y in card_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+    <label>Formát kartičky
+      <select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+  </div>
   {% endif %}
   <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
   <p><button class="primary">Uložiť</button>

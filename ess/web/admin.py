@@ -1,14 +1,13 @@
 """Administration pages (Google sign-in required)."""
 
 import uuid
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from ess.models import MembershipStatus, TaskType
-from ess.services import certificates, directory, members, memberships, tasks
+from ess.services import certificates, directory, members, memberships, sss_cards, tasks
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act as _act, render as _render, safe_back as _safe_back
 
@@ -42,7 +41,8 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     detail = directory.member_detail(session, member_id)
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
-    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, this_year=date.today().year,
+    issuable = [y for y in sss_cards.allowed_years(session) if sss_cards.can_issue(session, member_id, y)]
+    return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, issuable_years=issuable,
                    clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
                    cert_types=certificates.active_types(session))
 

@@ -91,6 +91,8 @@ class Member(TimestampMixin, Base):
 
     member_since: Mapped[date | None] = mapped_column(Date)
     reduced_fee: Mapped[bool] = mapped_column(Boolean, default=False)
+    # The member receives the SSS card (no smartphone); "pdf" or "png". None = no card (R33).
+    card_format: Mapped[str | None] = mapped_column(String(3))
     expelled_at: Mapped[date | None] = mapped_column(Date)
     expelled_reason: Mapped[str | None] = mapped_column(Text)
     # SSS membership ended by decision of the presidium (not expulsion) - can be restored later.

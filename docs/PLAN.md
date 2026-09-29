@@ -136,6 +136,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   *stratená / ukradnutá / poškodená*: pôvodná okamžite prestane platiť a jej overenie ukáže „nahlásená ako
   stratená/ukradnutá“ (resp. „nahradená novou“). Kód kartičky je v DB šifrovaný (kvôli opätovnému stiahnutiu)
   a vyhľadáva sa podľa odtlačku (migrácia `0011`).
+- **R33** – **Vydávanie kartičky SSS (upresnenie R31/R32):**
+  - Prvú kartičku vydá **ručne a raz** predseda skupiny (alebo administrátor) – pri pridaní člena alebo keď sa
+    člen stane členom SSS (povýšenie z čakateľa, obnovenie členstva). Na **tento rok**, na **nasledujúci** len
+    v období platby členského (`renewal_window_days` pred koncom roka, R27).
+  - Na daný rok sa kartička vydá len raz (aj nahradená sa počíta). **Náhradu** vydáva len administrátor s dôvodom.
+  - Člen s kartičkou má uložený **formát (PDF alebo PNG)**. Na **ďalšie roky** mu kartička príde **e-mailom
+    automaticky**, keď sa jeho členské označí ako zaplatené (fáza 3 – rozloží sa to podľa spracovania výpisov,
+    žiadne hromadné rozosielanie).
 
 ## 4. Architektúra
 
@@ -298,6 +306,8 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 - Ročné referencie, PAYMe odkaz v eCP a na portáli.
 - Nahratie bankového výpisu, automatické párovanie podľa referencie, ručné dopárovanie.
 - Prehľad zaplateného členského.
+- Po označení členského za zaplatené: členovi s kartičkou (`members.card_format`) sa vydá kartička na daný rok
+  a pošle e-mailom (R33).
 
 ### Fáza 4 – Portál člena
 - Prihlásenie cez eCP (R5).

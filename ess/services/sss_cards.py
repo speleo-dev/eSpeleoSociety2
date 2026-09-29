@@ -1,8 +1,10 @@
-"""Kartička SSS: issued by an administrator for one calendar year, with its own random code (R31, R32).
+"""Kartička SSS: one card per member and calendar year, with its own random code (R31–R33).
 
-Until payments exist (phase 3) the administrator issues the card after checking that the SSS fee for the
-year is paid. One card per member and year: the same card can be downloaded or sent again, but a new one
-is issued only as a replacement of a lost, stolen or damaged card – the old code then shows that state.
+- The first card is issued once, manually, by the club chair or an administrator (when the member is
+  added or becomes a member of SSS) – for this year, or for the next year during the payment period.
+- Later years: the card is e-mailed automatically when the fee is marked as paid (phase 3).
+- The same card can be downloaded or sent again; a new one only as a replacement of a lost, stolen or
+  damaged card, and only by an administrator – the old code then shows that state.
 """
 
 import enum
@@ -20,9 +22,11 @@ from ess.cards import CardContent
 from ess.models import Club, Member, Membership, SssCard
 from ess.security import pii
 from ess.services import members
-from ess.services.access import PUBLIC, Actor, DomainError, require_admin
+from ess.services import settings
+from ess.services.access import PUBLIC, Actor, DomainError, PermissionDenied, can_manage_club, require_admin
 
 REPLACE_REASONS = ("lost", "stolen", "damaged")
+FORMATS = ("pdf", "png")
 _CTX = "sss_cards.code"
 
 
@@ -36,6 +40,7 @@ class IssuedCard:
     content: CardContent
     email: str | None
     first_name: str
+    card_format: str = "pdf"  # the member's preferred format
 
 
 def current_card(session: Session, member_id: uuid.UUID, year: int) -> SssCard | None:
@@ -59,7 +64,7 @@ def _content(session: Session, member: Member, card: SssCard, code: str, base_ur
     content = CardContent(full_name=data.full_name(), club_name=club.name if club else "",
                           card_number=data.card_number, year=card.year,
                           verify_url=f"{base_url.rstrip('/')}/k/{code}")
-    return IssuedCard(card, content, data.email, data.first_name)
+    return IssuedCard(card, content, data.email, data.first_name, member.card_format or "pdf")
 
 
 def _new_card(session: Session, actor: Actor, member: Member, year: int, base_url: str) -> IssuedCard:
@@ -73,15 +78,34 @@ def _new_card(session: Session, actor: Actor, member: Member, year: int, base_ur
     return _content(session, member, card, code, base_url)
 
 
-def issue(session: Session, actor: Actor, member_id: uuid.UUID, year: int, base_url: str) -> IssuedCard:
-    """First card of the year. A second one only through `replace`."""
-    require_admin(actor)
-    this_year = date.today().year
-    if not (this_year - 1 <= year <= this_year + 1):
-        raise DomainError("invalid_card_year")
+def allowed_years(session: Session, today: date | None = None) -> list[int]:
+    """This year; the next year too during the payment period (renewal window before the year end, R27)."""
+    today = today or date.today()
+    window = settings.get_int(session, "renewal_window_days")
+    next_year_opens = date(today.year, 12, 31).toordinal() - window
+    return [today.year, today.year + 1] if today.toordinal() >= next_year_opens else [today.year]
+
+
+def can_issue(session: Session, member_id: uuid.UUID, year: int) -> bool:
+    """A card of the year was never issued (a replaced card counts as issued)."""
+    return session.scalar(select(SssCard.id).where(SssCard.member_id == member_id, SssCard.year == year)) is None
+
+
+def issue(session: Session, actor: Actor, member_id: uuid.UUID, year: int, base_url: str,
+          card_format: str = "pdf") -> IssuedCard:
+    """First card of the year, once – by the chair of the member's club or an administrator."""
+    if card_format not in FORMATS:
+        raise DomainError("invalid_value")
     member = _member_for_card(session, member_id)
-    if current_card(session, member_id, year):
+    clubs = session.scalars(select(Club).join(Membership, Membership.club_id == Club.id).where(
+        Membership.member_id == member_id, Membership.valid_to.is_(None))).all()
+    if not actor.is_admin and not any(can_manage_club(session, actor, c) for c in clubs):
+        raise PermissionDenied("club_manager")
+    if year not in allowed_years(session):
+        raise DomainError("invalid_card_year")
+    if not can_issue(session, member_id, year):
         raise DomainError("card_already_issued")
+    member.card_format = card_format  # the member receives cards (next years automatically after payment)
     return _new_card(session, actor, member, year, base_url)
 
 

@@ -64,7 +64,8 @@ def after_commit(request: Request, session: Session) -> bool:
         context = dict(item.context)
         if "link_path" in context:
             context["link"] = base_url(request) + context.pop("link_path")
-        ok = send(mailer, render_mail(item.to, item.subject, item.template, **context)) and ok
+        ok = send(mailer, render_mail(item.to, item.subject, item.template, attachments=item.attachments,
+                                      **context)) and ok
     push_ecp_changes(request, session)
     return ok
 

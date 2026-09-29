@@ -50,6 +50,7 @@ Klub **„SSS – nezaradení“**:
 | `email_enc` | bytes | voliteľné pri importe; bez neho sa nedá požiadať o eCP; **nie je jedinečný** (manželia) |
 | `street_enc`, `postal_code_enc`, `city_enc` | bytes | adresa po častiach, voliteľné (`street_enc` je pôvodné jednoriadkové bydlisko – migrácia `0009` ho zachovala) |
 | `country` | text(2) | krajina, ISO kód, predvolene `SK` (sama osebe neidentifikuje) |
+| `card_format` | text | `pdf` / `png` – člen dostáva kartičku SSS (R33, migrácia `0012`); prázdne = nie |
 | `phone_enc` | bytes | voliteľné; telefón predsedu skupiny a predsedu SSS sa zobrazuje na overovacej stránke |
 | `lookup_bidx` | bytes | HMAC(meno, priezvisko, rok narodenia) – vyhľadanie pri žiadosti o eCP |
 | `email_bidx` | bytes | HMAC(e-mail) – nie jedinečný; zobrazenie, kto e-mail zdieľa; člena nikdy neidentifikuje sám |

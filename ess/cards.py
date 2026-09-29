@@ -1,6 +1,7 @@
-"""PDF "Kartička SSS" – printable card for members without a smartphone (one calendar year).
+"""The SSS card ("Kartička SSS") – card for members without a smartphone (one calendar year), as PDF or PNG.
 
-The card is printed on A4 at the real ID-1 size (85.6 × 54 mm) with a cutting frame. Its QR code leads
+PDF: printed on A4 at the real ID-1 size (85.6 × 54 mm) with a cutting frame. PNG: the card alone
+(1011 × 638 px, the same layout), e.g. to keep in a phone. Its QR code leads
 to a page that shows only "Člen Slovenskej speleologickej spoločnosti" and "Členské zaplatené na rok XXXX".
 """
 
@@ -10,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import qrcode
+from PIL import Image, ImageDraw, ImageFont
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
@@ -103,3 +105,62 @@ def render_card_pdf(card: CardContent) -> bytes:
     c.showPage()
     c.save()
     return out.getvalue()
+
+
+# --- PNG -------------------------------------------------------------------------------------------------
+
+PNG_SIZE = (1011, 638)  # ID-1 ratio, ~300 dpi
+_PX = PNG_SIZE[0] / 85.6  # pixels per millimetre
+
+
+def _font(bold: bool, size_mm: float) -> ImageFont.FreeTypeFont:
+    name = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
+    return ImageFont.truetype(str(STATIC / "fonts" / name), max(8, round(size_mm * _PX)))
+
+
+def _fit_font(draw: ImageDraw.ImageDraw, text: str, bold: bool, size_mm: float, width_px: float):
+    while size_mm > 1.8:
+        font = _font(bold, size_mm)
+        if draw.textlength(text, font=font) <= width_px:
+            return font
+        size_mm -= 0.1
+    return _font(bold, size_mm)
+
+
+def render_card_png(card: CardContent) -> bytes:
+    """The same card as an image (no page, no cutting frame)."""
+    w, h = PNG_SIZE
+    mm_ = lambda v: round(v * _PX)  # noqa: E731
+    dark = tuple(round(c * 255) for c in DARK)
+    gold = tuple(round(c * 255) for c in GOLD)
+    image = Image.new("RGB", PNG_SIZE, "white")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 0, w, mm_(13)), fill=dark)
+    with Image.open(STATIC / "logo-sss.png") as logo:
+        logo = logo.convert("RGBA").resize((mm_(10), mm_(10)))
+        image.paste(logo, (mm_(2.5), mm_(1.5)), logo)
+    draw.text((mm_(14), mm_(2.2)), "Slovenská speleologická spoločnosť", font=_font(True, 2.7), fill="white")
+    draw.text((mm_(14), mm_(6.8)), f"Členská kartička {card.year}", font=_font(True, 2.5), fill=gold)
+
+    qr_size = mm_(30)
+    qr = qrcode.make(card.verify_url, box_size=10, border=1).convert("RGB").resize((qr_size, qr_size), Image.NEAREST)
+    image.paste(qr, (w - qr_size - mm_(3), h - qr_size - mm_(5)))
+
+    text_w = w - qr_size - mm_(9)
+    x = mm_(4)
+    draw.text((x, mm_(16.5)), card.full_name, font=_fit_font(draw, card.full_name, True, 3.5, text_w), fill=(25, 25, 25))
+    draw.text((x, mm_(22.5)), card.club_name, font=_fit_font(draw, card.club_name, False, 2.5, text_w), fill=(25, 25, 25))
+    if card.card_number:
+        draw.text((x, mm_(27.5)), f"Číslo preukazu: {card.card_number}", font=_font(False, 2.5), fill=(25, 25, 25))
+    draw.text((x, h - mm_(12)), f"Platí na rok {card.year}", font=_font(False, 2.5), fill=(25, 25, 25))
+    draw.text((x, h - mm_(7)), "Overenie: naskenujte QR kód", font=_font(False, 1.9), fill=(100, 100, 100))
+    out = io.BytesIO()
+    image.save(out, format="PNG", optimize=True)
+    return out.getvalue()
+
+
+def render_card(card: CardContent, card_format: str) -> tuple[bytes, str, str]:
+    """(data, MIME type, file name) in the requested format."""
+    if card_format == "png":
+        return render_card_png(card), "image/png", f"karticka-sss-{card.year}.png"
+    return render_card_pdf(card), "application/pdf", f"karticka-sss-{card.year}.pdf"
