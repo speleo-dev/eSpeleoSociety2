@@ -426,6 +426,7 @@ class EcpPass(TimestampMixin, Base):
     application_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ecp_applications.id"))
     wallet_object_id: Mapped[str] = mapped_column(String(120), unique=True)  # issuer.random, no personal data
     state: Mapped[str] = mapped_column(String(16))
+    wallet_state: Mapped[str | None] = mapped_column(String(16))  # last state sent to Google Wallet
     photo: Mapped[str | None] = mapped_column(String(200))  # object name in the media bucket
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -158,6 +158,7 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
         save_url = wallet.save_url(ecp_pass.wallet_object_id)
     except WalletError:
         raise DomainError("wallet_error") from None
+    ecp_pass.wallet_state = ecp_pass.state
 
     application.status = S.APPROVED.value
     application.decided_at, application.decided_by = _now(), actor.id

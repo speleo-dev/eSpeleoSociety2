@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ess.models import (
+    EcpPass,
     CertificateType,
     Club,
     Member,
@@ -124,6 +125,7 @@ class MemberDetail:
     positions: list[PositionView]
     certificates: list[CertificateView]
     shared_email_with: list[tuple[uuid.UUID, str]]
+    ecp_pass: "EcpPass | None" = None  # the newest eCP (also a revoked one)
 
 
 def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None:
@@ -141,7 +143,10 @@ def member_detail(session: Session, member_id: uuid.UUID) -> MemberDetail | None
     holders = session.scalars(
         select(PositionHolder).where(PositionHolder.member_id == member_id).order_by(PositionHolder.valid_from.desc())
     )
+    ecp_pass = session.scalar(select(EcpPass).where(EcpPass.member_id == member_id)
+                              .order_by(EcpPass.issued_at.desc()).limit(1))
     return MemberDetail(
+        ecp_pass=ecp_pass,
         member=member,
         data=read_member(member),
         sss_status=_sss_status(member, any(v.membership.valid_to is None for v in views), bool(views)),

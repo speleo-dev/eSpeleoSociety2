@@ -173,6 +173,9 @@ def local_time(value) -> str:
 
 
 templates.env.filters["local_time"] = local_time
+
+ECP_STATE_LABELS = {"active": "aktívny", "inactive": "neaktívny (členstvo pozastavené)", "revoked": "zrušený"}
+templates.env.filters["ecp_state_label"] = lambda state: ECP_STATE_LABELS.get(state, state)
 templates.env.filters["task_label"] = task_label
 templates.env.filters["resolution_label"] = resolution_label
 templates.env.filters["task_description"] = task_description
