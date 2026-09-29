@@ -6,15 +6,24 @@
   #crop-img { display:block; width:100%; }
   #crop-frame { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; }
   #crop-stage { overflow:hidden; }
+  #camera-video { width:100%; max-width:28rem; transform:scaleX(-1); background:#000; }
 </style>
 <h1>Fotka a súhlasy</h1>
-<p>E-mail je overený. Nahrajte fotku tváre ako na doklad: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
+<p>E-mail je overený. Nahrajte fotku tváre ako na doklad alebo sa odfoťte kamerou: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
    jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" enctype="multipart/form-data" class="form">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <label>Fotka (JPEG alebo PNG, najviac 5 MB) *
     <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required></label>
+  <p><button type="button" id="camera-open" hidden>Odfotiť kamerou</button></p>
+  <p id="camera-message" class="flash error" hidden></p>
+  <div id="camera-box" hidden>
+    <video id="camera-video" autoplay playsinline muted></video>
+    <p class="muted">Pozerajte priamo do kamery, tvár dobre osvetlená spredu, jednoduché pozadie.</p>
+    <p><button type="button" class="primary" id="camera-shoot">Odfotiť</button>
+       <button type="button" id="camera-cancel">Zrušiť</button></p>
+  </div>
   <div id="crop-stage" hidden>
     <img id="crop-img" alt="Náhľad fotky">
     <div id="crop-frame"></div>
@@ -33,4 +42,5 @@
   <p><button class="primary">Odoslať žiadosť</button></p>
 </form>
 <script src="/static/crop.js" defer></script>
+<script src="/static/camera.js" defer></script>
 {% endblock %}

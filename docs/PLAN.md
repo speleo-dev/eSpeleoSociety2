@@ -191,6 +191,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     odhlásiť člena zo všetkých zariadení a zmazať jeho passkeys.
   - Na portál sa dostane len člen s **aktívnym** eCP. Neaktívny (pozastavený, ukončené členstvo v SSS) ani zrušený
     eCP nemá prístup; po obnovení členstva sa prístup vráti sám.
+- **R39** – **Fotka z kamery** (požiadavka 2026-09-29): pri žiadosti o eCP sa dá fotka vybrať zo súboru alebo
+  odfotiť kamerou notebooku či telefónu (`static/camera.js`, getUserMedia – funguje len cez HTTPS a po povolení
+  kamery v prehliadači). Záber ide do rovnakého orezu a kontroly ako vybraný súbor. Na telefóne ponúka výber súboru
+  aj fotoaparát priamo.
 
 ## 4. Architektúra
 

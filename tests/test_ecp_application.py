@@ -197,7 +197,10 @@ def test_web_application_flow(web):
     assert "Skontrolujte si e-mail" in client.get("/ecp/apply/sent").text
     response = client.get(token_path, follow_redirects=False)
     assert response.headers["location"] == "/ecp/apply/photo"
-    assert "E-mail je overený" in client.get("/ecp/apply/photo").text  # photo step
+    page = client.get("/ecp/apply/photo").text
+    assert "E-mail je overený" in page  # photo step
+    assert 'id="camera-open"' in page and "/static/camera.js" in page  # photo from a notebook or phone camera
+    assert "getUserMedia" in client.get("/static/camera.js").text
     assert client.get(token_path).status_code == 410  # used link
 
 
