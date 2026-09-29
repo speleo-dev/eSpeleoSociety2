@@ -144,6 +144,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Člen s kartičkou má uložený **formát (PDF alebo PNG)**. Na **ďalšie roky** mu kartička príde **e-mailom
     automaticky**, keď sa jeho členské označí ako zaplatené (fáza 3 – rozloží sa to podľa spracovania výpisov,
     žiadne hromadné rozosielanie).
+- **R34** – **Ročná známka** (obrázok v hornej časti eCP, `heroImage`) sa generuje ako v pôvodnej aplikácii:
+  šablóna 256 × 256 (predvolená `static/sticker-template.png` alebo nahratá), náhodné farby, rok rozdelený okolo
+  znaku. Systémový administrátor si pozrie náhľad, môže vygenerovať iné farby a nasadí ju (rovnaký obrázok ako
+  náhľad). Použije sa v nových eCP, ak je na aktuálny rok; vo vydaných eCP sa vymení po zaplatení členského (fáza 3).
 
 ## 4. Architektúra
 
@@ -308,6 +312,7 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 - Prehľad zaplateného členského.
 - Po označení členského za zaplatené: členovi s kartičkou (`members.card_format`) sa vydá kartička na daný rok
   a pošle e-mailom (R33).
+- Po zaplatení členského: v eCP sa nastaví „Platný do“ a ročná známka zaplateného roka (R34).
 
 ### Fáza 4 – Portál člena
 - Prihlásenie cez eCP (R5).

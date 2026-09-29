@@ -39,6 +39,7 @@ class PassContent:
     photo_url: str
     check_url: str
     valid_until: date | None = None  # end of the last paid year (phase 3)
+    hero_url: str | None = None  # yearly sticker
     state: str = "ACTIVE"
 
 
@@ -79,6 +80,7 @@ def build_pass_object(content: PassContent) -> dict:
         "imageModulesData": [{"id": "photo", "mainImage": {"sourceUri": {"uri": content.photo_url}}}],
         "textModulesData": modules,
         "linksModuleData": {"uris": [{"id": "homepage", "uri": "https://www.speleology.sk", "description": "Web SSS"}]},
+        **({"heroImage": {"sourceUri": {"uri": content.hero_url}}} if content.hero_url else {}),
     }
 
 

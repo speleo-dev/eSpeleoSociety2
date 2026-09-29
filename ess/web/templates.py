@@ -53,6 +53,7 @@ ERRORS = {
     "card_needs_email": "Člen nemá e-mail – kartičku stiahnite a vytlačte.",
     "card_already_issued": "Na tento rok už kartička vydaná bola. Stiahnite ju znova; novú môže vydať len administrátor ako náhradu (stratená / ukradnutá / poškodená).",
     "card_not_available": "Kartička už neplatí alebo ju nemožno znova stiahnuť.",
+    "invalid_sticker_template": "Šablóna musí byť PNG 256 × 256 px s priehľadným pozadím a sivými farbami #000000, #606060, #404040.",
     "invalid_card_year": "Kartičku možno vydať na tento rok, na nasledujúci len v období platby členského.",
     "ecp_member_not_eligible": "eCP môže dostať len člen (nie čakateľ).",
     "member_not_in_sss": "Člen už nie je členom SSS – eCP nemožno vydať.",

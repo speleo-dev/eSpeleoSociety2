@@ -1,5 +1,6 @@
 """Application settings stored in the database (fee amounts etc.). Changed by system administrators."""
 
+import re
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
@@ -7,6 +8,16 @@ from sqlalchemy.orm import Session
 from ess import audit
 from ess.models import Setting
 from ess.services.access import Actor, DomainError, require_system_admin
+
+def _colour(value: str) -> str:
+    if not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
+        raise ValueError(value)
+    return value.upper()
+
+
+def _background(value: str) -> str:
+    return "transparent" if value.lower() == "transparent" else _colour(value)
+
 
 # key -> validator
 _KNOWN: dict[str, type] = {
@@ -20,10 +31,18 @@ _KNOWN: dict[str, type] = {
     "ecp_application_expiry_days": int,  # unfinished application expires after
     "ecp_qr_grace_minutes": int,  # a used QR token stays valid for
     "ecp_qr_daily_limit": int,  # new QR codes per eCP and day
+    # yearly sticker (hero image of the eCP)
+    "sticker_text_color": _colour,
+    "sticker_bg_color": _background,
+    "sticker_template": str,  # object name of an uploaded template ("" = built-in)
+    "sticker_url": str,  # public URL of the deployed sticker
+    "sticker_year": int,
 }
 
 # Built-in defaults (also inserted by migrations 0008 and 0009).
 DEFAULTS = {
+    "sticker_text_color": "#FFFFFF",
+    "sticker_bg_color": "transparent",
     "renewal_window_days": "60",
     "ecp_link_valid_hours": "24",
     "ecp_application_expiry_days": "14",

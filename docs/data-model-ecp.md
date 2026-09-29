@@ -58,7 +58,8 @@ zdroj `paper_form`). Aktívnemu členovi hneď, navrhnutému až po aktivácii (
 e-mail s odkazom `/ecp/photo/<token>` (platí počet dní ako prepadnutie žiadosti); ďalej rovnako ako verejná žiadosť.
 E-maily zo služieb idú cez `ess/services/outbox.py` – odošlú sa až po uložení.
 Hotové (krok 7, R31): kartička SSS – `ess/cards.py` (PDF, písmo DejaVu), `ess/services/sss_cards.py`, overenie `/k/<kód>`.
-Zostáva: stav členského (fáza 3), ročná známka a nastavenia vzhľadu eCP.
+Hotové (krok 8, R34): ročná známka – `ess/stickers.py`, `ess/services/sticker.py`, Nastavenia → Ročná známka eCP.
+Zostáva: stav členského (fáza 3).
 E-mail sa pošle len vtedy, keď e-mail zodpovedá členovi v evidencii. Tak sa nedá zistiť, kto je členom,
 ani posielať e-maily na cudzie adresy. Počet žiadostí je obmedzený na 3 za deň na e-mail (obmedzenie podľa IP adresy zatiaľ nie je) a formulár má
 skryté pole proti robotom.
