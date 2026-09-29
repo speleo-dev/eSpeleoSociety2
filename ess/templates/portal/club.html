@@ -1,0 +1,49 @@
+{% extends "public/_layout.html" %}
+{% block title %}{{ view.club.name }} – portál eSS{% endblock %}
+{% block content %}
+<p><a href="/portal">← Späť</a></p>
+<h1>{{ view.club.name }}</h1>
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+{% if view.chair_name %}<p>Predseda: {{ view.chair_name }}{% if view.delegate_name %}; skupinu spravuje zástupca {{ view.delegate_name }}{% endif %}</p>{% endif %}
+
+{% if view.is_chair and view.delegate_name %}
+<section class="box">
+  <p>Správu skupiny ste preniesli na zástupcu. Kým ju neprevezmete späť, skupinu len čítate.</p>
+  <form method="post" action="/portal/clubs/{{ view.club.id }}/take-back" onsubmit="return confirm('Prevziať správu skupiny? Zástupca stratí práva.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="primary">Prevziať správu</button>
+  </form>
+</section>
+{% elif view.is_chair and view.delegate_options %}
+<details><summary>Preniesť správu skupiny na zástupcu</summary>
+<form method="post" action="/portal/clubs/{{ view.club.id }}/delegate" class="form" onsubmit="return confirm('Preniesť správu skupiny na zástupcu? Kým ju neprevezmete späť, skupinu budete len čítať.')">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label>Zástupca<select name="member_id" required><option value="">— vyberte člena —</option>
+    {% for r in view.delegate_options %}<option value="{{ r.member_id }}">{{ r.data.last_name }} {{ r.data.first_name }}</option>{% endfor %}</select></label>
+  <button>Preniesť správu</button>
+  <p class="muted">Zástupcom môže byť člen skupiny, ktorý ju má ako primárnu.</p>
+</form></details>
+{% endif %}
+{% if view.is_delegate %}
+<section class="box">
+  <p>Spravujete skupinu ako zástupca predsedu.</p>
+  <form method="post" action="/portal/clubs/{{ view.club.id }}/resign" onsubmit="return confirm('Zrušiť administráciu skupiny? Práva sa vrátia predsedovi.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Zrušiť administráciu klubu</button>
+  </form>
+</section>
+{% endif %}
+
+<h2>Členovia ({{ view.rows|length }})</h2>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Meno</th>{% if view.full %}<th>Stav</th>{% endif %}<th>Telefón</th><th>E-mail</th>{% if view.full %}<th>Bydlisko</th><th>Č. preukazu</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for r in view.rows %}{% set d = r.data %}
+    <tr><td>{{ d.last_name }} {{ d.first_name }}</td>
+      {% if view.full %}<td data-label="Stav">{{ r.status|label }}</td>{% endif %}
+      <td data-label="Telefón">{% if d.phone %}<a href="tel:{{ d.phone|replace(' ', '') }}">{{ d.phone }}</a>{% endif %}</td>
+      <td data-label="E-mail">{% if d.email %}<a href="mailto:{{ d.email }}">{{ d.email }}</a>{% endif %}</td>
+      {% if view.full %}<td data-label="Bydlisko">{{ d.full_address() }}</td><td data-label="Č. preukazu">{{ d.card_number or "" }}</td>{% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if not view.full %}<p class="muted">Kontakty sú len pre potreby skupiny, nešírte ich ďalej.</p>{% endif %}
+{% endblock %}

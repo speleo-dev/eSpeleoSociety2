@@ -15,7 +15,7 @@
 {% endif %}
 <h2>Členstvo</h2>
 <ul>
-  {% for name, status, primary in home.clubs %}<li>{{ name }}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
+  {% for club, status, primary in home.clubs %}<li>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
   {% else %}<li class="muted">Nie ste v žiadnej skupine.</li>{% endfor %}
 </ul>
 <p>Členské zaplatené: {% if home.paid_years %}{{ home.paid_years|join(", ") }} (eCP platí do {{ home.valid_until|date }}){% else %}zatiaľ žiadny záznam{% endif %}</p>

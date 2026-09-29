@@ -23,4 +23,8 @@ Pravidlá: R5, R37, R38 v `docs/PLAN.md`. Konvencie ako v `docs/data-model.md`.
 Hotové (krok 1): prihlásenie kódom z e-mailu, domovská stránka člena (`/portal`), odhlásenie, v administrácii
 počet prihlásených zariadení a „Odhlásiť zo všetkých zariadení“.
 Hotové (krok 2): passkeys – `ess/services/passkeys.py`, `static/passkey.js`; ponuka po prihlásení kódom.
-Zostáva: skupina a jej členovia (R37), dokumenty, novinky, notifikácie, hlásenie vstupu do jaskyne.
+Hotové (krok 3): skupina na portáli (R37) – `/portal/clubs/<id>` pre každého člena skupiny (nie pre „SSS – nezaradení“):
+bežný člen vidí členov v stave „člen“ s telefónom a e-mailom; predseda (aj počas zastupovania) a zástupca všetkých
+vrátane čakateľov, bydliska a čísla preukazu. Tlačidlá „Preniesť správu“ a „Prevziať správu“ (predseda) a „Zrušiť
+administráciu klubu“ (zástupca), všetky s potvrdením.
+Zostáva: dokumenty, novinky, notifikácie, hlásenie vstupu do jaskyne.

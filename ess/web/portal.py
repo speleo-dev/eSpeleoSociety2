@@ -15,7 +15,7 @@ from ess.config import get_settings
 from ess.db import get_session
 from ess.models import Member
 from ess.services import outbox, passkeys, portal_auth
-from ess.services.access import DomainError
+from ess.services.access import Actor, DomainError, PermissionDenied
 from ess.web.auth import csrf_token
 from ess.web.common import after_commit, base_url
 from ess.web.public import verify_public_csrf
@@ -270,3 +270,66 @@ async def passkey_login(request: Request, session: Db):
     if isinstance(result, str):
         return JSONResponse({"error": ERRORS.get(result, result)}, status_code=400)
     return _signed_in(request, result, JSONResponse({"ok": True, "redirect": "/portal"}))
+
+
+# --- club (R37) ----------------------------------------------------------------------------------------
+
+
+@router.get("/portal/clubs/{club_id}")
+def club_page(request: Request, club_id: uuid.UUID, session: Db):
+    from ess.services import portal
+
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    try:
+        view = portal.club_view(session, member, club_id)
+    except DomainError:
+        return _page(request, "portal/unavailable.html", status_code=404)
+    return _page(request, "portal/club.html", view=view, flash=request.session.pop("portal_flash", None))
+
+
+def _club_action(request: Request, session: Session, club_id: uuid.UUID, action, success: str):
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    actor = Actor(kind="member", id=str(member.id))
+    try:
+        action(actor)
+        session.commit()
+        request.session["portal_flash"] = {"kind": "ok", "text": success}
+    except (DomainError, PermissionDenied) as exc:
+        session.rollback()
+        request.session["portal_flash"] = {"kind": "error", "text": ERRORS.get(getattr(exc, "code", str(exc)),
+                                                                              "Akciu nebolo možné vykonať.")}
+    return RedirectResponse(f"/portal/clubs/{club_id}", status_code=303)
+
+
+@router.post("/portal/clubs/{club_id}/delegate", dependencies=[Depends(verify_public_csrf)])
+def club_delegate(request: Request, club_id: uuid.UUID, session: Db, member_id: Annotated[str, Form()] = ""):
+    from ess.services import delegations
+
+    def run(actor):
+        try:
+            target = uuid.UUID(member_id)
+        except ValueError:
+            raise DomainError("member_required") from None
+        delegations.delegate(session, actor, club_id, target)
+
+    return _club_action(request, session, club_id, run, "Správu skupiny ste preniesli na zástupcu.")
+
+
+@router.post("/portal/clubs/{club_id}/take-back", dependencies=[Depends(verify_public_csrf)])
+def club_take_back(request: Request, club_id: uuid.UUID, session: Db):
+    from ess.services import delegations
+
+    return _club_action(request, session, club_id, lambda actor: delegations.take_back(session, actor, club_id),
+                        "Správu skupiny ste prevzali späť.")
+
+
+@router.post("/portal/clubs/{club_id}/resign", dependencies=[Depends(verify_public_csrf)])
+def club_resign(request: Request, club_id: uuid.UUID, session: Db):
+    from ess.services import delegations
+
+    return _club_action(request, session, club_id, lambda actor: delegations.resign(session, actor, club_id),
+                        "Administráciu skupiny ste zrušili, práva má znova predseda.")
