@@ -122,7 +122,8 @@ testovacích dát; nikdy nepracuj s reálnymi osobnými údajmi mimo produkcie.
 
 ## Príkazy
 
-Nastavenie Google Cloud: `docs/gcp-setup.md`.
+Nastavenie Google Cloud: `docs/gcp-setup.md`. Nasadenie na Cloud Run (v Cloud Shell): `./deploy.sh`
+(s migráciami `./deploy.sh migrate`); projekt `espeleosociety` je v skripte napevno.
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"   # inštalácia

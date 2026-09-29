@@ -173,6 +173,10 @@ Kontrola: gcloud vypíše `Service URL`. Otvor v prehliadači:
 - `<URL>/` – úvodná stránka,
 - `<URL>/readyz` – má vrátiť `{"status":"ok","database":"ok"}`.
 
+
+**Ďalšie nasadenia:** `~/eSpeleoSociety2/deploy.sh` (s migráciami DB: `./deploy.sh migrate`). Skript má projekt
+`espeleosociety` a región napevno, takže nový Cloud Shell nastavený na iný projekt nenasadí nikam inam.
+
 ## 12. Aktualizácia DB a testovacie dáta (vývoj)
 
 Po každej novej migrácii zopakuj krok 10. Testovacie dáta sa dajú nahrať **len do prázdnej** databázy
