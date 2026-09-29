@@ -71,7 +71,7 @@ prihláška u predsedu). Odvolanie = nový záznam, nič sa nemaže.
 |---|---|
 | `member_id` | najviac jeden neukončený eCP na člena |
 | `wallet_object_id` | `3388000000022877308.<náhodné id>` – bez osobných údajov |
-| `state` | `active`, `inactive` (pozastavenie), `revoked` (vylúčenie / odchod zo SSS, R25) |
+| `state` | `active` (aj keď člen nie je v žiadnej skupine a čaká na rozhodnutie, R30), `inactive` (pozastavený vo všetkých skupinách), `revoked` (vylúčenie / ukončenie členstva v SSS, R25) |
 | `wallet_state` | posledný stav odoslaný do Google Wallet (migrácia `0010`); rozdiel = čaká na odoslanie |
 | `photo` | názov fotky v buckete; pri `revoked` sa fotka zmaže |
 | `application_id`, `issued_at`, `revoked_at` | pôvod a priebeh |

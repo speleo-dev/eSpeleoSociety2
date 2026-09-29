@@ -1,7 +1,9 @@
 """eCP state follows SSS membership (R25).
 
 - member of SSS (an open membership with status `member`)  -> `active`
-- no active membership (suspended everywhere, waiting for the presidium's decision) -> `inactive`
+- left all clubs, waiting for the administrator's decision -> still `active` (a club decides only for
+  itself; the member may have paid the SSS fee, R30)
+- suspended in every club where the member still is -> `inactive`
 - expelled or SSS membership ended -> `revoked` (final)
 
 The state is recalculated automatically whenever a member or a membership changes (SQLAlchemy flush
@@ -30,10 +32,11 @@ WALLET_STATES = {EcpPassState.ACTIVE.value: "ACTIVE", EcpPassState.INACTIVE.valu
 def desired_state(session: Session, member: Member) -> str:
     if member.expelled_at or member.sss_ended_at:
         return EcpPassState.REVOKED.value
-    active = session.scalar(select(Membership.id).where(
-        Membership.member_id == member.id, Membership.valid_to.is_(None),
-        Membership.status == MembershipStatus.MEMBER))
-    return EcpPassState.ACTIVE.value if active else EcpPassState.INACTIVE.value
+    statuses = set(session.scalars(select(Membership.status).where(
+        Membership.member_id == member.id, Membership.valid_to.is_(None))))
+    if not statuses or MembershipStatus.MEMBER in statuses:
+        return EcpPassState.ACTIVE.value
+    return EcpPassState.INACTIVE.value
 
 
 def refresh(session: Session, member_id: uuid.UUID) -> None:

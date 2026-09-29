@@ -116,6 +116,15 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   v `ess-smtp-gmail-password`). Schránka `ess@sss.sk` na WebSupporte má obmedzenie prihlásenia podľa krajín;
   Cloud Run (Nemecko) a Cloud Shell sa neprihlásia. Treba požiadať správcu domény `sss.sk` o povolenie
   (Nemecko) a potom prepnúť späť (`docs/gcp-setup.md`, krok 16).
+- **R30** – **Klub rozhoduje len za seba, o členstve v SSS rozhoduje administrátor.**
+  - Členské sa dnes platí ručne: na výročných schôdzach skupín (január – február) sa vyberá členské do skupiny
+    aj do SSS. Platby do skupín IS nerieši.
+  - Kto nezaplatí, o tom rozhoduje skupina na výročnej schôdzi (zvyčajne až po roku, nie je to pravidlo) –
+    **IS nič nevyraďuje automaticky** podľa platieb.
+  - Člen môže nezaplatiť do skupiny, ale zaplatiť do SSS. Predseda skupiny ukončí členstvo len vo svojej skupine.
+  - Keď člen nie je v žiadnej skupine, **ostáva členom SSS a jeho eCP platí**, kým administrátor nerozhodne
+    (zaradiť do „SSS – nezaradení“ alebo ukončiť členstvo v SSS – požiadavka „Rozhodnutie o členstve v SSS“).
+  - Vylúčiť zo SSS môže len administrátor (predseda SSS).
 
 ## 4. Architektúra
 

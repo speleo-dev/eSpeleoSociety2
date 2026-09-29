@@ -19,7 +19,7 @@ _LABELS = [
     (MembershipEndReason.TERMINATED, "ukončené"),
     (MembershipEndReason.EXPELLED, "vylúčenie zo SSS"),
     (SssStatus.MEMBER, "člen SSS"),
-    (SssStatus.AWAITING_DECISION, "čaká na rozhodnutie predsedníctva"),
+    (SssStatus.AWAITING_DECISION, "člen SSS bez skupiny – čaká na rozhodnutie"),
     (SssStatus.ENDED, "členstvo v SSS ukončené"),
     (SssStatus.EXPELLED, "vylúčený zo SSS"),
     (SssStatus.NEVER, "bez členstva"),
@@ -133,7 +133,7 @@ def task_description(task) -> str:
             return "Predseda skupiny navrhuje povýšiť čakateľa na člena. Aktivujte po doručení podkladov."
         return "Nový člen navrhnutý predsedom skupiny. Aktivujte po doručení podkladov."
     if task.task_type == "sss_decision":
-        return "Ukončil členstvo vo všetkých skupinách. Zapíšte rozhodnutie predsedníctva."
+        return "Nie je v žiadnej skupine (členom SSS ostáva). Rozhodnite o zaradení do „SSS – nezaradení“ alebo o ukončení členstva v SSS."
     if task.task_type == "ecp_issue":
         return "Žiadosť o eCP s fotkou. Skontrolujte fotku a schváľte alebo zamietnite."
     return ""

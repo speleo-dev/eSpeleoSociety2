@@ -43,7 +43,7 @@ def test_leaving_sss_revokes_for_good(session):
     wallet, ecp_pass, member_id = _issued(session)
     memberships.terminate(session, SYSTEM, _membership(session, member_id).id)
     session.flush()
-    assert ecp_pass.state == "inactive"  # waiting for the presidium's decision
+    assert ecp_pass.state == "active"  # a club decides only for itself; the administrator decides about SSS (R30)
     members.end_sss_membership(session, SYSTEM, member_id, "rozhodnutie")
     session.flush()
     assert ecp_pass.state == "revoked" and ecp_pass.revoked_at
