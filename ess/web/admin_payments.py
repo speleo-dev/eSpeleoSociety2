@@ -5,14 +5,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
 
 from ess.models import Club, Member, PaymentReference
 from ess.services import payments
 from ess.services.access import DomainError, PermissionDenied
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act, error_text, render
+from ess.web.common import Admin, Db, act, after_commit, error_text, render
 
 router = APIRouter(prefix="/admin")
+MAX_STATEMENT = 10 * 1024 * 1024  # bytes
 
 
 def _create_and_show(request: Request, session: Db, back: str, create) -> RedirectResponse:
@@ -33,6 +35,63 @@ def payments_page(request: Request, admin: Admin, session: Db):
 
     return render(request, "admin/payments.html", admin, session, due_year=max(payments.payment_years(session)),
                   pending=ecp_content.pending_count(session))
+
+
+@router.get("/statements")
+def statements_page(request: Request, admin: Admin, session: Db):
+    from ess.banking import FORMATS
+    from ess.models import BankStatement
+
+    recent = session.scalars(select(BankStatement).order_by(BankStatement.uploaded_at.desc()).limit(20)).all()
+    return render(request, "admin/statements.html", admin, session, formats=FORMATS, recent=recent,
+                  result=request.session.pop("statement_result", None))
+
+
+@router.post("/statements", dependencies=[Depends(verify_csrf)])
+async def statement_upload(request: Request, admin: Admin, session: Db):
+    from ess.banking import StatementError
+    from ess.services import bank_statements
+
+    form = await request.form()
+    upload = form.get("file")
+    data = await upload.read(MAX_STATEMENT + 1) if hasattr(upload, "read") else b""
+    try:
+        if not data:
+            raise DomainError("invalid_statement")
+        if len(data) > MAX_STATEMENT:
+            raise DomainError("statement_too_large")
+        result = bank_statements.import_statement(session, admin.actor, str(form.get("format", "")), data)
+        session.commit()
+    except (DomainError, PermissionDenied, StatementError) as exc:
+        session.rollback()
+        from ess.services import outbox
+
+        outbox.discard(session)
+        request.session["flash"] = {"kind": "error", "text": error_text(exc)}
+        return RedirectResponse("/admin/statements", status_code=303)
+    request.session["statement_result"] = {"counts": result.counts, "duplicates": result.duplicates}
+    request.session["flash"] = {"kind": "ok", "text": "Výpis bol spracovaný."}
+    if not after_commit(request, session):
+        request.session["flash"] = {"kind": "error", "text": "Výpis bol spracovaný, niektorý e-mail sa však nepodarilo odoslať."}
+    return RedirectResponse("/admin/statements", status_code=303)
+
+
+@router.post("/tasks/{task_id}/assign-payment", dependencies=[Depends(verify_csrf)])
+def task_assign_payment(request: Request, task_id: uuid.UUID, admin: Admin, session: Db,
+                        code: Annotated[str, Form()] = ""):
+    from ess.services import bank_statements
+
+    return act(request, session, "/admin/tasks", lambda: bank_statements.assign(session, admin.actor, task_id, code),
+               "Platba bola priradená.")
+
+
+@router.post("/tasks/{task_id}/resolve-payment", dependencies=[Depends(verify_csrf)])
+def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: Admin, session: Db,
+                         note: Annotated[str, Form()] = ""):
+    from ess.services import bank_statements
+
+    return act(request, session, "/admin/tasks", lambda: bank_statements.resolve(session, admin.actor, task_id, note),
+               "Požiadavka bola vybavená.")
 
 
 @router.post("/payments/publish-links", dependencies=[Depends(verify_csrf)])

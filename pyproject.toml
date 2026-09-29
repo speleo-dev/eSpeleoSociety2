@@ -21,6 +21,7 @@ dependencies = [
     "tzdata",
     "reportlab>=4",
     "qrcode>=7.4",
+    "defusedxml>=0.7",  # bank statements (camt.053 XML) are untrusted input
 ]
 
 [project.optional-dependencies]

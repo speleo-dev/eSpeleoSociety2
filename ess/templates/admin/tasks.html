@@ -18,8 +18,9 @@
   <tbody>
   {% for r in rows %}{% set t = r.task %}
     <tr>
-      <td><strong>{{ t.task_type|task_label }}</strong><br><span class="muted">{{ t|task_description }}</span></td>
-      <td data-label="Člen"><a href="/admin/members/{{ t.member_id }}">{{ r.full_name }}</a></td>
+      <td><strong>{{ t.task_type|task_label }}</strong><br><span class="muted">{{ t|task_description }}</span>
+        {% set b = bank.get(t.id) %}{% if b %}<br><span class="muted">Platiteľ: {{ b.payer_name or "—" }}{% if b.payer_iban %}, {{ b.payer_iban }}{% endif %}{% if b.transaction.payer_reference %}; referencia: {{ b.transaction.payer_reference }}{% endif %}{% if b.message %}; správa: {{ b.message }}{% endif %}</span>{% endif %}</td>
+      <td data-label="Člen">{% if t.member_id %}<a href="/admin/members/{{ t.member_id }}">{{ r.full_name }}</a>{% endif %}</td>
       <td data-label="Skupina">{{ r.club_name or "" }}</td>
       <td data-label="{% if show == 'open' %}Od{% else %}Vybavené{% endif %}">{{ (t.created_at if show == "open" else t.resolved_at)|date }}</td>
       <td>
@@ -40,6 +41,17 @@
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="note" placeholder="Poznámka (napr. číslo uznesenia)" aria-label="Poznámka">
             <button>Ukončiť členstvo v SSS</button></form>
+        {% elif t.task_type in (T.PAYMENT_UNMATCHED.value, T.PAYMENT_OVERPAID.value) %}
+          {% if t.task_type == T.PAYMENT_UNMATCHED.value %}
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/assign-payment">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <input name="code" required placeholder="Referencia (12 znakov)" aria-label="Referencia" autocomplete="off">
+            <button class="primary">Priradiť</button></form>
+          {% endif %}
+          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/resolve-payment">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <input name="note" required placeholder="Ako bolo vybavené (vrátené, dar…)" aria-label="Poznámka">
+            <button>Vybavené</button></form>
         {% elif t.task_type == T.ECP_ISSUE.value %}
           <a href="/admin/ecp-applications/{{ t.context.application_id }}"><button class="primary">Posúdiť žiadosť</button></a>
         {% endif %}

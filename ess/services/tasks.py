@@ -85,7 +85,7 @@ def close_tasks(
 
 
 def cancel_all_for_member(session: Session, actor: Actor, member_id: uuid.UUID, resolution: str) -> None:
-    for task_type in TaskType:
+    for task_type in (TaskType.MEMBER_ACTIVATION, TaskType.SSS_DECISION, TaskType.ECP_ISSUE):  # not payments
         close_tasks(session, actor, task_type, TaskStatus.CANCELLED, resolution, member_id=member_id)
 
 
@@ -159,14 +159,14 @@ def count_open(session: Session) -> int:
 def list_tasks(session: Session, open_only: bool = True, task_type: str | None = None, limit: int = 200) -> list[TaskRow]:
     from ess.services.members import read_member
 
-    query = select(Task, Member, Club).join(Member, Member.id == Task.member_id).outerjoin(Club, Club.id == Task.club_id)
+    query = select(Task, Member, Club).outerjoin(Member, Member.id == Task.member_id).outerjoin(Club, Club.id == Task.club_id)
     if open_only:
         query = query.where(Task.status == TaskStatus.OPEN.value).order_by(Task.created_at)
     else:
         query = query.where(Task.status != TaskStatus.OPEN.value).order_by(Task.resolved_at.desc()).limit(limit)
     if task_type:
         query = query.where(Task.task_type == task_type)
-    return [TaskRow(task, read_member(member).full_name(), club.name if club else None)
+    return [TaskRow(task, read_member(member).full_name() if member else "", club.name if club else None)
             for task, member, club in session.execute(query)]
 
 

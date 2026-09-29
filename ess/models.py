@@ -593,6 +593,7 @@ class BankTransaction(Base):
     payer_reference: Mapped[str | None] = mapped_column(String(140))
     payer_name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     payer_iban_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    message_enc: Mapped[bytes | None] = mapped_column(LargeBinary)  # payment message (may hold personal data)
     payment_reference_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("payment_references.id"))
     result: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -1,0 +1,31 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}Bankové výpisy{% endblock %}
+{% block body %}
+<h1>Bankové výpisy</h1>
+<form method="post" enctype="multipart/form-data" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Formát<select name="format">{% for key, name in formats.items() %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select></label>
+    <label>Súbor výpisu<input type="file" name="file" required></label>
+  </div>
+  <button class="primary">Nahrať a spárovať</button>
+</form>
+<p class="muted">Spracujú sa len prijaté platby. Platby sa párujú podľa referencie platiteľa (aj keď ju platiteľ napísal do správy).
+  Neúplná platba: platiteľovi príde e-mail so zvyšnou sumou. Neznáma referencia a preplatok idú do Požiadaviek.
+  Ten istý výpis ani tá istá platba sa nespracujú dvakrát.</p>
+
+{% if result %}
+<h2>Výsledok</h2>
+<ul>
+  <li>Zaplatené: {{ result.counts.get("paid", 0) }}</li>
+  <li>Čiastočne zaplatené: {{ result.counts.get("partial", 0) }}</li>
+  <li>Preplatok (Požiadavky): {{ result.counts.get("overpaid", 0) }}</li>
+  <li>Neznáma referencia (Požiadavky): {{ result.counts.get("unknown_reference", 0) }}</li>
+  <li>Už spracované skôr: {{ result.duplicates }}</li>
+</ul>
+{% endif %}
+
+<h2>Nahraté výpisy</h2>
+<ul>{% for s in recent %}<li>{{ s.uploaded_at|local_time }} – {{ formats.get(s.file_format, s.file_format) }}</li>
+{% else %}<li class="muted">Zatiaľ žiadny.</li>{% endfor %}</ul>
+{% endblock %}

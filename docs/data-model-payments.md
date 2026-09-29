@@ -9,7 +9,11 @@ Hotové (krok 2): po zaplatení sa v eCP nastaví „Platný do“ (koniec posle
 členovi s kartičkou (`members.card_format`) sa vydá kartička na zaplatený rok a pošle e-mailom (R33).
 Hotové (krok 3): platobný odkaz v eCP (R36, variant A) – `ecp_content.payment_link`, stránka **Členské**
 (`/admin/payments`) so zverejnením odkazov a odosielaním po dávkach.
-Zostáva: bankový výpis a Požiadavky (neznáma referencia, preplatok).
+Hotové (krok 4): spracovanie výpisu – `ess/services/bank_statements.py`, stránka **Bankové výpisy** (`/admin/statements`),
+Požiadavky „Nespárovaná platba“ (priradiť k referencii / vybavené) a „Preplatok“ (vybavené s poznámkou), e-mail
+pri neúplnej platbe (`payment_partial`). Referencia sa hľadá v referencii platiteľa aj v správe pre prijímateľa.
+Parser **camt.053** (`ess/banking/camt053.py`) je **predbežný** – referencia platiteľa = `EndToEndId`; overí sa na
+vzorovom výpise (otázka 3 v `docs/PLAN.md`). Správa pre prijímateľa sa ukladá šifrovaná (`message_enc`, migrácia `0016`).
 
 Pravidlá: R7, R27, R30, R33–R36 v `docs/PLAN.md`.
 Konvencie ako v `docs/data-model.md`.
@@ -48,7 +52,7 @@ referencia zaplatená celá (pri hromadnej platbe by sa čiastočná suma nedala
 
 Člen má na rok najviac jednu neukončenú referenciu `member` (odkaz v eCP sa nemení).
 
-## Bankové výpisy (implementuje sa po vzorovom výpise)
+## Bankové výpisy
 
 `bank_statements` – nahratý výpis: kto a kedy nahral, formát, odtlačok súboru (ten istý výpis sa nenahrá dvakrát).
 

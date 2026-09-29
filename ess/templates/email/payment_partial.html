@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="sk"><head><meta charset="utf-8"><title>Neúplná platba členského SSS</title></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+<div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:5px">
+  <h2>Dobrý deň {{ first_name }},</h2>
+  <p>zaplatili ste neúplnú sumu členského SSS na rok {{ year }}{% if bulk %} (hromadná platba za členov skupiny){% endif %}.
+     Prijali sme {{ received|money }}, spolu doteraz {{ paid|money }}. <strong>Zostáva zaplatiť {{ remaining|money }}.</strong></p>
+  {% if payme_url %}<p><a href="{{ payme_url }}" style="display:inline-block;padding:10px 18px;background:#0B4A46;color:#fff;text-decoration:none;border-radius:4px">Doplatiť {{ remaining|money }}</a></p>{% endif %}
+  <p>Pri platbe prevodom zadajte do poľa „referencia platiteľa“ kód <strong>{{ code }}</strong>.
+     Po zaplatení celej sumy sa členské označí ako zaplatené.</p>
+  <p>S pozdravom<br>Slovenská speleologická spoločnosť</p>
+</div>
+</body></html>

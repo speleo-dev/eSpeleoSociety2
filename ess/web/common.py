@@ -27,7 +27,7 @@ def render(request: Request, name: str, admin: AdminContext, session: Session | 
 
 
 def error_text(exc: Exception) -> str:
-    code = exc.code if isinstance(exc, DomainError) else str(exc)
+    code = getattr(exc, "code", None) or str(exc)
     return ERRORS.get(code, "Akciu nebolo možné vykonať.")
 
 

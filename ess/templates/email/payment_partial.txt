@@ -1,0 +1,11 @@
+Dobrý deň {{ first_name }},
+
+zaplatili ste neúplnú sumu členského SSS na rok {{ year }}{% if bulk %} (hromadná platba za členov skupiny){% endif %}.
+Prijali sme {{ received|money }}, spolu doteraz {{ paid|money }}. Zostáva zaplatiť {{ remaining|money }}.
+
+{% if payme_url %}Doplatiť môžete tu: {{ payme_url }}
+{% endif %}Pri platbe prevodom zadajte do poľa „referencia platiteľa“ kód {{ code }}.
+Po zaplatení celej sumy sa členské označí ako zaplatené.
+
+S pozdravom
+Slovenská speleologická spoločnosť

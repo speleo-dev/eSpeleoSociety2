@@ -1,5 +1,7 @@
 """Jinja2 environment shared by all pages, with Slovak labels for enums."""
 
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
@@ -104,6 +106,11 @@ ERRORS = {
     "club_chair": "Túto akciu môže vykonať len predseda skupiny.",
     "club_already_delegated": "Skupinu už spravuje zástupca – najprv prevezmite správu.",
     "club_not_delegated": "Skupina nemá zástupcu predsedu.",
+    "statement_already_imported": "Tento výpis už bol nahratý.",
+    "invalid_statement": "Súbor nie je výpis vo zvolenom formáte.",
+    "unknown_statement_format": "Neznámy formát výpisu.",
+    "reference_not_found": "Referencia neexistuje.",
+    "statement_too_large": "Súbor je príliš veľký (najviac 10 MB).",
     "delegate_not_eligible": "Zástupcom môže byť len člen skupiny (stav člen), ktorý ju má ako primárnu, a nie predseda.",
 }
 
@@ -125,9 +132,13 @@ TASK_LABELS = {
     "member_activation": "Aktivácia člena",
     "sss_decision": "Rozhodnutie o členstve v SSS",
     "ecp_issue": "Vydanie eCP",
+    "payment_unmatched": "Nespárovaná platba",
+    "payment_overpaid": "Preplatok",
 }
 
 RESOLUTION_LABELS = {
+    "assigned": "priradená k referencii",
+    "resolved": "vybavené",
     "activated": "aktivovaný",
     "rejected": "zamietnuté",
     "withdrawn": "návrh stiahnutý",
@@ -159,6 +170,14 @@ def task_description(task) -> str:
         return "Nie je v žiadnej skupine (členom SSS ostáva). Rozhodnite o zaradení do „SSS – nezaradení“ alebo o ukončení členstva v SSS."
     if task.task_type == "ecp_issue":
         return "Žiadosť o eCP s fotkou. Skontrolujte fotku a schváľte alebo zamietnite."
+    ctx = task.context or {}
+    amount = money(Decimal(ctx["amount"])) if ctx.get("amount") else ""
+    if task.task_type == "payment_unmatched":
+        return (f"Platba {amount} z {fmt_date(date.fromisoformat(ctx['booked_on']))} bez známej referencie. "
+                "Priraďte ju k referencii alebo vybavte ručne (napr. vrátenie).")
+    if task.task_type == "payment_overpaid":
+        return (f"Preplatok {money(Decimal(ctx.get('overpaid', '0')))} (platba {amount}, referencia {ctx.get('code', '')}, "
+                f"rok {ctx.get('year', '')}). Vráťte ho alebo ho ponechajte ako dar.")
     return ""
 
 

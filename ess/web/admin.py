@@ -71,10 +71,14 @@ def membership_terminate(
 
 @router.get("/tasks")
 def task_list(request: Request, admin: Admin, session: Db, show: str = "open", type: str = ""):
+    from ess.services import bank_statements
+
     open_only = show != "done"
+    rows = tasks.list_tasks(session, open_only=open_only, task_type=type or None)
+    bank = {r.task.id: bank_statements.view(session, r.task.bank_transaction_id)
+            for r in rows if r.task.bank_transaction_id}
     return _render(
-        request, "admin/tasks.html", admin, session,
-        rows=tasks.list_tasks(session, open_only=open_only, task_type=type or None),
+        request, "admin/tasks.html", admin, session, rows=rows, bank=bank,
         show="open" if open_only else "done", type=type, T=TaskType,
     )
 
