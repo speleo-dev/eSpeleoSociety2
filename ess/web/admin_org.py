@@ -15,7 +15,7 @@ from ess import audit
 from ess.images import MAX_UPLOAD_BYTES
 from ess.mail import Mail, Mailer, MailError, get_mailer
 from ess.models import AdminRole, Club, MembershipStatus
-from ess.services import admin_access, certificates, clubs, directory, documents, importing, settings, sticker
+from ess.services import admin_access, certificates, clubs, delegations, directory, documents, importing, settings, sticker
 from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
@@ -75,8 +75,26 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
            "active": club.active, "code": club.code or "", "logo_url": club.logo_url or ""}
     raw.update({f: getattr(club, f) or "" for f in clubs.CONTACT_FIELDS})
     raw["founded_on"] = club.founded_on.isoformat() if club.founded_on else ""
+    delegation = delegations.current(session, club_id)
+    eligible = set(delegations.eligible_ids(session, club_id))
+    names = {r.id: f"{r.data.last_name} {r.data.first_name}" for r in active_members}
     return render(request, "admin/club_form.html", admin, session, club=club, raw=raw, chairs=chairs,
-                  active_members=active_members)
+                  active_members=active_members, delegation=delegation,
+                  delegate_name=names.get(delegation.delegate_member_id, "") if delegation else "",
+                  delegate_options=[r for r in active_members if r.id in eligible])
+
+
+@router.post("/clubs/{club_id}/delegation", dependencies=[Depends(verify_csrf)])
+def club_delegate(request: Request, club_id: uuid.UUID, admin: Admin, session: Db,
+                  member_id: Annotated[uuid.UUID, Form()]):
+    return act(request, session, f"/admin/clubs/{club_id}",
+               lambda: delegations.delegate(session, admin.actor, club_id, member_id), "Zástupca predsedu bol určený.")
+
+
+@router.post("/clubs/{club_id}/delegation/end", dependencies=[Depends(verify_csrf)])
+def club_delegation_end(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
+    return act(request, session, f"/admin/clubs/{club_id}", lambda: delegations.take_back(session, admin.actor, club_id),
+               "Zastupovanie bolo ukončené, skupinu spravuje predseda.")
 
 
 @router.post("/clubs/{club_id}", dependencies=[Depends(verify_csrf)])

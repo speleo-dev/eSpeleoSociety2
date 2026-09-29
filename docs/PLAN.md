@@ -171,10 +171,16 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     (X = posledný rok obdobia platby), kým nie je zaplatené; po zaplatení zmizne, pri čiastočnej platbe žiada zvyšok.
     Nové eCP ho dostanú hneď. Keď sa začne obdobie platby, administrátor v časti **Členské** klikne na „Zverejniť
     platobné odkazy“ – eCP sa do Google Wallet odošlú po dávkach (50 na požiadavku). Neskôr to môže robiť plánovaná úloha.
-- **R37** – **Zastupovanie predsedu skupiny** (návrh, 2026-09-29): predseda môže práva správy skupiny preniesť
-  na iného člena, ktorý je v skupine v stave „člen“ a má ju ako primárnu. Počas zastupovania predseda skupinu
-  nemení, má len tlačidlo **„Prevziať správu“**, ktoré zastupovanie ukončí; potom môže znova určiť kohokoľvek
-  (aj toho istého). Upresnenie: otázka 8.
+- **R37** – **Zastupovanie predsedu skupiny** (odsúhlasené 2026-09-29; niektorí predsedovia nepracujú s IT):
+  - Predseda alebo administrátor určí **jedného** zástupcu – člena skupiny v stave „člen“, ktorý ju má ako primárnu.
+    Zástupca má všetky práva správy skupiny namiesto predsedu.
+  - Počas zastupovania predseda skupinu nemení (len číta) a má tlačidlo **„Prevziať správu“**, ktoré zastupovanie
+    ukončí; potom môže znova určiť kohokoľvek (aj toho istého). Administrátor môže zástupcu určiť, zmeniť aj ukončiť.
+  - Zástupca má tlačidlo **„Zrušiť administráciu klubu“** (s potvrdením) – práva sa vrátia predsedovi.
+  - Zastupovanie sa ukončí samo pri zmene predsedu a keď zástupca prestane byť členom skupiny v stave „člen“
+    alebo si zmení primárnu skupinu. Tabuľka `club_delegations` (migrácia `0015`), `ess/services/delegations.py`.
+  - **Čítanie skupiny na portáli (fáza 4):** každý člen skupiny vidí skupinu a jej členov, bežný člen len meno,
+    priezvisko, telefón a e-mail; predseda (aj počas zastupovania) a zástupca vidia všetko o členoch skupiny.
 
 ## 4. Architektúra
 
@@ -344,6 +350,8 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 ### Fáza 4 – Portál člena
 - Prihlásenie cez eCP (R5).
 - Novinky, vlastné údaje, odkazy na dokumenty, zaplatené členské.
+- Skupina a jej členovia (R37): bežný člen vidí meno, priezvisko, telefón a e-mail; tlačidlá „Prevziať správu“
+  (predseda) a „Zrušiť administráciu klubu“ (zástupca, s potvrdením).
 - Odosielanie notifikácií do eCP z administrácie.
 - Hlásenie vstupu do jaskyne: kde, kto, plánovaný návrat → pripomienka členovi → e-mail predsedovi skupiny.
 
@@ -376,6 +384,4 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 7. **Členstvo v SSS a zaplatené členské** (prejedná Lad'o s predsedom SSS): člen so zaplateným členským je členom
    SSS do konca roka, na ktorý zaplatil – má to IS zohľadniť pri ukončení členstva v SSS alebo pri odchode zo
    skupín? Zatiaľ platí R30 (rozhoduje administrátor, nič automaticky).
-8. **Zastupovanie predsedu (R37):** môže zástupcu určiť aj administrátor (predseda bez eCP sa do portálu neprihlási)?
-   Končí zastupovanie samo pri zmene predsedu alebo keď zástupca prestane byť členom skupiny? Môže predseda počas
-   zastupovania aspoň čítať zoznam členov? Je naraz najviac jeden zástupca?
+8. ~~Zastupovanie predsedu~~ – vyriešené v R37.

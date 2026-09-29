@@ -145,6 +145,11 @@ viazaný na skupinu; nie pre klub „SSS – nezaradení“).
 - **Zmenu predsedu skupiny zadáva len administrátor**, až po doručení dokumentov (zvyčajne z výročnej
   schôdze skupiny). Dovtedy má oprávnenia starý predseda. Zmena sa týka len danej skupiny a dá sa vrátiť.
 - Funkcie slúžia aj na zobrazenie kontaktov (predseda skupiny a predseda SSS na overovacej stránke).
+
+**`club_delegations`** – zástupca predsedu skupiny (R37, migrácia `0015`): `club_id`, `chair_member_id` (zastupovaný
+predseda), `delegate_member_id`, `created_by`, `created_at`, `ended_at`, `ended_by`, `end_reason` (`taken_back`,
+`resigned`, `chair_changed`, `delegate_left`, `replaced`). Najviac jedno neukončené zastupovanie na skupinu;
+záznamy sa nemažú. Platí len kým `chair_member_id` je aktuálny predseda.
 - Budúcnosť (približne o 3,5 roka): dočasná rola **delegát** – osoba poverená skupinou na účasť
   a hlasovanie na valnom zhromaždení. Slovo „delegát“ sa preto inde v IS nepoužíva.
 

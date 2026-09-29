@@ -100,6 +100,11 @@ ERRORS = {
     "member_not_payable": "Niektorý z vybraných členov už má zaplatené alebo je v inej hromadnej platbe.",
     "reference_not_open": "Platobný odkaz už nie je otvorený (je zaplatený alebo zrušený).",
     "note_required": "Doplňte poznámku.",
+    "club_has_no_chair": "Skupina nemá zadaného predsedu.",
+    "club_chair": "Túto akciu môže vykonať len predseda skupiny.",
+    "club_already_delegated": "Skupinu už spravuje zástupca – najprv prevezmite správu.",
+    "club_not_delegated": "Skupina nemá zástupcu predsedu.",
+    "delegate_not_eligible": "Zástupcom môže byť len člen skupiny (stav člen), ktorý ju má ako primárnu, a nie predseda.",
 }
 
 

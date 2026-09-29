@@ -12,7 +12,7 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ess.models import Club, PositionHolder
+from ess.models import Club, ClubDelegation, PositionHolder
 
 ActorKind = Literal["system_admin", "admin", "member", "system", "public"]
 
@@ -77,12 +77,28 @@ def chaired_club_ids(session: Session, member_id: uuid.UUID, on: date | None = N
     return {club_id for club_id, vf, vt in rows if club_id and is_open_on(vf, vt, on)}
 
 
+def managed_club_ids(session: Session, member_id: uuid.UUID) -> set[uuid.UUID]:
+    """Clubs the member manages: as chair unless delegated (R37), or as the chair's delegate."""
+    today = date.today()
+    delegations = session.execute(select(ClubDelegation.club_id, ClubDelegation.chair_member_id,
+                                         ClubDelegation.delegate_member_id).where(ClubDelegation.ended_at.is_(None))).all()
+    chairs = session.execute(select(PositionHolder.club_id, PositionHolder.member_id, PositionHolder.valid_from,
+                                    PositionHolder.valid_to).where(
+        PositionHolder.position_code == "club_chair",
+        PositionHolder.club_id.in_([d[0] for d in delegations]))).all() if delegations else []
+    current_chair = {c: m for c, m, vf, vt in chairs if is_open_on(vf, vt, today)}
+    # A delegation applies only while its chair is still the chair (a new chair may start on a later date).
+    effective = {club_id: delegate for club_id, chair, delegate in delegations if current_chair.get(club_id) == chair}
+    as_delegate = {club_id for club_id, delegate in effective.items() if delegate == member_id}
+    return (chaired_club_ids(session, member_id) - set(effective)) | as_delegate
+
+
 def can_manage_club(session: Session, actor: Actor, club: Club) -> bool:
     if actor.is_admin:
         return True
     if actor.kind != "member" or club.is_unaffiliated:
         return False
-    return club.id in chaired_club_ids(session, uuid.UUID(actor.id))
+    return club.id in managed_club_ids(session, uuid.UUID(actor.id))
 
 
 def require_club_manager(session: Session, actor: Actor, club: Club) -> None:

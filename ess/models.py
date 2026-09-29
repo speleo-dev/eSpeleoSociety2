@@ -477,6 +477,27 @@ class SssCard(Base):
     )
 
 
+class ClubDelegation(Base):
+    """A club chair hands over managing the club to another member (R37). At most one active per club."""
+
+    __tablename__ = "club_delegations"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    club_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clubs.id"), index=True)
+    chair_member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"))  # chair who is represented
+    delegate_member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    created_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_by: Mapped[str | None] = mapped_column(String(64))
+    # taken_back (chair), resigned (delegate), chair_changed, delegate_left, replaced (administrator)
+    end_reason: Mapped[str | None] = mapped_column(String(16))
+
+    __table_args__ = (
+        Index("uq_club_delegations_active", "club_id", unique=True, postgresql_where=text("ended_at IS NULL")),
+    )
+
+
 # --- phase 3: payments (docs/data-model-payments.md) ---------------------------------------------------------
 
 

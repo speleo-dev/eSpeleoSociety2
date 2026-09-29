@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ess import audit
 from ess.models import Club, Member, Membership, MembershipEndReason, MembershipStatus, PositionHolder
 from ess.security import pii
-from ess.services.access import Actor, DomainError, PermissionDenied, chaired_club_ids, require_admin
+from ess.services.access import Actor, DomainError, PermissionDenied, managed_club_ids, require_admin
 
 # Encryption contexts (associated data) - one per column.
 _CTX = {
@@ -153,8 +153,8 @@ def _can_edit(session: Session, actor: Actor, member: Member) -> bool:
         return True
     if actor.kind != "member":
         return False
-    chaired = chaired_club_ids(session, uuid.UUID(actor.id))
-    return any(m.valid_to is None and m.club_id in chaired for m in member.memberships)
+    managed = managed_club_ids(session, uuid.UUID(actor.id))
+    return any(m.valid_to is None and m.club_id in managed for m in member.memberships)
 
 
 def update_member(session: Session, actor: Actor, member_id: uuid.UUID, data: MemberData) -> Member:

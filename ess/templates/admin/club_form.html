@@ -66,6 +66,29 @@
     <button>Zadať predsedu</button>
   </form>
   <p class="muted">Zadajte až po doručení dokumentov z výročnej schôdze. Predchádzajúcemu predsedovi sa funkcia ukončí k tomuto dátumu.</p>
+
+  <h2>Zastupovanie predsedu</h2>
+  {% if delegation %}
+  <p>Skupinu spravuje zástupca predsedu <a href="/admin/members/{{ delegation.delegate_member_id }}">{{ delegate_name }}</a>
+     (od {{ delegation.created_at|local_time }}). Predseda má len čítanie a tlačidlo „Prevziať správu“.</p>
+  <form class="inline" method="post" action="/admin/clubs/{{ club.id }}/delegation/end" onsubmit="return confirm('Ukončiť zastupovanie? Skupinu bude spravovať predseda.')">
+    {% include "admin/_csrf.html" %}
+    <button>Ukončiť zastupovanie</button>
+  </form>
+  {% endif %}
+  {% if chairs %}
+  <form class="inline" method="post" action="/admin/clubs/{{ club.id }}/delegation">
+    {% include "admin/_csrf.html" %}
+    <label>{% if delegation %}Iný zástupca{% else %}Zástupca{% endif %}
+      <select name="member_id" required>
+        <option value="">— vyberte člena —</option>
+        {% for r in delegate_options %}<option value="{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</option>{% endfor %}
+      </select></label>
+    <button>Určiť zástupcu</button>
+  </form>
+  <p class="muted">Zástupcom môže byť člen skupiny (stav člen), ktorý ju má ako primárnu. Zastupovanie sa ukončí samo pri zmene
+    predsedu alebo keď zástupca prestane byť členom skupiny (alebo si zmení primárnu skupinu).</p>
+  {% endif %}
   {% endif %}
   <p><a href="/admin/members?club={{ club.id }}">Členovia skupiny →</a></p>
   <p><a href="/admin/clubs/{{ club.id }}/bulk-payment">Hromadná platba členského →</a></p>
