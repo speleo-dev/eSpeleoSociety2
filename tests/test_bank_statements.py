@@ -138,3 +138,13 @@ def test_web_upload_and_task_actions(migrated_db, google, client):
         task_id = session.scalar(select(Task.id).where(Task.task_type == "payment_unmatched"))
     r = client.post(f"/admin/tasks/{task_id}/resolve-payment", data={"csrf_token": token, "note": "vrátené"})
     assert "Požiadavka bola vybavená" in r.text
+
+
+def test_camt053_tatra_banka_format():
+    """Structure of a real Tatra banka statement (anonymized): the payer reference is EndToEndId."""
+    from pathlib import Path
+
+    [tx] = camt053.parse((Path(__file__).parent / "data" / "camt053_tatra_sample.xml").read_bytes())
+    assert tx.bank_ref == "PO26092900000001" and tx.amount == Decimal("7.00") and tx.booked_on == date(2026, 9, 29)
+    assert tx.payer_reference == "2LAXU3TRV67K" and tx.message == "Clenske SSS 2026"
+    assert tx.payer_name == "Peter Platiteľ" and tx.payer_iban == "SK0809000000000123123123"

@@ -12,8 +12,8 @@ Hotové (krok 3): platobný odkaz v eCP (R36, variant A) – `ecp_content.paymen
 Hotové (krok 4): spracovanie výpisu – `ess/services/bank_statements.py`, stránka **Bankové výpisy** (`/admin/statements`),
 Požiadavky „Nespárovaná platba“ (priradiť k referencii / vybavené) a „Preplatok“ (vybavené s poznámkou), e-mail
 pri neúplnej platbe (`payment_partial`). Referencia sa hľadá v referencii platiteľa aj v správe pre prijímateľa.
-Parser **camt.053** (`ess/banking/camt053.py`) je **predbežný** – referencia platiteľa = `EndToEndId`; overí sa na
-vzorovom výpise (otázka 3 v `docs/PLAN.md`). Správa pre prijímateľa sa ukladá šifrovaná (`message_enc`, migrácia `0016`).
+Parser **camt.053** (`ess/banking/camt053.py`) je overený na výpise z Tatra banky (2026-09-30): referencia platiteľa
+z PAYMe odkazu prišla v `EndToEndId`, správa „Clenske SSS 2026“ v `Ustrd`. Údaje o majiteľovi účtu z výpisu sa nečítajú. Správa pre prijímateľa sa ukladá šifrovaná (`message_enc`, migrácia `0016`).
 Hotové (krok 5): prehľad zaplateného členského na stránke **Členské** – rok, súhrn podľa primárnej skupiny, zoznam
 členov skupiny, export CSV (`payments.overview`). Počítajú sa členovia SSS so stavom „člen“ a každý, kto na rok zaplatil.
 

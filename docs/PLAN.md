@@ -407,7 +407,7 @@ Ikonky stavov (prevzaté z pôvodného projektu, `ess/static/icons`), logo aplik
 ## 10. Otvorené otázky
 1. Presné pravidlá pripomienky pri hlásení vstupu do jaskyne (kedy pripomenúť členovi, kedy e-mail predsedovi).
 2. Podporuje WebSupport PostgreSQL šifrované (SSL) pripojenie a obmedzenie podľa IP? (overí test vo fáze 0)
-3. V akom formáte exportuje banka SSS výpis (CSV, XML camt.053, …)? Treba vzorový výpis.
+3. ~~Formát výpisu~~ – camt.053 (XML); overené na výpise z Tatra banky 2026-09-30, referencia platiteľa = `EndToEndId`.
 4. Gmail druhého hlavného admina (zadá sa do konfigurácie, nie do repozitára).
 5. Aké osobné údaje presne zobraziť na overovacej stránke (návrh: meno, fotka, skupina)?
 6. Potrebuje aj povýšenie čakateľa na člena aktiváciu administrátorom? (návrh: áno)

@@ -1,7 +1,7 @@
 """Parser of ISO 20022 camt.053 (bank to customer statement) – incoming payments only.
 
-PROVISIONAL: verified against the standard, not yet against a real statement of the SSS bank.
-The payer reference ("referencia platiteľa", PAYMe `PI`) is the SEPA end-to-end id (`EndToEndId`);
+Verified with a Tatra banka statement (2026-09-30, tests/data/camt053_tatra_sample.xml is an anonymized copy).
+Only incoming entries are read; the account owner block of the statement is ignored. The payer reference ("referencia platiteľa", PAYMe `PI`) is the SEPA end-to-end id (`EndToEndId`);
 a structured creditor reference or the message may carry it too, so all are kept.
 """
 
