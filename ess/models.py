@@ -199,7 +199,8 @@ class PositionHolder(TimestampMixin, Base):
             "uq_position_holders_single",
             "position_code",
             unique=True,
-            postgresql_where=text("valid_to IS NULL AND position_code IN ('sss_chair', 'sss_vice_chair', 'audit_chair')"),
+            postgresql_where=text("valid_to IS NULL AND position_code IN "
+                                  "('sss_chair', 'sss_vice_chair', 'sss_secretary', 'sss_treasurer', 'audit_chair')"),
         ),
         Index(
             "uq_position_holders_club_chair",

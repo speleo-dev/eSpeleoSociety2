@@ -207,6 +207,19 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Hlásenie vstupu do jaskyne: jaskyňa, spolulezci (voľný text), plánovaný návrat; „Som vonku“. Bez potvrdenia
     návratu **30 minút** po plánovanom čase pripomienka e-mailom členovi, po ďalších **30 minútach** e-mail predsedovi
     jeho primárnej skupiny (ďalšie kontakty prejedná predsedníctvo). Kontrolu spúšťa Cloud Scheduler každých 5 minút.
+- **R42** – **Upratanie používateľského rozhrania, 1. kolo** (2026-09-30, podklad `docs/screens.md`):
+  - Hromadná platba **len pre predsedu / zástupcu** na portáli (z administrácie odstránená).
+  - „Ukončiť členstvo v skupine“ (a „Nastaviť ako primárnu“) je pod **„Ďalšie akcie“**.
+  - Predseda vidí na stránke skupiny rámček „Návrhy na členstvo čakajúce na aktiváciu“.
+  - Menu administrácie: Členovia · Skupiny · **Správa organizácie** (Organizačná štruktúra, Členské, Bankové výpisy,
+    Požiadavky) · **Oznamy** (Dokumenty, Notifikácie do eCP) · **Nastavenia** (Import; superadmin aj Prístupy
+    a Nastavenia aplikácie). Vpravo farebné štítky bez popisu: červený = čakajúce požiadavky, oranžový = nezaplatené
+    členské za tento rok.
+  - Meno administrátora skrátené („Ladislav G.“) vo farebnom štítku podľa úrovne; `system_admin` sa v rozhraní
+    volá **superadmin**.
+  - Odkaz „← Späť“ na každej stránke administrácie aj portálu; portál má hornú lištu (Domov, Odhlásiť).
+  - Funkcie výboru podľa sss.sk/vybor: pridané **Tajomník SSS** a **Hospodár SSS** (migrácia `0024`).
+  - Testovacie dáta sa zmažú nástrojom `ess.tools.purge_test_data` (nie v prostredí prod).
 
 ## 4. Architektúra
 

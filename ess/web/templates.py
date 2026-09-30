@@ -26,7 +26,7 @@ _LABELS = [
     (SssStatus.EXPELLED, "vylúčený zo SSS"),
     (SssStatus.NEVER, "bez členstva"),
     (AdminRole.ADMIN, "administrátor"),
-    (AdminRole.SYSTEM_ADMIN, "systémový administrátor"),
+    (AdminRole.SYSTEM_ADMIN, "superadmin"),
 ]
 
 ERRORS = {
@@ -88,7 +88,7 @@ ERRORS = {
     "certificate_type_exists": "Tento typ certifikátu už existuje.",
     "super_admin_is_configured": "Tento účet je hlavný systémový administrátor (nastavené na serveri).",
     "cannot_revoke_self": "Nemôžete odobrať prístup sebe.",
-    "system_admin": "Túto akciu môže vykonať len systémový administrátor.",
+    "system_admin": "Túto akciu môže vykonať len superadmin.",
     "invalid_value": "Neplatná hodnota.",
     "already_expelled": "Člen už je vylúčený.",
     "member_edit": "Na úpravu údajov tohto člena nemáte oprávnenie.",
@@ -247,6 +247,17 @@ def money(value) -> str:
 
 
 templates.env.filters["money"] = money
+
+
+def short_name(value: str) -> str:
+    """"Ladislav Gagyi" -> "Ladislav G." (header of the administration)."""
+    parts = (value or "").split()
+    if len(parts) < 2:
+        return value or ""
+    return f"{parts[0]} {parts[-1][0]}."
+
+
+templates.env.filters["short_name"] = short_name
 FEE_METHOD_LABELS = {"member": "odkaz člena", "bulk": "hromadná platba", "manual": "ručne"}
 templates.env.filters["fee_method_label"] = lambda method: FEE_METHOD_LABELS.get(method, "")
 templates.env.filters["task_label"] = task_label

@@ -188,32 +188,6 @@ def payment_cancel(request: Request, reference_id: uuid.UUID, admin: Admin, sess
                lambda: payments.cancel_reference(session, admin.actor, reference_id), "Platobný odkaz bol zrušený.")
 
 
-@router.get("/clubs/{club_id}/bulk-payment")
-def bulk_payment_form(request: Request, club_id: uuid.UUID, admin: Admin, session: Db, year: int | None = None):
-    club = session.get(Club, club_id)
-    if club is None:
-        return render(request, "admin/not_found.html", admin, session)
-    years = payments.payment_years(session)
-    year = year if year in years else years[-1]
-    return render(request, "admin/bulk_payment.html", admin, session, club=club, year=year, years=years,
-                  candidates=payments.bulk_candidates(session, admin.actor, club_id, year),
-                  open_refs=payments.open_bulk_references(session, club_id))
-
-
-@router.post("/clubs/{club_id}/bulk-payment", dependencies=[Depends(verify_csrf)])
-async def bulk_payment_create(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
-    form = await request.form()
-    back = f"/admin/clubs/{club_id}/bulk-payment"
-    try:
-        year = int(form.get("year", ""))
-        chosen = [uuid.UUID(v) for v in form.getlist("member_id")]
-    except ValueError:
-        request.session["flash"] = {"kind": "error", "text": error_text(DomainError("invalid_value"))}
-        return RedirectResponse(back, status_code=303)
-    return _create_and_show(request, session, f"{back}?year={year}",
-                            lambda: payments.create_bulk(session, admin.actor, club_id, year, chosen))
-
-
 def member_fee_rows(session, member: Member) -> dict:
     """Fees for the member page: paid years and the years that can still be paid."""
     fees = payments.member_fees(session, member.id)

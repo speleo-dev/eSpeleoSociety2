@@ -94,7 +94,7 @@ def test_login_redirects_to_google(client, google):
 def test_super_admin_login_and_logout(client, google):
     assert login(client, google).headers["location"] == "/admin"
     page = client.get("/admin")
-    assert page.status_code == 200 and "systémový administrátor" in page.text
+    assert page.status_code == 200 and "role-system_admin" in page.text and "superadmin" in page.text
     assert client.post("/admin/logout", data={"csrf_token": csrf(client)}, follow_redirects=False).status_code == 303
     assert client.get("/admin").status_code == 401
 

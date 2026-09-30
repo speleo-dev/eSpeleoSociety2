@@ -1,7 +1,6 @@
-{% extends "public/_layout.html" %}
+{% extends "portal/_layout.html" %}
 {% block title %}{{ data.full_name() }} – {{ club.name }}{% endblock %}
-{% block content %}
-<p><a href="/portal/clubs/{{ club.id }}">← {{ club.name }}</a></p>
+{% block portal %}
 <h1>{{ data.full_name() }}</h1>
 {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
 <p>Stav v skupine: <strong>{{ m.status|label }}</strong> (od {{ m.valid_from|date }}){% if m.is_primary %}, primárna skupina{% endif %}</p>
@@ -23,9 +22,11 @@
   <button>{{ text }}</button>
 </form>
 {% endfor %}
-<form class="inline" method="post" action="/portal/clubs/{{ club.id }}/memberships/{{ m.id }}/terminate" onsubmit="return confirm('Ukončiť členstvo v skupine? Platí len pre vašu skupinu; o členstve v SSS rozhodne administrátor.')">
+<details><summary>Ďalšie akcie</summary>
+<form method="post" action="/portal/clubs/{{ club.id }}/memberships/{{ m.id }}/terminate" onsubmit="return confirm('Ukončiť členstvo v skupine? Platí len pre vašu skupinu; o členstve v SSS rozhodne administrátor.')">
   <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Ukončiť členstvo v skupine</button>
 </form>
+</details>
 {% if m.status.value == "pending_activation" %}<p class="muted">Návrh čaká na aktiváciu administrátorom.</p>{% endif %}
 
 {% if card_years and m.status.value == "member" %}

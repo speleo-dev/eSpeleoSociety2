@@ -438,3 +438,14 @@ def summarize(rows: list[FeeRow]) -> list[ClubSummary]:
             summary.paid += 1
             summary.paid_amount += row.amount
     return sorted(by_club.values(), key=lambda s: s.club_name.casefold())
+
+
+def unpaid_count(session: Session, year: int) -> int:
+    """Members of SSS (status "member" in a club) without a paid fee for the year – one query, no decryption."""
+    from sqlalchemy import exists, func
+
+    paid = exists().where(Fee.member_id == Member.id, Fee.year == year, Fee.paid_at.is_not(None))
+    active = exists().where(Membership.member_id == Member.id, Membership.valid_to.is_(None),
+                            Membership.status == MembershipStatus.MEMBER)
+    return session.scalar(select(func.count()).select_from(Member).where(
+        active, ~paid, Member.expelled_at.is_(None), Member.sss_ended_at.is_(None))) or 0

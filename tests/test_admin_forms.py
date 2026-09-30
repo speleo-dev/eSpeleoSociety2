@@ -121,7 +121,7 @@ def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
     assert client.get("/admin/access").status_code == 403
     assert client.get("/admin/settings").status_code == 403
     client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99"}, follow_redirects=False)
-    assert "Túto akciu môže vykonať len systémový administrátor." in client.get("/admin").text
+    assert "Túto akciu môže vykonať len superadmin." in client.get("/admin").text
 
     login(client, google)  # super admin
     token = csrf(client)

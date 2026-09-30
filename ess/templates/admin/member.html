@@ -125,6 +125,7 @@
         {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
         {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
         {% if m.status == S.SUSPENDED %}{{ status_button(m.id, S.MEMBER, "Obnoviť") }}{% endif %}
+        <details><summary>Ďalšie akcie</summary>
         {% if not m.is_primary %}<form class="inline" method="post" action="/admin/memberships/{{ m.id }}/primary">
           {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Nastaviť ako primárnu</button></form>{% endif %}
         <form class="inline" method="post" action="/admin/memberships/{{ m.id }}/terminate"
@@ -132,6 +133,7 @@
           {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
           <button>Ukončiť v skupine</button>
         </form>
+        </details>
       </td>
     </tr>
   {% else %}

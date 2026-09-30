@@ -1,7 +1,6 @@
-{% extends "public/_layout.html" %}
+{% extends "portal/_layout.html" %}
 {% block title %}Hromadná platba – {{ club.name }}{% endblock %}
-{% block content %}
-<p><a href="/portal/clubs/{{ club.id }}/payments">← Členské</a></p>
+{% block portal %}
 <h1>Hromadná platba {{ ref.year }}</h1>
 {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
 <dl>

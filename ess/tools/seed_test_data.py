@@ -122,7 +122,7 @@ def _seed(session, rng: random.Random, member_count: int) -> None:
     pool = [m for m, c in created if m.id not in chairs and c is not unaffiliated]
     rng.shuffle(pool)
     holders = set(chairs)
-    for code in ["sss_chair", "sss_vice_chair", "audit_chair"] + ["board_member"] * 5 + ["audit_member"] * 2:
+    for code in ["sss_chair", "sss_vice_chair", "sss_secretary", "sss_treasurer", "audit_chair"] + ["board_member"] * 3 + ["audit_member"] * 2:
         holder = pool.pop()
         positions.assign_position(session, SYSTEM, code, holder.id, valid_from=start)
         holders.add(holder.id)

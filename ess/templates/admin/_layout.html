@@ -3,25 +3,43 @@
 {% block header %}
 <header>
   <a class="brand" href="/admin"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
-  <nav>
+  <nav class="menu">
     <a href="/admin/members">Členovia</a>
     <a href="/admin/clubs">Skupiny</a>
-    <a href="/admin/payments">Členské</a>
-    <a href="/admin/tasks">Požiadavky{% if open_tasks %} <span class="chip">{{ open_tasks }}</span>{% endif %}</a>
-    <a href="/admin/organization">Organizácia</a>
-    <a href="/admin/documents">Dokumenty</a>
-    <a href="/admin/notifications">Notifikácie</a>
-    <a href="/admin/import">Import</a>
-    {% if admin.is_system_admin %}<a href="/admin/access">Prístupy</a><a href="/admin/settings">Nastavenia</a>{% endif %}
+    <details><summary>Správa organizácie</summary><div>
+      <a href="/admin/organization">Organizačná štruktúra</a>
+      <a href="/admin/payments">Členské</a>
+      <a href="/admin/statements">Bankové výpisy</a>
+      <a href="/admin/tasks">Požiadavky</a>
+    </div></details>
+    <details><summary>Oznamy</summary><div>
+      <a href="/admin/documents">Dokumenty</a>
+      <a href="/admin/notifications">Notifikácie do eCP</a>
+    </div></details>
+    <details><summary>Nastavenia</summary><div>
+      <a href="/admin/import">Import</a>
+      {% if admin.is_system_admin %}<a href="/admin/access">Prístupy</a><a href="/admin/settings">Nastavenia aplikácie</a>{% endif %}
+    </div></details>
+    {% if badges %}
+    <a class="badge badge-tasks" href="/admin/tasks" title="Čakajúce požiadavky">{{ badges.tasks }}</a>
+    <a class="badge badge-unpaid" href="/admin/payments?year={{ badges.year }}" title="Nezaplatené členské {{ badges.year }}">{{ badges.unpaid }}</a>
+    {% endif %}
   </nav>
-  <span class="muted">{{ admin.display_name }} ({{ admin.role|label }})</span>
+  <span class="role role-{{ admin.role.value }}" title="{{ admin.display_name }} – {{ admin.role|label }}">{{ admin.display_name|short_name }}</span>
   <form class="inline" method="post" action="/admin/logout">
     <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
     <button>Odhlásiť</button>
   </form>
 </header>
+<script>
+  // one open menu at a time; a click outside closes it
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll("nav.menu details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
+  });
+</script>
 {% endblock %}
 {% block content %}
+  {% block back %}<p class="back"><a href="/admin" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
   {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
   {% block body %}{% endblock %}
 {% endblock %}

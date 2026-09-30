@@ -453,6 +453,23 @@ gcloud scheduler jobs create http ess-tick --location europe-west3 --schedule "*
 Kontrola: `gcloud scheduler jobs run ess-tick --location europe-west3` a v Cloud Run → Logs má byť požiadavka
 `POST /internal/tick` s kódom 200. Kód 404 = token v úlohe a v službe sa nezhoduje.
 
+## 19. Zmazanie testovacích dát pred importom (jednorazovo, v Cloud Shell)
+
+Zmaže všetkých členov, skupiny (okrem „SSS – nezaradení“) a všetko, čo k nim patrí (členstvá, eCP, žiadosti,
+platby, požiadavky…), aj fotky z úložiska. Ponechá administrátorov, nastavenia, dokumenty a auditný log.
+**Nedá sa vrátiť.** V prostredí `prod` sa nespustí.
+
+```bash
+cd ~/eSpeleoSociety2 && git pull --ff-only && .venv/bin/pip install -q .
+export ESS_DATABASE_URL="$(gcloud secrets versions access latest --secret=ess-database-url --project espeleosociety)"
+ESS_MEDIA_BUCKET=ess-media-espeleosociety .venv/bin/python -m ess.tools.purge_test_data --yes
+ESS_MEDIA_BUCKET=ess-media-espeleosociety .venv/bin/python -m ess.tools.load_clubs
+unset ESS_DATABASE_URL
+```
+
+Potom v administrácii Nastavenia → Import: najprv stiahnite „kódy skupín“, potom importujte členov.
+eCP vydané testovacím členom v Peňaženke Google ostanú, ale ich QR a odkazy už nebudú platné.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).

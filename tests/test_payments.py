@@ -173,13 +173,7 @@ def test_admin_pages_member_link_manual_payment_and_bulk(migrated_db, google, cl
     r = client.post(f"/admin/members/{a}/fee-paid", data={"csrf_token": token, "year": this_year, "note": "hotovosť"})
     assert "označené ako zaplatené" in r.text and "ručne: hotovosť" in r.text
 
-    page = client.get(f"/admin/clubs/{club_id}/bulk-payment").text
-    assert "Boris" in page and "Anna" not in page
-    r = client.post(f"/admin/clubs/{club_id}/bulk-payment",
-                    data={"csrf_token": token, "year": this_year, "member_id": [str(b)]}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"].startswith("/admin/payments/")
-    page = client.get(r.headers["location"]).text
-    assert "Hromadná platba" in page and "Boris" in page and "Zrušiť platobný odkaz" in page
+    assert client.get(f"/admin/clubs/{club_id}/bulk-payment").status_code == 404  # only the chair, on the portal
 
 
 @pytest.mark.db

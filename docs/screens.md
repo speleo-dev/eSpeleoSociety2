@@ -1,10 +1,10 @@
 # Obrazovky a tlačidlá – prehľad na upratanie
 
-Stav: 2026-09-30 (po fáze 5). Podklad na kontrolu prípadov použitia: **kde** je tlačidlo, **kto** ho vidí
+Stav: 2026-09-30 (po fáze 5); 1. kolo úprav podľa R42 je zapracované (menu, štítky, „Späť“, hromadná platba len na portáli, „Ďalšie akcie“). Podklad na kontrolu prípadov použitia: **kde** je tlačidlo, **kto** ho vidí
 a **kedy** je dostupné. Oprávnenie sa vždy kontroluje aj na serveri – skryté tlačidlo nie je jediná ochrana.
 
 Skratky rolí: **V** verejnosť · **Č** člen s aktívnym eCP · **P** predseda skupiny (bez zástupcu) · **Z** zástupca
-predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** administrátor · **SA** systémový administrátor.
+predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** administrátor · **SA** superadmin (systémový administrátor).
 
 ---
 
@@ -71,8 +71,9 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 ## 4. Administrácia (`/admin`, Google prihlásenie)
 
-Menu: Členovia · Skupiny · Členské · Požiadavky · Organizácia · Dokumenty · Notifikácie · Import ·
-(SA:) Prístupy · Nastavenia.
+Menu: Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky) ·
+Oznamy (Dokumenty, Notifikácie do eCP) · Nastavenia (Import; SA: Prístupy, Nastavenia aplikácie) · štítky: čakajúce
+požiadavky (červený), nezaplatené členské tohto roka (oranžový) · meno v štítku podľa úrovne · Odhlásiť.
 
 | Obrazovka | Kto | Tlačidlá | Kedy |
 |---|---|---|---|
@@ -89,8 +90,7 @@ Menu: Členovia · Skupiny · Členské · Požiadavky · Organizácia · Dokume
 | Detail člena – certifikáty | A | Odstrániť · Pridať certifikát | – |
 | Detail člena – vylúčenie | A | Vylúčiť zo SSS (dôvod) | nie vylúčený; nevratné |
 | Skupiny | A | Nová skupina · detail | – |
-| Detail skupiny | A | Uložiť · Nahrať / odstrániť logo · Zadať predsedu · Určiť zástupcu / Ukončiť zastupovanie · Členovia skupiny · Hromadná platba | zastupovanie nie pri „SSS – nezaradení“ |
-| Hromadná platba (admin) | A | Vytvoriť platobný odkaz · Zrušiť | ako na portáli predsedu |
+| Detail skupiny | A | Uložiť · Nahrať / odstrániť logo · Zadať predsedu · Určiť zástupcu / Ukončiť zastupovanie · Členovia skupiny | zastupovanie nie pri „SSS – nezaradení“ |
 | Členské | A | rok · Export CSV · Zverejniť platobné odkazy · Odoslať ďalšiu dávku · Bankové výpisy | „dávka“ len ak čakajú eCP |
 | Platobný odkaz (detail) | A | Otvoriť PAYMe · Zrušiť | zrušiť len otvorený |
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |

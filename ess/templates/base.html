@@ -50,6 +50,21 @@
     details summary { cursor:pointer; color:var(--accent); margin:.5rem 0; }
     dd { margin:0; min-width:0; overflow-wrap:anywhere; }
     td form.inline button { margin:0 .2rem .2rem 0; white-space:nowrap; }
+    nav.menu { align-items:center; }
+    nav.menu details { position:relative; }
+    nav.menu summary { list-style:none; cursor:pointer; color:var(--fg); margin:0; }
+    nav.menu summary::-webkit-details-marker { display:none; }
+    nav.menu summary::after { content:" ▾"; font-size:.8em; color:var(--muted); }
+    nav.menu details > div { position:absolute; z-index:10; top:1.6rem; left:0; min-width:13rem; display:flex; flex-direction:column;
+      background:var(--bg); border:1px solid var(--line); border-radius:.4rem; padding:.3rem 0; box-shadow:0 4px 12px rgba(0,0,0,.15); }
+    nav.menu details > div a { padding:.35rem .8rem; }
+    nav.menu details > div a:hover { background:var(--chip); }
+    .badge { display:inline-block; min-width:1.6rem; text-align:center; border-radius:1rem; padding:.05rem .5rem; font-size:.85rem;
+      font-weight:600; color:#fff !important; }
+    .badge-tasks { background:#c0392b; } .badge-unpaid { background:#d68910; }
+    .role { border-radius:1rem; padding:.05rem .6rem; font-size:.8rem; color:#fff; white-space:nowrap; }
+    .role-admin { background:#2b5d8a; } .role-system_admin { background:#7d3c98; }
+    p.back { margin:0 0 .5rem; font-size:.9rem; }
     @media (max-width: 640px) {
       table.stack thead { display:none; }
       table.stack tr { display:block; border-bottom:1px solid var(--line); padding:.4rem 0; }

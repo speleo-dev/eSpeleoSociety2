@@ -1,7 +1,6 @@
-{% extends "public/_layout.html" %}
+{% extends "portal/_layout.html" %}
 {% block title %}{% if member_id %}Úprava údajov{% else %}Nový člen{% endif %} – {{ club.name }}{% endblock %}
-{% block content %}
-<p><a href="/portal/clubs/{{ club.id }}">← {{ club.name }}</a></p>
+{% block portal %}
 <h1>{% if member_id %}Úprava údajov člena{% else %}Pridať do skupiny{% endif %}</h1>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form">

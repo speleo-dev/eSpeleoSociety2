@@ -1,7 +1,6 @@
-{% extends "public/_layout.html" %}
+{% extends "portal/_layout.html" %}
 {% block title %}{{ view.club.name }} – portál eSS{% endblock %}
-{% block content %}
-<p><a href="/portal">← Späť</a></p>
+{% block portal %}
 <h1>{{ view.club.name }}</h1>
 {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
 {% if view.chair_name %}<p>Predseda: {{ view.chair_name }}{% if view.delegate_name %}; skupinu spravuje zástupca {{ view.delegate_name }}{% endif %}</p>{% endif %}
@@ -36,6 +35,13 @@
 <p><a href="/portal/clubs/{{ view.club.id }}/members/new"><button class="primary">Pridať čakateľa / navrhnúť člena</button></a>
    <a href="/portal/clubs/{{ view.club.id }}/payments"><button>Členské a hromadná platba</button></a></p>
 {% endif %}
+{% if view.full %}{% set pending = view.rows|selectattr("status.value", "equalto", "pending_activation")|list %}
+{% if pending %}
+<section class="box">
+  <strong>Návrhy na členstvo čakajúce na aktiváciu administrátorom:</strong>
+  <ul>{% for r in pending %}<li>{{ r.data.last_name }} {{ r.data.first_name }}</li>{% endfor %}</ul>
+</section>
+{% endif %}{% endif %}
 <h2>Členovia ({{ view.rows|length }})</h2>
 <div class="table-wrap"><table class="stack">
   <thead><tr><th>Meno</th>{% if view.full %}<th>Stav</th>{% endif %}<th>Telefón</th><th>E-mail</th>{% if view.full %}<th>Bydlisko</th><th>Č. preukazu</th>{% endif %}</tr></thead>

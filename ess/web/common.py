@@ -19,10 +19,15 @@ Db = Annotated[Session, Depends(get_session)]
 
 def render(request: Request, name: str, admin: AdminContext, session: Session | None = None,
            status_code: int = 200, **context):
+    from ess.services import payments
+
     flash = request.session.pop("flash", None)
-    open_tasks = tasks.count_open(session) if session is not None else None
+    badges = None
+    if session is not None:
+        year = date.today().year
+        badges = {"tasks": tasks.count_open(session), "unpaid": payments.unpaid_count(session, year), "year": year}
     return templates.TemplateResponse(
-        request, name, {"admin": admin, "flash": flash, "open_tasks": open_tasks, **context}, status_code=status_code
+        request, name, {"admin": admin, "flash": flash, "badges": badges, **context}, status_code=status_code
     )
 
 

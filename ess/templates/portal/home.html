@@ -1,6 +1,7 @@
-{% extends "public/_layout.html" %}
+{% extends "portal/_layout.html" %}
 {% block title %}Portál eSS{% endblock %}
-{% block content %}
+{% block back %}{% endblock %}
+{% block portal %}
 {% set d = home.data %}
 <h1>{{ d.full_name() }}</h1>
 {% if home.payment %}
@@ -71,8 +72,4 @@
     {% endif %}</li>
 {% endfor %}
 </ul>
-<form method="post" action="/portal/logout">
-  <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <button>Odhlásiť</button>
-</form>
 {% endblock %}

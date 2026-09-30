@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block header %}
+<header>
+  <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> Portál eSS</a>
+  <nav>
+    <a href="/portal">Domov</a>
+  </nav>
+  <form class="inline" method="post" action="/portal/logout">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Odhlásiť</button>
+  </form>
+</header>
+{% endblock %}
+{% block content %}
+  {% block back %}<p class="back"><a href="/portal" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
+  {% block portal %}{% endblock %}
+{% endblock %}
