@@ -231,7 +231,10 @@ def test_admin_access(session):
 def test_settings(session):
     assert settings.get_setting(session, "fee_amount") == "15.00"
     with pytest.raises(PermissionDenied):
-        settings.set_setting(session, ADMIN, "fee_amount", "20")
+        settings.set_setting(session, ADMIN, "ecp_qr_daily_limit", "20")
+    with pytest.raises(PermissionDenied):
+        settings.set_setting(session, Actor(kind="member", id=str(uuid.uuid4())), "fee_amount", "20")
+    settings.set_setting(session, ADMIN, "fee_amount", "15.00")  # admins edit fee settings (R44)
     assert settings.get_setting(session, "reduced_fee_amount") == "7.00"
     assert settings.get_setting(session, "reduced_fee_age") == "62"
     settings.set_setting(session, SYS_ADMIN, "reduced_fee_amount", "7.50")

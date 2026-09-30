@@ -2,8 +2,7 @@
 {% block page_title %}Nastavenia aplikácie{% endblock %}
 {% block body %}
 <h1>Nastavenia aplikácie</h1>
-{% set can_edit = admin.is_system_admin %}
-{% if not can_edit %}<p class="muted">Nastavenia mení superadmin.</p>{% endif %}
+{% set can_edit = True %}{% set sa = admin.is_system_admin %}
 <form method="post" class="form" id="settings-form">
   {% include "admin/_csrf.html" %}
   <fieldset disabled id="settings-fields">
@@ -18,6 +17,7 @@
     <label>Názov príjemcu<input name="payment_account_name" value="{{ values.payment_account_name }}"></label>
   </div>
   <p class="muted">IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.</p>
+  {% if sa %}
   <h2>eCP</h2>
   <div class="grid">
     <label>Platnosť odkazu v e-maile (hodín)<input name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}"></label>
@@ -26,6 +26,7 @@
     <label>Nových QR na eCP za deň (najviac)<input name="ecp_qr_daily_limit" inputmode="numeric" value="{{ values.ecp_qr_daily_limit }}"></label>
     <label>Portál: prihlásených zariadení na člena (najviac)<input name="portal_max_devices" inputmode="numeric" value="{{ values.portal_max_devices }}"></label>
   </div>
+  {% endif %}
   </fieldset>
   {% if can_edit %}
   <p><button type="button" id="settings-edit">Upraviť</button>
@@ -55,13 +56,13 @@
   <p><button>Pridať typ</button></p>
 </form>
 {% endif %}
+{% if sa %}
 <h2>Ročná známka eCP</h2>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <p>{% if sticker.url %}Nasadená známka na rok {{ sticker.year }}:<br><img src="{{ sticker.url }}" alt="Ročná známka" style="max-width:100%;background:#ccc">
    {% else %}<span class="muted">Zatiaľ nie je nasadená žiadna známka.</span>{% endif %}</p>
 <p class="muted">Obrázok v hornej časti eCP. Každý rok má náhodné farby. Nová známka sa použije pri nových eCP;
    vo vydaných eCP sa zmení po zaplatení členského (fáza 3).</p>
-{% if can_edit %}
 <form method="post" action="/admin/settings/sticker" class="form">
   {% include "admin/_csrf.html" %}
   <div class="grid">
@@ -87,9 +88,7 @@
     <p><button>Nahrať šablónu</button></p>
   </form>
 </details>
-{% endif %}
 
-{% if can_edit %}
 <h2>E-mail</h2>
 <form method="post" action="/admin/settings/test-mail" class="form">
   {% include "admin/_csrf.html" %}

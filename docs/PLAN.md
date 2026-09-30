@@ -229,6 +229,12 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Celé meno používateľa v štítku (dvojriadkovo, farba podľa úrovne); po kliknutí rola a **Odhlásiť**
     (administrácia aj portál).
   - **Členovia skupiny vidia na portáli všetkých jej členov vrátane čakateľov** (meno, stav, telefón, e-mail).
+- **R44** – **Nastavenia mení aj administrátor, ale len časť** (2026-09-30; upresňuje R43):
+  - Administrátor vidí a cez „Upraviť“ mení: členské, zľavnené členské, vek pre zľavu, menu, obdobie platby
+    na ďalší rok, IBAN a príjemcu platby; pridáva typy certifikátov.
+  - Len superadmin vidí a mení: lehoty a limity eCP (QR, žiadosti), počet zariadení na portáli, ročnú známku,
+    testovací e-mail; Import a Prístupy.
+  - Server kontroluje oprávnenie pri každom kľúči (`settings.ADMIN_KEYS`); skryté pole nie je jediná ochrana.
 
 ## 4. Architektúra
 

@@ -51,7 +51,7 @@ def remove_certificate(session: Session, actor: Actor, certificate_id: uuid.UUID
 
 
 def add_certificate_type(session: Session, actor: Actor, code: str, name: str) -> CertificateType:
-    require_system_admin(actor)
+    require_admin(actor)  # R44: administrators maintain the certificate types
     code = code.strip().lower()
     if not code or not name.strip():
         raise DomainError("name_required")

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ess import audit
 from ess.models import Setting
-from ess.services.access import Actor, DomainError, require_system_admin
+from ess.services.access import Actor, DomainError, require_admin, require_system_admin
 
 def _colour(value: str) -> str:
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
@@ -55,6 +55,10 @@ _KNOWN: dict[str, type] = {
     "sticker_year": int,
 }
 
+# Settings an administrator may change (R44); all others – eCP, portal, yearly sticker – only a superadmin.
+ADMIN_KEYS = {"fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
+              "payment_iban", "payment_account_name"}
+
 # Built-in defaults (also inserted by migrations 0008, 0009, 0013 and 0019).
 DEFAULTS = {
     "sticker_text_color": "#FFFFFF",
@@ -80,7 +84,10 @@ def get_int(session: Session, key: str) -> int:
 
 
 def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
-    require_system_admin(actor)
+    if key in ADMIN_KEYS:
+        require_admin(actor)
+    else:
+        require_system_admin(actor)
     kind = _KNOWN.get(key) or (str if re.fullmatch(r"sticker_url_\d{4}", key) else None)  # sticker of a year
     if kind is None:
         raise DomainError("unknown_setting")

@@ -119,10 +119,16 @@ def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
         s.commit()
     login(client, google, email="office@example.org")
     assert client.get("/admin/access").status_code == 403
-    page = client.get("/admin/settings").text  # administrators see the settings, read only
-    assert "Nastavenia mení superadmin" in page and 'id="settings-edit"' not in page and "<fieldset disabled" in page
-    r = client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99"}, follow_redirects=False)
-    assert r.status_code == 403
+    page = client.get("/admin/settings").text  # administrators change the fee settings only (R44)
+    assert 'id="settings-edit"' in page and "<fieldset disabled" in page and "ecp_qr_daily_limit" not in page
+    assert "Ročná známka" not in page
+    client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99", "ecp_qr_daily_limit": "99"})
+    page = client.get("/admin/settings").text
+    assert 'value="99"' in page
+    with migrated_db() as s:
+        from ess.services import settings as settings_service
+
+        assert settings_service.get_setting(s, "ecp_qr_daily_limit") == "10"  # superadmin only: ignored
     assert client.get("/admin/import").status_code == 403
 
     login(client, google)  # super admin

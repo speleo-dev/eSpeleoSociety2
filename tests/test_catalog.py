@@ -40,8 +40,8 @@ def test_certificates(session):
     cert = certificates.add_certificate(session, ADMIN, m.id, srt1.id, date(2024, 1, 1), None, "kurz")
     certificates.remove_certificate(session, ADMIN, cert.id)
     with pytest.raises(PermissionDenied):
-        certificates.add_certificate_type(session, ADMIN, "speleo_diver", "Jaskynný potápač")
-    certificates.add_certificate_type(session, SYS_ADMIN, "Speleo_Diver", "Jaskynný potápač")
+        certificates.add_certificate_type(session, Actor(kind="member", id=str(uuid.uuid4())), "speleo_diver", "X")
+    certificates.add_certificate_type(session, ADMIN, "Speleo_Diver", "Jaskynný potápač")
     with pytest.raises(DomainError, match="certificate_type_exists"):
         certificates.add_certificate_type(session, SYS_ADMIN, "speleo_diver", "X")
     assert "Jaskynný potápač" in [t.name for t in certificates.active_types(session)]

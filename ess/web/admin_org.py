@@ -182,7 +182,7 @@ def access_revoke(request: Request, user_id: uuid.UUID, admin: Admin, session: D
 
 @router.get("/settings")
 def settings_page(request: Request, admin: Admin, session: Db):
-    """Administrators see the settings; only superadmins change them (R43)."""
+    """Administrators change the fee settings; eCP, portal and sticker settings are for superadmins (R44)."""
     return _settings_page(request, admin, session)
 
 
@@ -196,13 +196,11 @@ def _settings_page(request: Request, admin, session, status_code: int = 200, **e
 
 @router.post("/settings", dependencies=[Depends(verify_csrf)])
 async def settings_save(request: Request, admin: Admin, session: Db):
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
     form = await request.form()
 
     def save():
         for key in SETTING_KEYS:
-            if key not in form:
+            if key not in form or (key not in settings.ADMIN_KEYS and not admin.is_system_admin):
                 continue
             new = str(form.get(key, "")).strip()
             if new != (settings.get_setting(session, key) or ""):

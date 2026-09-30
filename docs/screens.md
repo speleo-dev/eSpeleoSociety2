@@ -72,7 +72,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 ## 4. Administrácia (`/admin`, Google prihlásenie)
 
 Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky,
-Dokumenty) · Notifikácie · Nastavenia (A: len čítanie; SA: Nastavenia aplikácie s „Upraviť“, Import, Prístupy) · štítky:
+Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“, R44; SA: všetky nastavenia, Import, Prístupy) · štítky:
 čakajúce požiadavky (červený), nezaplatené členské tohto roka (zlatý) · celé meno v štítku podľa úrovne → Odhlásiť.
 
 | Obrazovka | Kto | Tlačidlá | Kedy |
@@ -101,7 +101,8 @@ Dokumenty) · Notifikácie · Nastavenia (A: len čítanie; SA: Nastavenia aplik
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |
 | Import | SA | Skontrolovať / Vykonať import (skupiny, členovia) · vzory CSV · kódy skupín | – |
 | Prístupy | SA | Pridať prístup · Odobrať | hlavných SA (z konfigurácie) nemožno odobrať |
-| Nastavenia | A (čítanie), SA | Upraviť → Zrušiť zmeny / Uložiť zmeny (členské, IBAN, eCP, zariadenia) · Pridať typ certifikátu · Ročná známka: náhľad / iné farby / nasadiť / nahrať šablónu · Testovací e-mail | – |
+| Nastavenia | A, SA | Upraviť → Zrušiť zmeny / Uložiť zmeny · Pridať typ certifikátu | A: len členské a platba (R44) |
+| Nastavenia – len SA | SA | lehoty eCP, QR, zariadenia portálu · Ročná známka: náhľad / iné farby / nasadiť / nahrať šablónu · Testovací e-mail | – |
 
 ## 5. Postrehy na upratanie (návrhy)
 
