@@ -57,38 +57,6 @@
 </form>
 {% endif %}
 {% if sa %}
-<h2>Ročná známka eCP</h2>
-{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
-<p>{% if sticker.url %}Nasadená známka na rok {{ sticker.year }}:<br><img src="{{ sticker.url }}" alt="Ročná známka" style="max-width:100%;background:#ccc">
-   {% else %}<span class="muted">Zatiaľ nie je nasadená žiadna známka.</span>{% endif %}</p>
-<p class="muted">Obrázok v hornej časti eCP. Každý rok má náhodné farby. Nová známka sa použije pri nových eCP;
-   vo vydaných eCP sa zmení po zaplatení členského (fáza 3).</p>
-<form method="post" action="/admin/settings/sticker" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Rok<select name="year">{% for y in sticker_years %}<option value="{{ y }}" {% if preview_year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
-    <label>Farba textu<input type="color" name="text_color" value="{{ sticker.text_color }}"></label>
-    <label>Farba pozadia<input type="color" name="bg_color" value="{{ '#0B4A46' if sticker.bg_color == 'transparent' else sticker.bg_color }}"></label>
-  </div>
-  <label class="check"><input type="checkbox" name="transparent" {% if sticker.bg_color == "transparent" %}checked{% endif %}> Priehľadné pozadie</label>
-  {% if preview %}
-    <p><img src="{{ preview }}" alt="Náhľad známky" style="max-width:100%;background:#ccc"></p>
-    <input type="hidden" name="seed" value="{{ preview_seed }}">
-    <p><button name="action" value="preview">Iné farby</button> <button name="action" value="deploy" class="primary">Nasadiť túto známku</button></p>
-  {% else %}
-    <p><button name="action" value="preview">Vygenerovať náhľad</button></p>
-  {% endif %}
-</form>
-<details>
-  <summary>Vlastná šablóna ({{ "nahratá" if sticker.template else "predvolená" }})</summary>
-  <form method="post" action="/admin/settings/sticker/template" enctype="multipart/form-data" class="form">
-    {% include "admin/_csrf.html" %}
-    <label>PNG 256 × 256 px, priehľadné pozadie; farby #000000 (okraj), #606060 a #404040 (výplň)
-      <input type="file" name="template" accept="image/png" required></label>
-    <p><button>Nahrať šablónu</button></p>
-  </form>
-</details>
-
 <h2>E-mail</h2>
 <form method="post" action="/admin/settings/test-mail" class="form">
   {% include "admin/_csrf.html" %}

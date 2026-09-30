@@ -121,7 +121,7 @@ def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
     assert client.get("/admin/access").status_code == 403
     page = client.get("/admin/settings").text  # administrators change the fee settings only (R44)
     assert 'id="settings-edit"' in page and "<fieldset disabled" in page and "ecp_qr_daily_limit" not in page
-    assert "Ročná známka" not in page
+    assert "Ročná známka eCP" not in page and 'href="/admin/sticker"' in page  # sticker is under Členské (R45)
     client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99", "ecp_qr_daily_limit": "99"})
     page = client.get("/admin/settings").text
     assert 'value="99"' in page

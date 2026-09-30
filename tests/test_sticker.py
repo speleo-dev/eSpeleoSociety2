@@ -2,7 +2,7 @@
 
 import io
 import re
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from PIL import Image
@@ -35,16 +35,42 @@ def test_template_check():
 
 
 @pytest.mark.db
-def test_deploy_sets_hero_for_new_passes(session):
+def test_publish_locks_sticker_and_opens_payment(session):
+    from ess.services import ecp_content, payments, settings
+
     store = MemoryMediaStore()
+    due = sticker.due_year(session)
+    assert sticker.edit_year(session) == due
     with pytest.raises(PermissionDenied):
-        sticker.deploy(session, Actor(kind="admin", id="a"), store, YEAR, "#FFFFFF", "transparent", 5)
+        sticker.publish(session, Actor(kind="member", id="m"), store, due, "#FFFFFF", "transparent", 5)
+    with pytest.raises(DomainError, match="sticker_wrong_year"):
+        sticker.render(session, SYSTEM, store, due + 1, "#FFFFFF", "transparent", 5)
     with pytest.raises(DomainError):
-        sticker.deploy(session, SYSTEM, store, YEAR, "white", "transparent", 5)
-    url = sticker.deploy(session, SYSTEM, store, YEAR, "#ffffff", "transparent", 5)
+        sticker.publish(session, SYSTEM, store, due, "white", "transparent", 5)
+    with pytest.raises(DomainError, match="sticker_not_published"):
+        ecp_content.publish_payment_links(session, SYSTEM)
+
+    url = sticker.publish(session, Actor(kind="admin", id="a"), store, due, "#ffffff", "transparent", 5)
     assert url.startswith(store.base_url + "/stickers/") and len(store.objects) == 1
-    assert sticker.hero_url(session) == url
-    assert sticker.hero_url(session, YEAR + 1) is None  # a sticker for another year is not used
+    assert sticker.hero_url(session, due) == url
+    assert sticker.hero_url(session, due + 1) is None  # a sticker for another year is not used
+    assert sticker.edit_year(session) is None  # locked until the next payment period
+    for call in (lambda: sticker.render(session, SYSTEM, store, due, "#FFFFFF", "transparent", 6),
+                 lambda: sticker.upload_template(session, SYSTEM, store, default_template())):
+        with pytest.raises(DomainError, match="sticker_locked"):
+            call()
+
+    # The next payment period opens the next year's sticker.
+    window = settings.get_int(session, "renewal_window_days")
+    in_period = date(due, 12, 31) - timedelta(days=window)
+    assert payments.payment_years(session, in_period) == [due, due + 1]
+    assert sticker.edit_year(session, in_period) == due + 1
+
+
+@pytest.mark.db
+def test_published_sticker_is_hero_of_new_passes(session):
+    store = MemoryMediaStore()
+    url = sticker.publish(session, SYSTEM, store, sticker.due_year(session), "#ffffff", "transparent", 5)
 
     from ess.models import EcpPass
     from ess.services import ecp_issuance
@@ -60,7 +86,7 @@ def test_deploy_sets_hero_for_new_passes(session):
 
 
 @pytest.mark.db
-def test_web_preview_and_deploy(migrated_db, monkeypatch):
+def test_web_preview_and_publish(migrated_db, monkeypatch):
     from fastapi.testclient import TestClient
 
     from ess.config import get_settings
@@ -77,20 +103,28 @@ def test_web_preview_and_deploy(migrated_db, monkeypatch):
     app = create_app()
     app.dependency_overrides[get_media_store] = lambda: store
     client = TestClient(app)
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
-    page = client.get("/admin/settings").text
-    csrf = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
-    page = client.post("/admin/settings/sticker", data={"csrf_token": csrf, "year": YEAR, "text_color": "#ffffff",
-                                                        "transparent": "on", "action": "preview"}).text
-    assert "data:image/png;base64," in page and store.objects == {}
-    seed = re.search(r'name="seed" value="(\d+)"', page).group(1)
-    page = client.post("/admin/settings/sticker", data={"csrf_token": csrf, "year": YEAR, "text_color": "#ffffff",
-                                                        "transparent": "on", "action": "deploy", "seed": seed}).text
-    assert f"Ročná známka na rok {YEAR} je nasadená" in page and len(store.objects) == 1
-    [(data, _)] = store.objects.values()
-    assert data == generate_sticker(default_template(), YEAR, "#FFFFFF", "transparent", int(seed))  # = preview
+    from ess.models import AdminRole
+    from ess.services import admin_access
 
+    with migrated_db() as s:  # an ordinary administrator (not a superadmin) designs the sticker
+        admin_access.grant_access(s, SYSTEM, "office@example.org", "Kancelária", AdminRole.ADMIN)
+        s.commit()
+    google.userinfo = {"email": "office@example.org", "email_verified": True, "name": "Admin"}
+    client.get("/admin/auth/callback")
+    page = client.get("/admin/sticker").text
+    year = int(re.search(r'name="year" value="(\d+)"', page).group(1))
+    csrf = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
     files = {"template": ("t.png", default_template(), "image/png")}
-    page = client.post("/admin/settings/sticker/template", data={"csrf_token": csrf}, files=files).text
+    page = client.post("/admin/sticker/template", data={"csrf_token": csrf}, files=files).text
     assert "Šablóna známky bola nahraná" in page and "nahratá" in page
+    template = next(iter(store.objects))
+    page = client.post("/admin/sticker", data={"csrf_token": csrf, "year": year, "text_color": "#ffffff",
+                                                "transparent": "on", "action": "preview"}).text
+    assert "data:image/png;base64," in page and len(store.objects) == 1
+    seed = re.search(r'name="seed" value="(\d+)"', page).group(1)
+    page = client.post("/admin/sticker", data={"csrf_token": csrf, "year": year, "text_color": "#ffffff",
+                                                "transparent": "on", "action": "publish", "seed": seed}).text
+    assert f"Ročná známka na rok {year} je zverejnená" in page and len(store.objects) == 2
+    [data] = [d for name, (d, _) in store.objects.items() if name != template]
+    assert data == generate_sticker(default_template(), year, "#FFFFFF", "transparent", int(seed))  # = preview
+    assert 'name="action"' not in page and "je zverejnená. Známku na ďalší rok" in page  # locked

@@ -35,7 +35,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 | Časť | Tlačidlá | Kedy |
 |---|---|---|
 | Ponuka passkey | **Nastaviť prihlásenie odtlačkom / tvárou** | po prihlásení kódom alebo keď člen nemá passkey; len ak prehliadač podporuje |
-| Platba | **Zaplatiť členské SSS na rok X** | kým nie je zaplatené a je nastavený IBAN |
+| Platba | **Zaplatiť členské SSS na rok X** | kým nie je zaplatené, je nastavený IBAN a známka na rok X je zverejnená (R45) |
 | Vstup do jaskyne | Nahlásiť vstup (rozbaľovacie) · **Som vonku** · Predĺžiť návrat | „Som vonku“ a „Predĺžiť“ len pri otvorenom hlásení |
 | Členstvo | odkazy na skupiny | odkaz nie pri „SSS – nezaradení“ |
 | Dokumenty | odkazy | platné dokumenty |
@@ -71,8 +71,8 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 ## 4. Administrácia (`/admin`, Google prihlásenie)
 
-Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky,
-Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“, R44; SA: všetky nastavenia, Import, Prístupy) · štítky:
+Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Ročná známka, Bankové výpisy,
+Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“, R44; SA: všetky nastavenia, Import, Prístupy) · štítky:
 čakajúce požiadavky (červený), nezaplatené členské tohto roka (zlatý) · celé meno v štítku podľa úrovne → Odhlásiť.
 
 | Obrazovka | Kto | Tlačidlá | Kedy |
@@ -91,7 +91,8 @@ Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“,
 | Detail člena – vylúčenie | A | Vylúčiť zo SSS (dôvod) | nie vylúčený; nevratné |
 | Skupiny | A | Nová skupina · detail | – |
 | Detail skupiny | A | Uložiť · Nahrať / odstrániť logo · Zadať predsedu · Určiť zástupcu / Ukončiť zastupovanie · Členovia skupiny | zastupovanie nie pri „SSS – nezaradení“ |
-| Členské | A | rok · Export CSV · Zverejniť platobné odkazy · Odoslať ďalšiu dávku · Bankové výpisy | „dávka“ len ak čakajú eCP |
+| Členské | A | rok · Export CSV · stav platby cez eCP (odkaz na Ročnú známku) · Odoslať ďalšiu dávku · Bankové výpisy | „dávka“ len ak čakajú eCP |
+| Ročná známka | A | Vygenerovať náhľad / Iné farby · **Zverejniť túto známku** (potvrdenie) · Nahrať šablónu | len kým známka na rok splatnosti nie je zverejnená (R45); inak len obrázok |
 | Platobný odkaz (detail) | A | Otvoriť PAYMe · Zrušiť | zrušiť len otvorený |
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |
 | Požiadavky | A | Aktivovať / Zamietnuť · Zaradiť do nezaradených / Ukončiť členstvo v SSS · Posúdiť žiadosť · Priradiť platbu / Vybavené | podľa typu požiadavky |
@@ -102,7 +103,7 @@ Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“,
 | Import | SA | Skontrolovať / Vykonať import (skupiny, členovia) · vzory CSV · kódy skupín | – |
 | Prístupy | SA | Pridať prístup · Odobrať | hlavných SA (z konfigurácie) nemožno odobrať |
 | Nastavenia | A, SA | Upraviť → Zrušiť zmeny / Uložiť zmeny · Pridať typ certifikátu | A: len členské a platba (R44) |
-| Nastavenia – len SA | SA | lehoty eCP, QR, zariadenia portálu · Ročná známka: náhľad / iné farby / nasadiť / nahrať šablónu · Testovací e-mail | – |
+| Nastavenia – len SA | SA | lehoty eCP, QR, zariadenia portálu · Testovací e-mail | – |
 
 ## 5. Postrehy na upratanie (návrhy)
 

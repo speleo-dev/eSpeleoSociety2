@@ -1,9 +1,9 @@
 """What the eCP shows besides its state: paid year ("Platný do"), the yearly sticker and the payment link
 (R34, R36).
 
-The payment link is shown for the latest year of the payment period (R27) until its fee is paid. When the
-period opens, an administrator publishes the links (`publish_payment_links`) – every pass is marked stale
-and sent in batches. After a fee is paid the pass is marked `content_stale`; the web layer sends the new content to Google
+The payment link is shown for the latest year of the payment period (R27) until its fee is paid, and only
+after the sticker of that year is published (R45). Publishing the sticker publishes the links
+(`publish_payment_links`) – every pass is marked stale and sent in batches. After a fee is paid the pass is marked `content_stale`; the web layer sends the new content to Google
 Wallet after the commit (`push_pending`), like state changes in `ecp_state`. A failed push is retried
 on the next call. The QR code is not touched here (it holds a one-time token, see ecp_verification).
 """
@@ -48,6 +48,8 @@ def hero_url(session: Session, member_id: uuid.UUID) -> str | None:
 def payment_link(session: Session, member_id: uuid.UUID) -> tuple[str, str] | None:
     """(PAYMe URL, label) for the member's own reference of the due year; None when paid or not possible."""
     year = max(payments.payment_years(session))
+    if not sticker.is_published(session, year):  # paying through the eCP opens with the new sticker (R45)
+        return None
     fee = payments.get_fee(session, member_id, year)
     if fee is not None and fee.paid_at is not None:
         return None
@@ -84,6 +86,8 @@ def pending_count(session: Session) -> int:
 def publish_payment_links(session: Session, actor: Actor) -> int:
     """The payment period opened: every eCP gets its payment link (sent in batches after commits)."""
     require_admin(actor)
+    if not sticker.is_published(session, max(payments.payment_years(session))):
+        raise DomainError("sticker_not_published")
     passes = session.scalars(select(EcpPass).where(EcpPass.state != EcpPassState.REVOKED.value)).all()
     for ecp_pass in passes:
         ecp_pass.content_stale = True

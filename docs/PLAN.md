@@ -232,9 +232,18 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R44** – **Nastavenia mení aj administrátor, ale len časť** (2026-09-30; upresňuje R43):
   - Administrátor vidí a cez „Upraviť“ mení: členské, zľavnené členské, vek pre zľavu, menu, obdobie platby
     na ďalší rok, IBAN a príjemcu platby; pridáva typy certifikátov.
-  - Len superadmin vidí a mení: lehoty a limity eCP (QR, žiadosti), počet zariadení na portáli, ročnú známku,
-    testovací e-mail; Import a Prístupy.
+  - Len superadmin vidí a mení: lehoty a limity eCP (QR, žiadosti), počet zariadení na portáli,
+    testovací e-mail; Import a Prístupy. (Ročná známka: R45.)
   - Server kontroluje oprávnenie pri každom kľúči (`settings.ADMIN_KEYS`); skryté pole nie je jediná ochrana.
+- **R45** – **Ročná známka má ročný cyklus a otvára platbu cez eCP** (2026-09-30):
+  - Známka je v menu Správa organizácie → **Ročná známka** (pri Členskom), pripravuje ju admin aj superadmin.
+  - Známku možno pripravovať (náhľad, farby, vlastná šablóna) len na **rok splatnosti** (posledný rok obdobia
+    platby, R27) a len kým nie je zverejnená. Inak stránka ukazuje len aktuálnu známku.
+  - **Zverejnenie** známku zamkne do ďalšieho obdobia platby a **otvorí platbu členského na ten rok cez eCP**:
+    platobný odkaz v eCP a tlačidlo „Zaplatiť“ na portáli. Odkazy sa pošlú do všetkých eCP (po dávkach);
+    samostatné tlačidlo „Zverejniť platobné odkazy“ zaniklo.
+  - Bez zverejnenej známky na rok splatnosti eCP ani portál platbu neponúkajú. Hromadná platba predsedu,
+    platobný odkaz z administrácie a ručné označenie platby nie sú zablokované.
 
 ## 4. Architektúra
 

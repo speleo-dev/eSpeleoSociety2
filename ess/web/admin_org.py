@@ -1,11 +1,8 @@
 """Administration: clubs, organisation structure, administrative access, settings and documents."""
 
-import base64
 import csv
 import io
-import secrets
 import uuid
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -15,7 +12,7 @@ from ess import audit
 from ess.images import MAX_UPLOAD_BYTES
 from ess.mail import Mail, Mailer, MailError, get_mailer
 from ess.models import AdminRole, Club, MembershipStatus
-from ess.services import admin_access, certificates, clubs, delegations, directory, documents, importing, settings, sticker
+from ess.services import admin_access, certificates, clubs, delegations, directory, documents, importing, settings
 from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
@@ -188,10 +185,8 @@ def settings_page(request: Request, admin: Admin, session: Db):
 
 def _settings_page(request: Request, admin, session, status_code: int = 200, **extra):
     values = {k: settings.get_setting(session, k) or "" for k in SETTING_KEYS}
-    this_year = date.today().year
     return render(request, "admin/settings.html", admin, session, status_code=status_code, values=values,
-                  cert_types=certificates.active_types(session), sticker=sticker.current(session),
-                  sticker_years=[this_year, this_year + 1], **extra)
+                  cert_types=certificates.active_types(session), **extra)
 
 
 @router.post("/settings", dependencies=[Depends(verify_csrf)])
@@ -216,42 +211,6 @@ def certificate_type_add(
     return act(request, session, "/admin/settings",
                lambda: certificates.add_certificate_type(session, admin.actor, code, name),
                "Typ certifikátu bol pridaný.")
-
-
-@router.post("/settings/sticker", dependencies=[Depends(verify_csrf)])
-async def sticker_action(request: Request, admin: Admin, session: Db, store: Store):
-    """Preview (new random colours) or deploy the yearly sticker shown in the preview."""
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
-    form = await request.form()
-    action = str(form.get("action", "preview"))
-    background = "transparent" if form.get("transparent") == "on" else str(form.get("bg_color", "#0B4A46"))
-    try:
-        year = int(str(form.get("year", "0")))
-        seed = int(str(form.get("seed") or 0)) if action == "deploy" else secrets.randbelow(2**31)
-        args = (session, admin.actor, store, year, str(form.get("text_color", "#FFFFFF")), background, seed)
-        if action == "deploy":
-            sticker.deploy(*args)
-            session.commit()
-            request.session["flash"] = {"kind": "ok", "text": f"Ročná známka na rok {year} je nasadená."}
-            return RedirectResponse("/admin/settings", status_code=303)
-        png = sticker.render(*args)
-        session.commit()
-    except (DomainError, PermissionDenied, ValueError) as exc:
-        session.rollback()
-        return _settings_page(request, admin, session, status_code=400, error=error_text(exc))
-    preview = "data:image/png;base64," + base64.b64encode(png).decode()
-    return _settings_page(request, admin, session, preview=preview, preview_seed=seed, preview_year=year)
-
-
-@router.post("/settings/sticker/template", dependencies=[Depends(verify_csrf)])
-def sticker_template(request: Request, admin: Admin, session: Db, store: Store,
-                     template: Annotated[UploadFile, File()]):
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
-    data = template.file.read(MAX_UPLOAD_BYTES + 1)
-    return act(request, session, "/admin/settings", lambda: sticker.upload_template(session, admin.actor, store, data),
-               "Šablóna známky bola nahraná.")
 
 
 @router.post("/settings/test-mail", dependencies=[Depends(verify_csrf)])

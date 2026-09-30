@@ -266,6 +266,11 @@ def test_web_sends_card_after_manual_payment(migrated_db, google, client):
     assert mail.subject == f"Kartička SSS na rok {this_year + 1}" and mail.attachments[0][2] == "application/pdf"
 
 
+def _publish_sticker(session) -> None:
+    settings.set_setting(session, SYSTEM, f"sticker_url_{max(payments.payment_years(session))}",
+                         "https://storage.example/stickers/due.png")
+
+
 def _links(wallet, ecp_pass) -> dict:
     return {u["id"]: u for u in wallet.objects[ecp_pass.wallet_object_id]["linksModuleData"]["uris"]}
 
@@ -279,10 +284,12 @@ def test_payment_link_in_ecp_until_paid(session):
     assert "payment" not in _links(wallet, ecp_pass)
 
     settings.set_setting(session, SYSTEM, "payment_iban", EXAMPLE_IBAN)
+    due = max(payments.payment_years(session))
+    assert ecp_content.payment_link(session, member_id) is None  # the sticker of the year is not published (R45)
+    _publish_sticker(session)
     assert ecp_content.publish_payment_links(session, SYSTEM) == 1
     session.commit()
     ecp_content.push_pending(session, wallet)
-    due = max(payments.payment_years(session))
     link = _links(wallet, ecp_pass)["payment"]
     ref = payments.member_reference(session, SYSTEM, member_id, due)
     assert f"PI={ref.code}" in link["uri"] and "AM=15.00" in link["uri"] and str(due) in link["description"]
@@ -304,6 +311,7 @@ def test_push_in_batches(session):
     from tests.test_ecp_verification import _issued
 
     wallet, ecp_pass, _ = _issued(session)
+    _publish_sticker(session)
     ecp_content.publish_payment_links(session, SYSTEM)
     session.commit()
     assert ecp_content.pending_count(session) == 1
@@ -317,9 +325,11 @@ def test_push_in_batches(session):
 def test_payments_admin_page(migrated_db, google, client):
     login(client, google)
     page = client.get("/admin/payments").text
-    assert "Zverejniť platobné odkazy" in page and "Všetky eCP sú aktuálne" in page
-    r = client.post("/admin/payments/publish-links", data={"csrf_token": csrf(client)})
-    assert "odosielajú do eCP" in r.text
+    assert "cez eCP je zatvorená" in page and "Všetky eCP sú aktuálne" in page
+    with migrated_db() as session:
+        _publish_sticker(session)
+        session.commit()
+    assert "V eCP sa zobrazuje platobný odkaz" in client.get("/admin/payments").text
 
 
 @pytest.mark.db

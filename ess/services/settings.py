@@ -55,7 +55,8 @@ _KNOWN: dict[str, type] = {
     "sticker_year": int,
 }
 
-# Settings an administrator may change (R44); all others – eCP, portal, yearly sticker – only a superadmin.
+# Settings an administrator may change (R44); all others – eCP, portal – only a superadmin. The yearly sticker
+# (`sticker_*`) is changed by administrators only through `sticker`, which enforces its yearly lock (R45).
 ADMIN_KEYS = {"fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
               "payment_iban", "payment_account_name"}
 
@@ -84,7 +85,7 @@ def get_int(session: Session, key: str) -> int:
 
 
 def set_setting(session: Session, actor: Actor, key: str, value: str) -> None:
-    if key in ADMIN_KEYS:
+    if key in ADMIN_KEYS or key.startswith("sticker_"):
         require_admin(actor)
     else:
         require_system_admin(actor)

@@ -1,24 +1,29 @@
 """Administration: membership fees, payment links (member and bulk) and manual payment (phase 3)."""
 
+import base64
 import csv
 import io
+import secrets
 import uuid
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import select
 
+from ess.images import MAX_UPLOAD_BYTES
 from ess.models import Club, Member, PaymentReference
-from ess.services import payments
+from ess.services import payments, sticker
 from ess.services.access import DomainError, PermissionDenied
+from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, after_commit, error_text, render
 from ess.web.templates import FEE_METHOD_LABELS
 
 router = APIRouter(prefix="/admin")
 MAX_STATEMENT = 10 * 1024 * 1024  # bytes
+Store = Annotated[MediaStore | None, Depends(get_media_store)]
 
 
 def _create_and_show(request: Request, session: Db, back: str, create) -> RedirectResponse:
@@ -41,7 +46,9 @@ def payments_page(request: Request, admin: Admin, session: Db, year: int | None 
     year = year if year in years else years[0]
     club_id = _club_id(club)
     rows = payments.overview(session, admin.actor, year)
-    return render(request, "admin/payments.html", admin, session, due_year=max(payments.payment_years(session)),
+    due_year = max(payments.payment_years(session))
+    return render(request, "admin/payments.html", admin, session, due_year=due_year,
+                  sticker_published=sticker.is_published(session, due_year),
                   pending=ecp_content.pending_count(session), year=year, years=years, club=club,
                   summary=payments.summarize(rows),
                   rows=[r for r in rows if club_id and r.club_id == club_id] if club else [],
@@ -136,14 +143,6 @@ def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: Admin, ses
                "Požiadavka bola vybavená.")
 
 
-@router.post("/payments/publish-links", dependencies=[Depends(verify_csrf)])
-def publish_links(request: Request, admin: Admin, session: Db):
-    from ess.services import ecp_content
-
-    return act(request, session, "/admin/payments", lambda: ecp_content.publish_payment_links(session, admin.actor),
-                "Platobné odkazy sa odosielajú do eCP.")
-
-
 @router.post("/payments/push", dependencies=[Depends(verify_csrf)])
 def push_links(request: Request, admin: Admin, session: Db):
     """Send the next batch (after_commit sends it; nothing else changes)."""
@@ -186,6 +185,54 @@ def payment_page(request: Request, reference_id: uuid.UUID, admin: Admin, sessio
 def payment_cancel(request: Request, reference_id: uuid.UUID, admin: Admin, session: Db):
     return act(request, session, f"/admin/payments/{reference_id}",
                lambda: payments.cancel_reference(session, admin.actor, reference_id), "Platobný odkaz bol zrušený.")
+
+
+# --- yearly sticker (R45) ------------------------------------------------------------------------------
+
+
+def _sticker_page(request: Request, admin, session, status_code: int = 200, **extra):
+    return render(request, "admin/sticker.html", admin, session, status_code=status_code,
+                  sticker=sticker.current(session), edit_year=sticker.edit_year(session),
+                  due_year=sticker.due_year(session), **extra)
+
+
+@router.get("/sticker")
+def sticker_page(request: Request, admin: Admin, session: Db):
+    return _sticker_page(request, admin, session)
+
+
+@router.post("/sticker", dependencies=[Depends(verify_csrf)])
+async def sticker_action(request: Request, admin: Admin, session: Db, store: Store):
+    """Preview (new random colours) or publish the sticker shown in the preview."""
+    form = await request.form()
+    action = str(form.get("action", "preview"))
+    background = "transparent" if form.get("transparent") == "on" else str(form.get("bg_color", "#0B4A46"))
+    try:
+        year = int(str(form.get("year", "0")))
+        seed = int(str(form.get("seed") or 0)) if action == "publish" else secrets.randbelow(2**31)
+        args = (session, admin.actor, store, year, str(form.get("text_color", "#FFFFFF")), background, seed)
+        if action == "publish":
+            sticker.publish(*args)
+            session.commit()
+            request.session["flash"] = {"kind": "ok", "text": f"Ročná známka na rok {year} je zverejnená. "
+                                        "Platba členského cez eCP je otvorená."}
+            after_commit(request, session)
+            return RedirectResponse("/admin/sticker", status_code=303)
+        png = sticker.render(*args)
+        session.commit()
+    except (DomainError, PermissionDenied, ValueError) as exc:
+        session.rollback()
+        return _sticker_page(request, admin, session, status_code=400, error=error_text(exc))
+    preview = "data:image/png;base64," + base64.b64encode(png).decode()
+    return _sticker_page(request, admin, session, preview=preview, preview_seed=seed)
+
+
+@router.post("/sticker/template", dependencies=[Depends(verify_csrf)])
+def sticker_template(request: Request, admin: Admin, session: Db, store: Store,
+                     template: Annotated[UploadFile, File()]):
+    data = template.file.read(MAX_UPLOAD_BYTES + 1)
+    return act(request, session, "/admin/sticker", lambda: sticker.upload_template(session, admin.actor, store, data),
+               "Šablóna známky bola nahraná.")
 
 
 def member_fee_rows(session, member: Member) -> dict:
