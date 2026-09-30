@@ -46,7 +46,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 ### Skupina (`/portal/clubs/<id>`)
 | Časť | Kto | Tlačidlá | Kedy |
 |---|---|---|---|
-| Zoznam členov | Č | – (meno, telefón, e-mail; len stav „člen“) | člen skupiny |
+| Zoznam členov | Č | – (meno, stav, telefón, e-mail; všetci vrátane čakateľov) | člen skupiny |
 | Zoznam členov | P, Z, Pz | – (všetci vrátane čakateľov, bydlisko, č. preukazu) | – |
 | Správa skupiny | P, Z | **Pridať čakateľa / navrhnúť člena** · Členské a hromadná platba · mená sú odkazy na detail | kto skupinu práve spravuje |
 | Zastupovanie | P | Preniesť správu (výber zástupcu, rozbaľovacie) | predseda bez zástupcu, existuje vhodný člen |
@@ -71,9 +71,9 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 ## 4. Administrácia (`/admin`, Google prihlásenie)
 
-Menu: Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky) ·
-Oznamy (Dokumenty, Notifikácie do eCP) · Nastavenia (Import; SA: Prístupy, Nastavenia aplikácie) · štítky: čakajúce
-požiadavky (červený), nezaplatené členské tohto roka (oranžový) · meno v štítku podľa úrovne · Odhlásiť.
+Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky,
+Dokumenty) · Notifikácie · Nastavenia (A: len čítanie; SA: Nastavenia aplikácie s „Upraviť“, Import, Prístupy) · štítky:
+čakajúce požiadavky (červený), nezaplatené členské tohto roka (zlatý) · celé meno v štítku podľa úrovne → Odhlásiť.
 
 | Obrazovka | Kto | Tlačidlá | Kedy |
 |---|---|---|---|
@@ -99,9 +99,9 @@ požiadavky (červený), nezaplatené členské tohto roka (oranžový) · meno 
 | Organizácia | A | – (funkcie) | – |
 | Dokumenty | A | Pridať · Odstrániť | – |
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |
-| Import | A | Skontrolovať / Vykonať import (skupiny, členovia) · vzory CSV · kódy skupín | – |
+| Import | SA | Skontrolovať / Vykonať import (skupiny, členovia) · vzory CSV · kódy skupín | – |
 | Prístupy | SA | Pridať prístup · Odobrať | hlavných SA (z konfigurácie) nemožno odobrať |
-| Nastavenia | SA | Uložiť (členské, IBAN, eCP, zariadenia) · Pridať typ certifikátu · Ročná známka: náhľad / iné farby / nasadiť / nahrať šablónu · Testovací e-mail | – |
+| Nastavenia | A (čítanie), SA | Upraviť → Zrušiť zmeny / Uložiť zmeny (členské, IBAN, eCP, zariadenia) · Pridať typ certifikátu · Ročná známka: náhľad / iné farby / nasadiť / nahrať šablónu · Testovací e-mail | – |
 
 ## 5. Postrehy na upratanie (návrhy)
 

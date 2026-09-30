@@ -2,13 +2,20 @@
 {% block header %}
 <header>
   <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> Portál eSS</a>
-  <nav>
+  <nav class="menu">
     <a href="/portal">Domov</a>
+    <details class="user"><summary class="role role-member">{{ (me or "Môj účet")|two_lines }}</summary><div>
+      <form method="post" action="/portal/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="link">Odhlásiť</button>
+      </form>
+    </div></details>
   </nav>
-  <form class="inline" method="post" action="/portal/logout">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Odhlásiť</button>
-  </form>
 </header>
+<script>
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll("nav.menu details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
+  });
+</script>
 {% endblock %}
 {% block content %}
   {% block back %}<p class="back"><a href="/portal" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}

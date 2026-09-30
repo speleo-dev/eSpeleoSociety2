@@ -182,8 +182,7 @@ def access_revoke(request: Request, user_id: uuid.UUID, admin: Admin, session: D
 
 @router.get("/settings")
 def settings_page(request: Request, admin: Admin, session: Db):
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
+    """Administrators see the settings; only superadmins change them (R43)."""
     return _settings_page(request, admin, session)
 
 
@@ -197,6 +196,8 @@ def _settings_page(request: Request, admin, session, status_code: int = 200, **e
 
 @router.post("/settings", dependencies=[Depends(verify_csrf)])
 async def settings_save(request: Request, admin: Admin, session: Db):
+    if not admin.is_system_admin:
+        return forbidden(request, admin, session)
     form = await request.form()
 
     def save():
@@ -334,11 +335,15 @@ MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 @router.get("/import")
 def import_page(request: Request, admin: Admin, session: Db):
+    if not admin.is_system_admin:  # import only for superadmins (R43)
+        return forbidden(request, admin, session)
     return render(request, "admin/import.html", admin, session, result=None, kind=None)
 
 
 @router.post("/import/{kind}", dependencies=[Depends(verify_csrf)])
 async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
+    if not admin.is_system_admin:
+        return forbidden(request, admin, session)
     if kind not in ("clubs", "members"):
         return render(request, "admin/not_found.html", admin, session)
     form = await request.form()
@@ -365,7 +370,9 @@ async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
 
 
 @router.get("/import/template/{kind}.csv")
-def import_template(kind: str, admin: Admin):
+def import_template(request: Request, kind: str, admin: Admin, session: Db):
+    if not admin.is_system_admin:
+        return forbidden(request, admin, session)
     if kind not in ("clubs", "members"):
         kind = "members"
     name = "vzor_skupiny.csv" if kind == "clubs" else "vzor_clenovia.csv"
@@ -374,8 +381,10 @@ def import_template(kind: str, admin: Admin):
 
 
 @router.get("/import/club-codes.csv")
-def club_codes(admin: Admin, session: Db):
+def club_codes(request: Request, admin: Admin, session: Db):
     """Current clubs with their codes - for the person preparing the member list."""
+    if not admin.is_system_admin:
+        return forbidden(request, admin, session)
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
     writer.writerow(["kod", "nazov"])

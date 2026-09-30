@@ -27,7 +27,20 @@ Db = Annotated[Session, Depends(get_session)]
 
 
 def _page(request: Request, name: str, status_code: int = 200, **context):
-    return templates.TemplateResponse(request, name, {"csrf": csrf_token(request), **context}, status_code=status_code)
+    return templates.TemplateResponse(request, name, {"csrf": csrf_token(request), "me": _me(request), **context},
+                                      status_code=status_code)
+
+
+def _me(request: Request) -> str | None:
+    """Full name of the signed-in member for the header (portal pages only)."""
+    if not request.url.path.startswith("/portal") or not request.cookies.get(COOKIE):
+        return None
+    from ess.db import get_sessionmaker
+    from ess.services import members
+
+    with get_sessionmaker()() as session:
+        member = portal_auth.current_member(session, request.cookies.get(COOKIE))
+        return members.read_member(member).full_name() if member else None
 
 
 def _browser(request: Request) -> str:

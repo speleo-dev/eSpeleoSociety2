@@ -59,12 +59,19 @@
       background:var(--bg); border:1px solid var(--line); border-radius:.4rem; padding:.3rem 0; box-shadow:0 4px 12px rgba(0,0,0,.15); }
     nav.menu details > div a { padding:.35rem .8rem; }
     nav.menu details > div a:hover { background:var(--chip); }
+    nav.menu details.user > div { left:auto; right:0; min-width:10rem; padding:.4rem .8rem; gap:.4rem; }
+    nav.menu details.user summary::after { content:""; }
+    nav.menu details.user summary { display:inline-block; padding:.2rem .7rem; color:#fff; }
+    nav.menu details > div { top:calc(100% + .3rem); }
+    button.link { background:none; border:0; padding:0; color:var(--accent); }
     .badge { display:inline-block; min-width:1.6rem; text-align:center; border-radius:1rem; padding:.05rem .5rem; font-size:.85rem;
       font-weight:600; color:#fff !important; }
-    .badge-tasks { background:#c0392b; } .badge-unpaid { background:#d68910; }
-    .role { border-radius:1rem; padding:.05rem .6rem; font-size:.8rem; color:#fff; white-space:nowrap; }
-    .role-admin { background:#2b5d8a; } .role-system_admin { background:#7d3c98; }
+    .badge-tasks { background:#c0392b; } .badge-unpaid { background:#b7950b; }
+    .role { border-radius:.6rem; padding:.1rem .7rem; font-size:.78rem; line-height:1.15; color:#fff; white-space:nowrap; text-align:center; }
+    .role-admin, .role-member { background:#2b5d8a; } .role-system_admin { background:#7d3c98; }
     p.back { margin:0 0 .5rem; font-size:.9rem; }
+    fieldset { border:0; padding:0; margin:0; min-width:0; }
+    fieldset:disabled input, fieldset:disabled select { background:var(--chip); color:var(--muted); }
     @media (max-width: 640px) {
       table.stack thead { display:none; }
       table.stack tr { display:block; border-bottom:1px solid var(--line); padding:.4rem 0; }

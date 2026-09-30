@@ -44,11 +44,11 @@
 {% endif %}{% endif %}
 <h2>Členovia ({{ view.rows|length }})</h2>
 <div class="table-wrap"><table class="stack">
-  <thead><tr><th>Meno</th>{% if view.full %}<th>Stav</th>{% endif %}<th>Telefón</th><th>E-mail</th>{% if view.full %}<th>Bydlisko</th><th>Č. preukazu</th>{% endif %}</tr></thead>
+  <thead><tr><th>Meno</th><th>Stav</th><th>Telefón</th><th>E-mail</th>{% if view.full %}<th>Bydlisko</th><th>Č. preukazu</th>{% endif %}</tr></thead>
   <tbody>
   {% for r in view.rows %}{% set d = r.data %}
     <tr><td>{% if view.can_manage %}<a href="/portal/clubs/{{ view.club.id }}/members/{{ r.member_id }}">{{ d.last_name }} {{ d.first_name }}</a>{% else %}{{ d.last_name }} {{ d.first_name }}{% endif %}</td>
-      {% if view.full %}<td data-label="Stav">{{ r.status|label }}</td>{% endif %}
+      <td data-label="Stav">{{ r.status|label }}</td>
       <td data-label="Telefón">{% if d.phone %}<a href="tel:{{ d.phone|replace(' ', '') }}">{{ d.phone }}</a>{% endif %}</td>
       <td data-label="E-mail">{% if d.email %}<a href="mailto:{{ d.email }}">{{ d.email }}</a>{% endif %}</td>
       {% if view.full %}<td data-label="Bydlisko">{{ d.full_address() }}</td><td data-label="Č. preukazu">{{ d.card_number or "" }}</td>{% endif %}</tr>

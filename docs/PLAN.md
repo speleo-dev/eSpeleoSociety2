@@ -180,7 +180,7 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Zastupovanie sa ukončí samo pri zmene predsedu a keď zástupca prestane byť členom skupiny v stave „člen“
     alebo si zmení primárnu skupinu. Tabuľka `club_delegations` (migrácia `0015`), `ess/services/delegations.py`.
   - **Čítanie skupiny na portáli (fáza 4):** každý člen skupiny vidí skupinu a jej členov, bežný člen len meno,
-    priezvisko, telefón a e-mail; predseda (aj počas zastupovania) a zástupca vidia všetko o členoch skupiny.
+    priezvisko, telefón a e-mail (aj čakateľov, R43); predseda (aj počas zastupovania) a zástupca vidia všetko o členoch skupiny.
 - **R38** – **Prihlásenie na portál** (upresnenie R5, odsúhlasené 2026-09-29):
   - V eCP je odkaz „Portál eSS“ s náhodným identifikátorom preukazu (`/p/<kľúč>`). Určuje len, ktorý člen sa
     prihlasuje – nie je dôkaz identity (e-mail môžu zdieľať manželia).
@@ -220,6 +220,15 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Odkaz „← Späť“ na každej stránke administrácie aj portálu; portál má hornú lištu (Domov, Odhlásiť).
   - Funkcie výboru podľa sss.sk/vybor: pridané **Tajomník SSS** a **Hospodár SSS** (migrácia `0024`).
   - Testovacie dáta sa zmažú nástrojom `ess.tools.purge_test_data` (nie v prostredí prod).
+- **R43** – **Upratanie UI, 2. kolo** (2026-09-30):
+  - Menu: Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Bankové výpisy, Požiadavky,
+    **Dokumenty**) · **Notifikácie** (samostatne) · Nastavenia. Položka „Oznamy“ zrušená.
+  - **Nastavenia aplikácie vidí aj administrátor**, len na čítanie. Superadmin má „Upraviť“ – polia sa odomknú
+    a namiesto tlačidla sa zobrazia „Zrušiť zmeny“ a „Uložiť zmeny“. **Import a Prístupy len pre superadmina.**
+  - Štítky: červený = čakajúce požiadavky, zlatý = nezaplatené členské; pri podržaní myši krátky popis.
+  - Celé meno používateľa v štítku (dvojriadkovo, farba podľa úrovne); po kliknutí rola a **Odhlásiť**
+    (administrácia aj portál).
+  - **Členovia skupiny vidia na portáli všetkých jej členov vrátane čakateľov** (meno, stav, telefón, e-mail).
 
 ## 4. Architektúra
 

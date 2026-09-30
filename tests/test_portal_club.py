@@ -30,7 +30,7 @@ def _m(session, member_id):
 def test_views_by_role(session):
     club_id, chair, helper, plain = _setup(session)
     view = portal.club_view(session, _m(session, plain), club_id)
-    assert not view.full and [r.data.first_name for r in view.rows] == ["Bežný", "Pomocník", "Predseda"]
+    assert not view.full and [r.data.first_name for r in view.rows] == ["Bežný", "Čakateľ", "Pomocník", "Predseda"]
     full = portal.club_view(session, _m(session, chair), club_id)
     assert full.full and full.can_manage and len(full.rows) == 4  # the candidate too
     assert [r.data.first_name for r in full.delegate_options] == ["Bežný", "Pomocník"]
@@ -78,5 +78,5 @@ def test_web_delegation_buttons(migrated_db, client):
 
     client.cookies.set("ess_member", plain_login.token)
     page = client.get(f"/portal/clubs/{club_id}").text
-    assert "Čakateľ" not in page and "Č. preukazu" not in page and "0900 111 222" in page
+    assert "Čakateľ" in page and "Č. preukazu" not in page and "0900 111 222" in page  # candidates too
     assert "Preniesť správu" not in page

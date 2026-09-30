@@ -258,6 +258,19 @@ def short_name(value: str) -> str:
 
 
 templates.env.filters["short_name"] = short_name
+
+
+def two_lines(value: str):
+    """Full name in two lines (first names / last name) to save space in the header."""
+    from markupsafe import Markup, escape
+
+    parts = (value or "").split()
+    if len(parts) < 2:
+        return escape(value or "")
+    return Markup(f"{escape(' '.join(parts[:-1]))}<br>{escape(parts[-1])}")
+
+
+templates.env.filters["two_lines"] = two_lines
 FEE_METHOD_LABELS = {"member": "odkaz člena", "bulk": "hromadná platba", "manual": "ručne"}
 templates.env.filters["fee_method_label"] = lambda method: FEE_METHOD_LABELS.get(method, "")
 templates.env.filters["task_label"] = task_label

@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess.models import Club, Fee, Member, Membership, MembershipStatus
+from ess.security.crypto import normalize_for_index
 from ess.services import delegations, documents, ecp_content, members
 from ess.services.access import DomainError, managed_club_ids
 from ess.services.members import MemberData
@@ -51,7 +52,7 @@ class ClubMemberRow:
 @dataclass
 class ClubView:
     club: Club
-    full: bool  # the chair (also while represented) and the delegate see all data; others name and contacts
+    full: bool  # the chair (also while represented) and the delegate see all data; others name, status, contacts
     can_manage: bool  # manages the club now (chair without a delegate, or the delegate)
     is_chair: bool
     is_delegate: bool
@@ -74,13 +75,11 @@ def club_view(session: Session, member: Member, club_id: uuid.UUID) -> ClubView:
     is_delegate = delegation is not None and delegation.delegate_member_id == member.id
     can_manage = club_id in managed_club_ids(session, member.id)
     full = is_chair or is_delegate or can_manage
-    statuses = None if full else (MembershipStatus.MEMBER,)
+    # Every member of the club sees everybody in it, candidates too (contacts for club events, R42).
     query = (select(Member, Membership.status).join(Membership, Membership.member_id == Member.id)
              .where(Membership.club_id == club_id, Membership.valid_to.is_(None)))
-    if statuses:
-        query = query.where(Membership.status.in_(statuses))
     rows = [ClubMemberRow(m.id, members.read_member(m), status) for m, status in session.execute(query)]
-    rows.sort(key=lambda r: (r.data.last_name.casefold(), r.data.first_name.casefold()))
+    rows.sort(key=lambda r: (normalize_for_index(r.data.last_name), normalize_for_index(r.data.first_name)))
     names = {r.member_id: r.data.full_name() for r in rows}
     eligible = set(delegations.eligible_ids(session, club_id)) if is_chair and delegation is None else set()
     return ClubView(club=club, full=full, can_manage=can_manage, is_chair=is_chair, is_delegate=is_delegate,

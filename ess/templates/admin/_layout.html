@@ -11,25 +11,27 @@
       <a href="/admin/payments">Členské</a>
       <a href="/admin/statements">Bankové výpisy</a>
       <a href="/admin/tasks">Požiadavky</a>
-    </div></details>
-    <details><summary>Oznamy</summary><div>
       <a href="/admin/documents">Dokumenty</a>
-      <a href="/admin/notifications">Notifikácie do eCP</a>
     </div></details>
+    <a href="/admin/notifications">Notifikácie</a>
+    {% if admin.is_system_admin %}
     <details><summary>Nastavenia</summary><div>
+      <a href="/admin/settings">Nastavenia aplikácie</a>
       <a href="/admin/import">Import</a>
-      {% if admin.is_system_admin %}<a href="/admin/access">Prístupy</a><a href="/admin/settings">Nastavenia aplikácie</a>{% endif %}
+      <a href="/admin/access">Prístupy</a>
     </div></details>
+    {% else %}<a href="/admin/settings">Nastavenia</a>{% endif %}
     {% if badges %}
-    <a class="badge badge-tasks" href="/admin/tasks" title="Čakajúce požiadavky">{{ badges.tasks }}</a>
-    <a class="badge badge-unpaid" href="/admin/payments?year={{ badges.year }}" title="Nezaplatené členské {{ badges.year }}">{{ badges.unpaid }}</a>
+    <a class="badge badge-tasks" href="/admin/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
+    <a class="badge badge-unpaid" href="/admin/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
     {% endif %}
+    <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
+      <span class="muted">{{ admin.role|label }}</span>
+      <form method="post" action="/admin/logout">
+        <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="link">Odhlásiť</button>
+      </form>
+    </div></details>
   </nav>
-  <span class="role role-{{ admin.role.value }}" title="{{ admin.display_name }} – {{ admin.role|label }}">{{ admin.display_name|short_name }}</span>
-  <form class="inline" method="post" action="/admin/logout">
-    <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-    <button>Odhlásiť</button>
-  </form>
 </header>
 <script>
   // one open menu at a time; a click outside closes it

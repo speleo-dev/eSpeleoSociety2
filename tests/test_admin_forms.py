@@ -119,9 +119,11 @@ def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
         s.commit()
     login(client, google, email="office@example.org")
     assert client.get("/admin/access").status_code == 403
-    assert client.get("/admin/settings").status_code == 403
-    client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99"}, follow_redirects=False)
-    assert "Túto akciu môže vykonať len superadmin." in client.get("/admin").text
+    page = client.get("/admin/settings").text  # administrators see the settings, read only
+    assert "Nastavenia mení superadmin" in page and 'id="settings-edit"' not in page and "<fieldset disabled" in page
+    r = client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99"}, follow_redirects=False)
+    assert r.status_code == 403
+    assert client.get("/admin/import").status_code == 403
 
     login(client, google)  # super admin
     token = csrf(client)
@@ -130,7 +132,8 @@ def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
     assert "druhy@example.org" in page and "Kancelária" in page
     client.post("/admin/settings", data={"csrf_token": token, "fee_amount": "16.00", "reduced_fee_amount": "7.00",
                                          "reduced_fee_age": "62", "fee_currency": "EUR"})
-    assert 'value="16.00"' in client.get("/admin/settings").text
+    page = client.get("/admin/settings").text
+    assert 'value="16.00"' in page and 'id="settings-edit"' in page
 
 
 def test_documents_page(client, google):
