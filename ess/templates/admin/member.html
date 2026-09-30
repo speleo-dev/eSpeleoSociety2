@@ -48,6 +48,7 @@
   <label>Rok<select name="year">{% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
   <button>Platobný odkaz člena</button>
 </form>
+{% if not admin.is_system_admin %}{# cash payments: administrators only (R46) #}
 <details><summary>Označiť členské ako zaplatené</summary>
 <form method="post" action="/admin/members/{{ d.member.id }}/fee-paid" class="form">
   {% include "admin/_csrf.html" %}
@@ -57,6 +58,7 @@
   </div>
   <button class="primary">Označiť ako zaplatené</button>
 </form></details>
+{% endif %}
 {% endif %}
 
 <h2>Kartička SSS</h2>

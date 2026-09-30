@@ -252,7 +252,10 @@ def payments_page(request: Request, club_id: uuid.UUID, session: Db, year: int |
     years = payments.payment_years(session)
     year = year if year in years else years[-1]
     rows = payments.overview(session, actor, year, club_id)
+    from ess.services import sticker
+
     return _page(request, "portal/payments.html", club=club, year=year, years=years, rows=rows,
+                 bulk_open=sticker.is_published(session, year),
                  paid=sum(1 for r in rows if r.paid_at),
                  candidates=payments.bulk_candidates(session, actor, club_id, year),
                  open_refs=payments.open_bulk_references(session, club_id),

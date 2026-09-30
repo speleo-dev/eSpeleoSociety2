@@ -21,7 +21,8 @@
 {% endif %}
 
 <h2>Hromadná platba za členov</h2>
-{% if candidates %}
+{% if not bulk_open %}<p class="muted">Hromadná platba na rok {{ year }} sa otvorí po zverejnení ročnej známky SSS.</p>
+{% elif candidates %}
 <form method="post" class="form">
   <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="year" value="{{ year }}">
   {% for c in candidates %}

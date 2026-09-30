@@ -67,7 +67,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 | Detail člena – kartička | Vydať a stiahnuť kartičku (rok, PDF/PNG) | stav „člen“ a na rok ešte nebola vydaná |
 | Úprava údajov | Uložiť · Zrušiť | zľavnené členské sa tu nemení |
 | Členské | výber roka · Vytvoriť platobný odkaz (výber členov) | rok platby; ďalší rok v období platby |
-| Hromadná platba | **Zaplatiť X €** · Zrušiť platobný odkaz | zrušiť len kým nie je nič zaplatené |
+| Hromadná platba | **Zaplatiť X €** · Zrušiť platobný odkaz | vytvoriť len po zverejnení ročnej známky na daný rok (R45); zrušiť len kým nie je nič zaplatené |
 
 ## 4. Administrácia (`/admin`, Google prihlásenie)
 
@@ -82,7 +82,7 @@ Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s �
 | Nový člen | A | Uložiť (skupina, člen/čakateľ, **Vydať eCP**, **Vydať kartičku** + rok, formát) | – |
 | Detail člena – hlavička | A | Upraviť údaje | – |
 | Detail člena – portál | A | Odhlásiť zo všetkých zariadení | člen je prihlásený aspoň na 1 zariadení |
-| Detail člena – členské | A | Platobný odkaz člena (rok) · Označiť ako zaplatené (rok, poznámka) | nezaplatený rok platby; nie pri vylúčenom / ukončenom |
+| Detail člena – členské | A | Platobný odkaz člena (rok) · Označiť ako zaplatené (rok, poznámka; len A, nie SA – R46) | nezaplatený rok platby; nie pri vylúčenom / ukončenom |
 | Detail člena – kartička | A | Stiahnuť znova · Poslať znova · Vydať náhradnú (dôvod) · Vydať kartičku (rok) | podľa vydaných kartičiek; „Poslať“ len s e-mailom |
 | Detail člena – členstvá | A | Aktivovať · Navrhnúť za člena · Pozastaviť · Obnoviť · Nastaviť ako primárnu · Ukončiť v skupine · Pridať do skupiny | podľa stavu (ako pri predsedovi + aktivácia) |
 | Detail člena – SSS | A | Zaradiť do „SSS – nezaradení“ | čaká na rozhodnutie alebo ukončené členstvo v SSS |

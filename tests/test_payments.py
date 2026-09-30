@@ -107,6 +107,9 @@ def test_bulk_payment_candidates_and_overpayment(session):
     assert [c.amount for c in offered] == [Decimal("15.00"), Decimal("7.00")]
 
     own = payments.member_reference(session, SYSTEM, a, YEAR)  # Anna also has her own link
+    with pytest.raises(DomainError, match="bulk_payment_not_open"):  # before the year's sticker (R45)
+        payments.create_bulk(session, chair, club_id, YEAR, [a, b])
+    _publish_sticker(session, YEAR)
     bulk = payments.create_bulk(session, chair, club_id, YEAR, [a, b])
     assert bulk.kind == "bulk" and bulk.expected_amount == Decimal("22.00") and bulk.club_id == club_id
     assert payments.bulk_candidates(session, chair, club_id, YEAR) == []  # already in an open bulk payment
@@ -140,6 +143,7 @@ def test_manual_payment_cancels_own_link(session):
 def test_find_reference_and_cancel_bulk(session):
     club_id = _club(session)
     a = _member(session, club_id)
+    _publish_sticker(session, YEAR)
     bulk = payments.create_bulk(session, SYSTEM, club_id, YEAR, [a])
     assert payments.find_reference(session, " " + bulk.code.lower()[:6] + " " + bulk.code[6:]).id == bulk.id
     assert payments.find_reference(session, "SHORT") is None
@@ -157,7 +161,13 @@ def test_admin_pages_member_link_manual_payment_and_bulk(migrated_db, google, cl
         a = _member(session, club_id, first_name="Anna", card_number="2")
         b = _member(session, club_id, first_name="Boris", card_number="3")
         session.commit()
-    login(client, google)
+    login(client, google)  # superadmin: sees no cash payment form and may not use it (R46)
+    page = client.get(f"/admin/members/{a}").text
+    assert "Platobný odkaz člena" in page and "Označiť ako zaplatené" not in page
+    r = client.post(f"/admin/members/{a}/fee-paid", data={"csrf_token": csrf(client), "year": date.today().year,
+                                                          "note": "hotovosť"})
+    assert "eviduje administrátor" in r.text
+    _login_admin(client, google, migrated_db)
     token = csrf(client)
     this_year = date.today().year
 
@@ -258,7 +268,7 @@ def test_web_sends_card_after_manual_payment(migrated_db, google, client):
         m = _member(session, club_id)
         sss_cards.issue(session, SYSTEM, m, this_year, "https://ess")
         session.commit()
-    login(client, google)
+    _login_admin(client, google, migrated_db)
     r = client.post(f"/admin/members/{m}/fee-paid",
                     data={"csrf_token": csrf(client), "year": this_year + 1, "note": "hotovosť"})
     assert "označené ako zaplatené" in r.text
@@ -266,9 +276,20 @@ def test_web_sends_card_after_manual_payment(migrated_db, google, client):
     assert mail.subject == f"Kartička SSS na rok {this_year + 1}" and mail.attachments[0][2] == "application/pdf"
 
 
-def _publish_sticker(session) -> None:
-    settings.set_setting(session, SYSTEM, f"sticker_url_{max(payments.payment_years(session))}",
-                         "https://storage.example/stickers/due.png")
+def _publish_sticker(session, year: int | None = None) -> None:
+    year = year or max(payments.payment_years(session))
+    settings.set_setting(session, SYSTEM, f"sticker_url_{year}", f"https://storage.example/stickers/{year}.png")
+
+
+def _login_admin(client, google, migrated_db) -> None:
+    """An ordinary administrator: only they record cash payments (R46)."""
+    from ess.models import AdminRole
+    from ess.services import admin_access
+
+    with migrated_db() as s:
+        admin_access.grant_access(s, SYSTEM, "office@example.org", "Kancelária", AdminRole.ADMIN)
+        s.commit()
+    login(client, google, email="office@example.org")
 
 
 def _links(wallet, ecp_pass) -> dict:
@@ -341,6 +362,7 @@ def test_overview_counts_members_and_payments(session):
     other = _club(session, "JS Iná")
     c = _member(session, other, first_name="Cyril", card_number="5")
     payments.mark_paid(session, SYSTEM, a, YEAR, "hotovosť")
+    _publish_sticker(session, YEAR)
     bulk = payments.create_bulk(session, SYSTEM, other, YEAR, [c])
     payments.apply_payment(session, SYSTEM, bulk, Decimal("15"))
 

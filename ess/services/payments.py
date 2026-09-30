@@ -212,7 +212,11 @@ def bulk_candidates(session: Session, actor: Actor, club_id: uuid.UUID, year: in
 def create_bulk(session: Session, actor: Actor, club_id: uuid.UUID, year: int,
                 member_ids: list[uuid.UUID]) -> PaymentReference:
     """One reference for the selected members; only members offered by `bulk_candidates`."""
+    from ess.services import sticker
+
     offered = {c.member_id for c in bulk_candidates(session, actor, club_id, year)}
+    if not sticker.is_published(session, year):  # opens with the year's sticker, like paying through the eCP (R45)
+        raise DomainError("bulk_payment_not_open")
     chosen = list(dict.fromkeys(member_ids))
     if not chosen:
         raise DomainError("no_members_selected")
@@ -271,8 +275,11 @@ def _after_paid(session: Session, fee: Fee) -> None:
 
 
 def mark_paid(session: Session, actor: Actor, member_id: uuid.UUID, year: int, note: str) -> Fee:
-    """An administrator marks the fee as paid (e.g. paid in cash); a note is required (R36)."""
-    require_admin(actor)
+    """An administrator marks the fee as paid (e.g. paid in cash); a note is required (R36).
+
+    Only administrators (and trusted scripts), not system administrators (R46)."""
+    if actor.kind not in ("admin", "system"):
+        raise PermissionDenied("admin_only")
     note = " ".join(note.split())
     if not note:
         raise DomainError("note_required")

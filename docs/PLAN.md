@@ -242,8 +242,11 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - **Zverejnenie** známku zamkne do ďalšieho obdobia platby a **otvorí platbu členského na ten rok cez eCP**:
     platobný odkaz v eCP a tlačidlo „Zaplatiť“ na portáli. Odkazy sa pošlú do všetkých eCP (po dávkach);
     samostatné tlačidlo „Zverejniť platobné odkazy“ zaniklo.
-  - Bez zverejnenej známky na rok splatnosti eCP ani portál platbu neponúkajú. Hromadná platba predsedu,
-    platobný odkaz z administrácie a ručné označenie platby nie sú zablokované.
+  - Bez zverejnenej známky na rok splatnosti eCP ani portál platbu neponúkajú. **Hromadná platba** predsedu
+    (alebo zástupcu, R37) na daný rok sa tiež otvorí až po zverejnení známky na ten rok. Platobný odkaz člena
+    z administrácie a ručné označenie platby nie sú zablokované.
+- **R46** – **Platbu v hotovosti (ručné označenie ako zaplatené) eviduje len administrátor** (`admin`), nie
+  systémový administrátor (2026-09-30). Superadmin tlačidlo nevidí a server ho odmietne.
 
 ## 4. Architektúra
 

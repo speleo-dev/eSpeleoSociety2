@@ -104,7 +104,13 @@ def test_bulk_payment_on_portal(migrated_db, client, club):
     token = _as(client, club, "chair")
     base = f"/portal/clubs/{club['id']}"
     page = client.get(f"{base}/payments").text
-    assert "Zaplatilo <strong>0</strong> z 3" in page and "Pomocník" in page
+    assert "Zaplatilo <strong>0</strong> z 3" in page and "sa otvorí po zverejnení ročnej známky" in page
+    year = re.search(r"Členské (\d{4})", page).group(1)
+    with migrated_db() as session:  # the year's sticker opens the bulk payment (R45)
+        settings.set_setting(session, SYSTEM, f"sticker_url_{year}", "https://storage.example/s.png")
+        session.commit()
+    page = client.get(f"{base}/payments").text
+    assert "Pomocník" in page
     r = client.post(f"{base}/payments", data={"csrf_token": token, "year": re.search(r'name="year" value="(\d+)"', page).group(1),
                                               "member_id": [str(club["helper"]), str(club["plain"])]})
     assert "Hromadná platba" in r.text and "30,00 €" in r.text and "payme.sk" in r.text
