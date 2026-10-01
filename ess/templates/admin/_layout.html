@@ -2,7 +2,10 @@
 {% block title %}{% block page_title %}Administrácia{% endblock %} – eSS{% endblock %}
 {% block header %}
 <header>
-  <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
+  <div class="brand-wrap">
+    <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
+    <span class="role role-badge role-{{ admin.role.value }}">{{ admin.role|label|capitalize }}</span>
+  </div>
   <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
   <nav class="menu">
     <a href="{{ A }}/members">Členovia</a>

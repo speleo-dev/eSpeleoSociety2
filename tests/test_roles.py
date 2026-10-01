@@ -72,3 +72,10 @@ def test_member_with_admin_role_opens_administration_via_ecp(migrated_db, google
         admin_access.revoke_access(s, SYSTEM, admin_access.member_access(s, member_id).id)
         s.commit()
     assert client.get("/admin").status_code == 401  # revoked: no access at once
+
+
+def test_admin_role_badge(client, google):  # noqa: F811
+    login(client, google)
+    assert 'role-badge role-admin">Administrátor<' in client.get("/admin").text
+    login(client, google, email="super@example.org")
+    assert 'role-badge role-system_admin">Superadmin<' in client.get("/admin").text

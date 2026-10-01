@@ -156,3 +156,10 @@ def test_chair_edits_club_contacts(migrated_db, client, club):
     r = client.post(f"{base}/edit", data={"csrf_token": token, "city": "Liptovský Mikuláš",
                                           "email": "js@example.org", "country": "SK", "web": "https://js.example.org"})
     assert "Údaje skupiny boli uložené" in r.text and "Liptovský Mikuláš" in r.text and "js@example.org" in r.text
+
+
+def test_role_badge_in_header(migrated_db, client, club):
+    _as(client, club, "chair")
+    assert 'role-badge role-chair">Predseda<' in client.get("/portal").text
+    _as(client, club, "plain")
+    assert 'role-badge role-member">Člen<' in client.get("/portal").text

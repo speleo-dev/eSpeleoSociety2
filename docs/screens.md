@@ -25,7 +25,8 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 ## 2. Portál člena (`/p/<kľúč>` z eCP, `/portal`)
 
 Menu (R52, na mobile ☰): Členovia · Skupiny · Organizácia (Výbor, Dokumenty, Notifikácie) · štítok s menom
-(Môj profil, Administrácia – len člen s rolou admin, Odhlásiť). Logo vedie na profil.
+(Môj profil, Administrácia – len člen s rolou admin, Odhlásiť). Logo vedie na profil. Vedľa loga je vždy
+viditeľný štítok roly (Člen / Predseda / Zástupca predsedu; v administrácii Administrátor / Superadmin), aj na mobile.
 
 ### Prihlásenie
 | Obrazovka | Tlačidlá | Kedy |

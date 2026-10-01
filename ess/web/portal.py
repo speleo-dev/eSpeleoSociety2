@@ -34,15 +34,18 @@ def _page(request: Request, name: str, status_code: int = 200, **context):
 def _nav(request: Request) -> dict:
     """Header of portal pages: the signed-in member's full name and whether they are an administrator (R51, R52)."""
     if not request.url.path.startswith("/portal") or not request.cookies.get(COOKIE):
-        return {"me": None, "me_admin": False}
+        return {"me": None, "me_admin": False, "me_role": "member"}
     from ess.db import get_sessionmaker
     from ess.services import admin_access, members
+    from ess.services.access import chaired_club_ids, managed_club_ids
 
     with get_sessionmaker()() as session:
         member = portal_auth.current_member(session, request.cookies.get(COOKIE))
         if member is None:
-            return {"me": None, "me_admin": False}
-        return {"me": members.read_member(member).full_name(),
+            return {"me": None, "me_admin": False, "me_role": "member"}
+        role = ("chair" if chaired_club_ids(session, member.id)
+                else "delegate" if managed_club_ids(session, member.id) else "member")
+        return {"me": members.read_member(member).full_name(), "me_role": role,
                 "me_admin": admin_access.resolve_member(session, member.id) is not None}
 
 
