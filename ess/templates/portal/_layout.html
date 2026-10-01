@@ -2,7 +2,7 @@
 {% block header %}
 <header>
   <div class="brand-wrap">
-    <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> Portál eSS</a>
+    <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> <span class="brand-text">Portál eSS</span></a>
     {% if me %}<span class="role role-badge role-{{ me_role }}">{{ {"member": "Člen", "chair": "Predseda", "delegate": "Zástupca predsedu"}[me_role] }}</span>{% endif %}
   </div>
   {% if me %}

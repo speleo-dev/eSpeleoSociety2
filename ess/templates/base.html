@@ -39,7 +39,8 @@
     img.icon { width:20px; height:20px; vertical-align:-4px; }
     header .brand { display:flex; align-items:center; gap:.5rem; }
     header .brand img { border-radius:50%; }
-    header .brand-wrap { display:flex; align-items:center; gap:.6rem; margin-right:auto; min-width:0; }
+    header .brand-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .6rem; margin-right:auto; min-width:0; }
+    header .brand-wrap .badge { text-decoration:none; }
     header .brand-wrap .brand { margin-right:0; }
     .role-badge { font-weight:600; }  /* the signed-in role, always visible (also on phones) */
     .role-chair, .role-delegate { background:#1e8449; }
@@ -80,13 +81,23 @@
       line-height:1; padding:.25rem .55rem; color:var(--fg); }
     @media (max-width: 760px) {  /* hamburger menu on phones (R52) */
       .menu-toggle { display:block; }
+      header { padding:.5rem .75rem; }
+      header .brand-wrap { flex-wrap:nowrap; gap:.3rem; }
+      header .brand-wrap .brand { font-size:.95rem; gap:.35rem; white-space:nowrap; }
+      header .brand-wrap .brand img { width:28px; height:28px; }
+      header .brand-wrap .role-badge { font-size:.7rem; padding:.1rem .45rem; }
+      header .brand-wrap .badge { min-width:1.3rem; padding:0 .35rem; font-size:.75rem; }
+      header .brand-wrap { flex:1 1 0; }
+      .menu-toggle { flex:none; }
       header nav.menu { display:none; width:100%; flex-direction:column; align-items:stretch; gap:.2rem; }
       header.open nav.menu { display:flex; }
       header nav.menu > a, header nav.menu > details > summary { padding:.45rem .2rem; border-top:1px solid var(--line); }
       nav.menu details > div { position:static; min-width:0; border:0; box-shadow:none; padding:0 0 .3rem 1rem; }
       nav.menu details.user > div { padding:.3rem 0 .3rem 1rem; }
       nav.menu details.user summary { margin-top:.4rem; }
-      nav.menu .badge { align-self:flex-start; }
+    }
+    @media (max-width: 420px) {  /* narrow phones: logo, role and badges stay on one line with the menu button */
+      header .brand-text { display:none; }
     }
     @media (max-width: 640px) {
       table.stack thead { display:none; }

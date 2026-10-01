@@ -74,9 +74,10 @@ viditeľný štítok roly (Člen / Predseda / Zástupca predsedu; v administrác
 | Členské | výber roka · Vytvoriť platobný odkaz (výber členov) | rok platby; ďalší rok v období platby |
 | Hromadná platba | **Zaplatiť X €** · Zrušiť platobný odkaz | vytvoriť len po zverejnení ročnej známky na daný rok (R45); zrušiť len kým nie je nič zaplatené |
 
-## 4. Administrácia (tajná adresa `/<ESS_ADMIN_PATH>`, vo vývoji `/admin`; Google prihlásenie – R48)
+## 4. eSS Admin – administrácia (tajná adresa `/<ESS_ADMIN_PATH>`, vo vývoji `/admin`; Google prihlásenie – R48)
 
-Menu (R50): Členovia · Skupiny · Správa organizácie (Výbor; A navyše Členské, Ročná známka, Bankové výpisy,
+Hlavička: logo „eSS Admin“, štítok roly a pri administrátorovi štítky požiadaviek a nezaplateného členského –
+vždy viditeľné, aj na mobile (úzky displej: bez textu loga). Menu (R50): Členovia · Skupiny · Správa organizácie (Výbor; A navyše Členské, Ročná známka, Bankové výpisy,
 Požiadavky; obaja Dokumenty) · Notifikácie · Nastavenia (Nastavenia aplikácie, Import; SA aj Prístupy) · štítky
 (len A): čakajúce požiadavky (červený), nezaplatené členské (zlatý) · štítok s menom → Odhlásiť (admin cez eCP:
 Môj portál, odhlásenie z portálu). SA vidí členov obmedzene (meno, skupiny, e-mail, telefón) s funkciami a

@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{% block page_title %}Administrácia{% endblock %} – eSS{% endblock %}
+{% block title %}{% block page_title %}Prehľad{% endblock %} – eSS Admin{% endblock %}
 {% block header %}
 <header>
   <div class="brand-wrap">
-    <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
+    <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> <span class="brand-text">eSS Admin</span></a>
     <span class="role role-badge role-{{ admin.role.value }}">{{ admin.role|label|capitalize }}</span>
+    {% if badges %}{# next to the role, visible also on phones #}
+    <a class="badge badge-tasks" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
+    <a class="badge badge-unpaid" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
+    {% endif %}
   </div>
   <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
   <nav class="menu">
@@ -26,10 +30,6 @@
       <a href="{{ A }}/import">Import</a>
       {% if admin.is_system_admin %}<a href="{{ A }}/access">Prístupy</a>{% endif %}
     </div></details>
-    {% if badges %}
-    <a class="badge badge-tasks" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
-    <a class="badge badge-unpaid" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
-    {% endif %}
     <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
       <span class="muted">{{ admin.role|label }}</span>
       {% if admin.via_ecp %}<a href="/portal">Môj portál (eCP)</a><a href="{{ A }}/login">Prihlásiť sa Googlom (superadmin)</a>{% endif %}
