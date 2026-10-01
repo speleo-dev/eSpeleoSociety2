@@ -228,6 +228,9 @@ templates.env.filters["membership_icon"] = membership_icon
 templates.env.filters["sss_icon"] = sss_icon
 templates.env.globals["ICON_LEGEND"] = ICON_LEGEND
 templates.env.globals["A"] = A  # administration base path (R48)
+from ess.web import i18n as _i18n  # noqa: E402
+
+templates.env.globals.update(I18N_LANGS=_i18n.LANGS, I18N_FLAGS=_i18n.FLAGS, i18n=_i18n.variants)
 templates.env.filters["label"] = label
 templates.env.filters["date"] = fmt_date
 

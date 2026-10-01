@@ -1,5 +1,6 @@
 {% extends "public/_layout.html" %}
-{% block title %}Overenie eCP{% endblock %}
+{% from "public/_i18n.html" import t, switcher %}
+{% block title %}{{ i18n("ecp_title")[page_lang] }}{% endblock %}
 {% block content %}
 <style>
   .verdict { border-radius:.6rem; padding:1rem 1.2rem; margin:1rem 0; font-size:1.25rem; font-weight:700; }
@@ -11,41 +12,40 @@
   .club-line { display:flex; align-items:center; gap:.5rem; }
   .club-line img { max-height:48px; max-width:96px; }
 </style>
+{{ switcher("ecp_title") }}
 {% if r.outcome == O.VALID %}
-  <div class="verdict ok">✔ Člen Slovenskej speleologickej spoločnosti – jaskyniar
-    <small>Overené {{ r.checked_at|local_time }}</small></div>
+  <div class="verdict ok">{{ t("valid") }}
+    <small>{{ t("checked") }} {{ r.checked_at|local_time }}</small></div>
 {% elif r.outcome == O.SUSPENDED %}
-  <div class="verdict warn">⚠ Členstvo je pozastavené<small>Preukaz momentálne neplatí.</small></div>
+  <div class="verdict warn">{{ t("suspended") }}<small>{{ t("suspended_note") }}</small></div>
 {% elif r.outcome == O.NOT_MEMBER %}
-  <div class="verdict bad">✖ Nie je členom Slovenskej speleologickej spoločnosti
-    <small>Tento preukaz bol zrušený.</small></div>
+  <div class="verdict bad">{{ t("not_member") }}<small>{{ t("revoked") }}</small></div>
 {% elif r.outcome == O.USED %}
-  <div class="verdict bad">✖ Tento QR kód už bol použitý
-    <small>Požiadajte držiteľa, aby otvoril preukaz v Peňaženke Google znova – zobrazí sa nový kód.</small></div>
+  <div class="verdict bad">{{ t("used") }}<small>{{ t("used_note") }}</small></div>
 {% else %}
-  <div class="verdict bad">✖ Preukaz sa nepodarilo overiť<small>Neplatný alebo neznámy kód.</small></div>
+  <div class="verdict bad">{{ t("invalid") }}<small>{{ t("invalid_note") }}</small></div>
 {% endif %}
 
 {% if r.outcome in (O.VALID, O.SUSPENDED) %}
 <div class="person">
-  {% if photo_url %}<img class="portrait" src="{{ photo_url }}" alt="Fotka držiteľa">{% endif %}
+  {% if photo_url %}<img class="portrait" src="{{ photo_url }}" alt="">{% endif %}
   <dl>
-    <dt>Meno</dt><dd><strong>{{ r.full_name }}</strong></dd>
-    <dt>Bydlisko</dt><dd>{{ r.address or "—" }}</dd>
-    <dt>Skupina</dt><dd class="club-line">{% if r.club_logo_url %}<img src="{{ r.club_logo_url }}" alt="Logo skupiny">{% endif %}{{ r.club_name or "—" }}</dd>
-    <dt>Člen SSS od</dt><dd>{{ r.member_since.year if r.member_since else "—" }}</dd>
-    <dt>Členské</dt><dd>{% if r.paid_until %}zaplatené do {{ r.paid_until|date }}{% else %}<span class="muted">nezaplatené</span>{% endif %}</dd>
+    <dt>{{ t("name") }}</dt><dd><strong>{{ r.full_name }}</strong></dd>
+    <dt>{{ t("address") }}</dt><dd>{{ r.address or "—" }}</dd>
+    <dt>{{ t("club") }}</dt><dd class="club-line">{% if r.club_logo_url %}<img src="{{ r.club_logo_url }}" alt="Logo skupiny">{% endif %}{{ r.club_name or "—" }}</dd>
+    <dt>{{ t("member_since") }}</dt><dd>{{ r.member_since.year if r.member_since else "—" }}</dd>
+    <dt>{{ t("fee") }}</dt><dd>{% if r.paid_until %}{{ t("paid_until") }} {{ r.paid_until|date }}{% else %}<span class="muted">{{ t("unpaid") }}</span>{% endif %}</dd>
   </dl>
 </div>
-<p class="muted">Porovnajte fotku s držiteľom preukazu.</p>
+<p class="muted">{{ t("compare") }}</p>
 
 {% if r.contacts %}
-<h2>Kontakty</h2>
-<ul>{% for c in r.contacts %}<li>{{ c.role }}: {{ c.name }}{% if c.phone %}, <a href="tel:{{ c.phone|replace(' ', '') }}">{{ c.phone }}</a>{% endif %}</li>{% endfor %}</ul>
+<h2>{{ t("contacts") }}</h2>
+<ul>{% for c in r.contacts %}<li>{{ t(c.code) if c.code in ("club_chair", "sss_chair") else c.role }}: {{ c.name }}{% if c.phone %}, <a href="tel:{{ c.phone|replace(' ', '') }}">{{ c.phone }}</a>{% endif %}</li>{% endfor %}</ul>
 {% endif %}
 {% if r.documents %}
-<h2>Dokumenty SSS</h2>
-<ul>{% for d in r.documents %}<li><a href="{{ d.url }}" rel="noopener noreferrer">{{ d.title }}</a>{% if d.valid_until %} <span class="muted">(platné do {{ d.valid_until|date }})</span>{% endif %}</li>{% endfor %}</ul>
+<h2>{{ t("documents") }}</h2>
+<ul>{% for d in r.documents %}<li><a href="{{ d.url }}" rel="noopener noreferrer">{{ d.title }}</a>{% if d.valid_until %} <span class="muted">({{ t("valid_until") }} {{ d.valid_until|date }})</span>{% endif %}</li>{% endfor %}</ul>
 {% endif %}
 {% endif %}
 {% endblock %}

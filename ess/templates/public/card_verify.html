@@ -1,23 +1,25 @@
 {% extends "public/_layout.html" %}
-{% block title %}Overenie kartičky SSS{% endblock %}
+{% from "public/_i18n.html" import t, switcher %}
+{% block title %}{{ i18n("card_title")[page_lang] }}{% endblock %}
 {% block content %}
 <style>
   .verdict { border-radius:.6rem; padding:1rem 1.2rem; margin:1rem 0; font-size:1.25rem; font-weight:700; color:#fff; }
   .verdict.ok { background:#1e7a3a; } .verdict.bad { background:#b3261e; } .verdict.warn { background:#b26a00; }
 </style>
+{{ switcher("card_title") }}
 {% if r.outcome == O.VALID %}
-  <div class="verdict ok">✔ Člen Slovenskej speleologickej spoločnosti</div>
-  <p><strong>Členské zaplatené na rok {{ r.year }}</strong></p>
+  <div class="verdict ok">{{ t("member") }}</div>
+  <p><strong>{{ t("fee_paid_year") }} {{ r.year }}</strong></p>
 {% elif r.outcome == O.OTHER_YEAR %}
-  <div class="verdict warn">⚠ Kartička platí na rok {{ r.year }}</div>
-  <p>Na aktuálny rok nie je vydaná.</p>
+  <div class="verdict warn">{{ t("card_other_year") }} {{ r.year }}</div>
+  <p>{{ t("card_other_year_note") }}</p>
 {% elif r.outcome in (O.LOST, O.STOLEN) %}
-  <div class="verdict bad">✖ Kartička bola nahlásená ako {{ "stratená" if r.outcome == O.LOST else "ukradnutá" }}</div>
-  <p>Kartička neplatí. Držiteľ nemusí byť jej majiteľom.</p>
+  <div class="verdict bad">{{ t("card_lost") if r.outcome == O.LOST else t("card_stolen") }}</div>
+  <p>{{ t("card_lost_note") }}</p>
 {% elif r.outcome == O.REPLACED %}
-  <div class="verdict bad">✖ Kartička bola nahradená novou</div>
-  <p>Táto kartička už neplatí.</p>
+  <div class="verdict bad">{{ t("card_replaced") }}</div>
+  <p>{{ t("card_replaced_note") }}</p>
 {% else %}
-  <div class="verdict bad">✖ Kartičku sa nepodarilo overiť</div>
+  <div class="verdict bad">{{ t("card_invalid") }}</div>
 {% endif %}
 {% endblock %}

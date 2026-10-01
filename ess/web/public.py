@@ -183,7 +183,10 @@ def verification_page(request: Request, token: str, session: Session = Depends(g
     result = ecp_verification.verify(session, token, wallet, base_url(request))
     session.commit()
     photo_url = store.url(result.photo) if store and result.photo else None
-    response = _page(request, "public/verify.html", r=result, O=ecp_verification.Outcome, photo_url=photo_url)
+    from ess.web.i18n import pick_language
+
+    response = _page(request, "public/verify.html", r=result, O=ecp_verification.Outcome, photo_url=photo_url,
+                     page_lang=pick_language(request.headers.get("accept-language")))
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
@@ -195,7 +198,10 @@ def card_verification_page(request: Request, code: str, session: Session = Depen
     """Target of the QR code on the printed SSS card: only membership and the paid year."""
     result = sss_cards.verify(session, code)
     session.commit()
-    response = _page(request, "public/card_verify.html", r=result, O=sss_cards.CardOutcome)
+    from ess.web.i18n import pick_language
+
+    response = _page(request, "public/card_verify.html", r=result, O=sss_cards.CardOutcome,
+                     page_lang=pick_language(request.headers.get("accept-language")))
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response

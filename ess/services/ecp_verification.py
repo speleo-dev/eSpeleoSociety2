@@ -36,6 +36,7 @@ class Contact:
     role: str
     name: str
     phone: str | None
+    code: str = ""  # position code (the page translates the role)
 
 
 @dataclass
@@ -84,7 +85,7 @@ def _contacts(session: Session, club: Club | None) -> list[Contact]:
         holder = session.scalar(query)
         if holder:
             data = members.read_member(holder)
-            result.append(Contact(role, data.full_name(), data.phone))
+            result.append(Contact(role, data.full_name(), data.phone, code))
     return result
 
 

@@ -1,0 +1,32 @@
+{# Verification pages in four languages (R55): every text is rendered in all languages, the browser shows one.
+   Switching does not reload the page – the eCP QR token is one-time. #}
+{% macro t(key) %}{% for lang, text in i18n(key).items() %}<span class="i18n" lang="{{ lang }}">{{ text }}</span>{% endfor %}{% endmacro %}
+
+{% macro switcher(title_key) %}
+<style>
+  .i18n { display:none; }
+  {% for l in I18N_LANGS %}html[data-lang="{{ l }}"] .i18n[lang="{{ l }}"] { display:inline; }
+  {% endfor %}
+  .langs { display:flex; gap:.4rem; justify-content:flex-end; margin:.2rem 0 .6rem; }
+  .langs button { background:none; border:1px solid var(--line); border-radius:.4rem; padding:.15rem .5rem; font-size:.85rem; color:var(--fg); }
+  {% for l in I18N_LANGS %}html[data-lang="{{ l }}"] .langs button[data-lang="{{ l }}"] { border-color:var(--accent); font-weight:700; }
+  {% endfor %}
+</style>
+<nav class="langs" aria-label="{{ i18n('language')['en'] }}" {% for l, text in i18n(title_key).items() %}data-title-{{ l }}="{{ text }}" {% endfor %}>
+  {% for l in I18N_LANGS %}<button type="button" data-lang="{{ l }}" lang="{{ l }}" title="{{ i18n('language')[l] }}">{{ I18N_FLAGS[l] }} {{ l|upper }}</button>{% endfor %}
+</nav>
+<script>
+  (function () {
+    const nav = document.querySelector("nav.langs"), root = document.documentElement;
+    function use(lang, remember) {
+      root.dataset.lang = lang; root.lang = lang;
+      document.title = nav.dataset["title" + lang.charAt(0).toUpperCase() + lang.slice(1)] || document.title;
+      if (remember) { try { localStorage.setItem("ess_lang", lang); } catch (e) {} }
+    }
+    let saved = null;
+    try { saved = localStorage.getItem("ess_lang"); } catch (e) {}
+    if (saved && nav.querySelector('button[data-lang="' + saved + '"]')) use(saved, false);
+    nav.addEventListener("click", (e) => { const b = e.target.closest("button[data-lang]"); if (b) use(b.dataset.lang, true); });
+  })();
+</script>
+{% endmacro %}

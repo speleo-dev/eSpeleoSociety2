@@ -116,9 +116,27 @@ def test_web_page_headers_and_content(migrated_db):
     client = TestClient(app)
     response = client.get(f"/v/{token}")
     assert response.status_code == 200 and "Člen Slovenskej speleologickej spoločnosti" in response.text
-    assert "Ján Žiadateľ" in response.text and re.search(r"Overené \d\d\.\d\d\.\d{4}", response.text)
+    assert "Ján Žiadateľ" in response.text and re.search(r"Overené</span>.*?</small>", response.text, re.S)
     assert response.headers["cache-control"] == "no-store" and "noindex" in response.headers["x-robots-tag"]
     assert 'src="https://storage.example/logos/js.png" alt="Logo skupiny"' in response.text
-    assert f"zaplatené do 31. 12. {_date.today().year}" in response.text
+    assert f"pagada hasta el</span> 31. 12. {_date.today().year}" in response.text
     bad = client.get("/v/nonsense")
     assert "Preukaz sa nepodarilo overiť" in bad.text and "Ján" not in bad.text
+
+
+def test_verification_pages_in_four_languages(migrated_db):
+    from fastapi.testclient import TestClient
+
+    from ess.main import create_app
+    from ess.web.i18n import LANGS, TEXTS, pick_language
+
+    assert all(len(v) == len(LANGS) and all(v) for v in TEXTS.values())
+    assert pick_language("fr-FR,fr;q=0.9,en;q=0.8") == "fr" and pick_language("de-DE") == "sk"
+    client = TestClient(create_app())
+    page = client.get("/v/nonsense", headers={"Accept-Language": "es-ES,es;q=0.9"}).text
+    assert 'data-lang="es"' in page and "<title>Verificación del eCP" in page
+    assert "No se ha podido verificar el carné" in page and "Preukaz sa nepodarilo overiť" in page  # all rendered
+    for lang in ("SK", "EN", "FR", "ES"):
+        assert f"{lang}</button>" in page
+    page = client.get("/k/nonsense").text
+    assert 'data-lang="sk"' in page and "The card could not be verified" in page

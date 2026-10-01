@@ -146,7 +146,8 @@ def test_web_download_email_and_public_page(migrated_db, monkeypatch):
     assert mail.attachments[0][0] == f"karticka-sss-{YEAR}.pdf"
     public = client.get(f"/k/{code}")
     assert "Člen Slovenskej speleologickej spoločnosti" in public.text
-    assert f"Členské zaplatené na rok {YEAR}" in public.text and "Ján" not in public.text
+    assert "Členské zaplatené na rok</span>" in public.text and f"</span> {YEAR}</strong>" in public.text
+    assert "Ján" not in public.text
     assert public.headers["cache-control"] == "no-store"
     assert "nepodarilo overiť" in client.get("/k/nonsense").text
     response = client.post(f"/admin/cards/{card.id}/replace",

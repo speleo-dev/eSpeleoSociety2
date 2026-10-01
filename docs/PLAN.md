@@ -309,6 +309,11 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   a „vydaný eCP (Google Wallet)“ – vidí ich len administrátor (zoznam členov) a predseda / zástupca (portál),
   nie bežný člen ani superadmin. Sú v samostatnom stĺpci. Zoznam členov v administrácii: Meno · (ikony) · Skupiny
   (bez ikon, „ďalšia“ pri neprimárnej) · Obec · E-mail; stĺpec „Stav v SSS“ zrušený. Obec a ikony len administrátor.
+- **R55** – **Overovacie stránky eCP a kartičky v štyroch jazykoch** (2026-10-01): slovenčina, angličtina,
+  francúzština, španielčina; prepínač s vlajkou a skratkou (SK · EN · FR · ES) hore na stránke. Predvolený jazyk
+  podľa prehliadača kontrolóra (Accept-Language), inak slovenčina; voľba sa pamätá v prehliadači. Všetky jazyky
+  sú v stránke a prepínajú sa bez opätovného načítania – QR kód eCP je jednorazový. Texty: `ess/web/i18n.py`
+  (názvy skupín a dokumentov ostávajú v slovenčine).
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.
