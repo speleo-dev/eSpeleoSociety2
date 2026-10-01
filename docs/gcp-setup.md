@@ -484,7 +484,9 @@ gcloud config set project espeleosociety
 printf 'sprava-%s' "$(openssl rand -hex 12)" | gcloud secrets create ess-admin-path --data-file=-
 gcloud secrets add-iam-policy-binding ess-admin-path \
   --member="serviceAccount:116532825256-compute@developer.gserviceaccount.com" --role=roles/secretmanager.secretAccessor
-URL=$(gcloud run services describe ess --region europe-west3 --format='value(status.url)')
+# adresa, ktorú aplikácia posiela Google = ESS_PUBLIC_BASE_URL služby (nie nutne status.url)
+URL=$(gcloud run services describe ess --region europe-west3 --format=json \
+  | jq -r '.spec.template.spec.containers[0].env[] | select(.name=="ESS_PUBLIC_BASE_URL") | .value')
 echo "$URL/$(gcloud secrets versions access latest --secret ess-admin-path)"
 echo "$URL/$(gcloud secrets versions access latest --secret ess-admin-path)/auth/callback"
 ```
@@ -498,7 +500,9 @@ vypísanú adresu (končí `/auth/callback`) a ulož. Starú `…/admin/auth/cal
 gcloud run services update ess --region europe-west3 --update-secrets ESS_ADMIN_PATH=ess-admin-path:latest
 ```
 
-**d)** Otvor prvú vypísanú adresu a prihlás sa. Over, že `<URL>/admin` vráti „Not Found“. Potom v konzole
+**d)** Počkaj asi 5 minút (Google zmenu neprijme hneď), otvor prvú vypísanú adresu a prihlás sa.
+Pri chybe `redirect_uri_mismatch` klikni na Google stránke na *error details* – zobrazí sa presná adresa
+`redirect_uri`, ktorú aplikácia poslala; tú skopíruj do *Authorized redirect URIs*. Over, že `<URL>/admin` vráti „Not Found“. Potom v konzole
 odstráň starú adresu `…/admin/auth/callback` z *Authorized redirect URIs*.
 
 Adresu pošli ostatným administrátorom súkromne (nie do verejných skupín). Zmena adresy: pridaj novú verziu
