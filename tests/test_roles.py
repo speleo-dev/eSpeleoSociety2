@@ -121,3 +121,18 @@ def test_superadmin_logs_member_out_and_switches_to_ecp_admin(migrated_db, googl
     assert r.status_code == 200
     with migrated_db() as s:
         assert portal_auth.active_sessions(s, member_id) == 0
+
+
+def test_member_list_icons_by_role(migrated_db, google, client):  # noqa: F811
+    from ess.models import EcpPass
+
+    with migrated_db() as s:
+        member_id = _member(s, _club(s), reduced_fee=True)
+        s.add(EcpPass(member_id=member_id, wallet_object_id=f"i.{member_id}", state="active"))
+        s.commit()
+    login(client, google)
+    page = client.get("/admin/members").text
+    assert 'title="vydaný eCP (Google Wallet)"' in page and 'title="zľavnené členské"' in page
+    login(client, google, email="super@example.org")
+    page = client.get("/admin/members").text
+    assert "vydaný eCP" not in page and "zľavnené členské" not in page and 'title="člen"' in page

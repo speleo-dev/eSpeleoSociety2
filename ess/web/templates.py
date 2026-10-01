@@ -221,6 +221,7 @@ ICON_LEGEND = [
     ("member", "člen"), ("candidate", "čakateľ"), ("pending_activation", "čaká na aktiváciu"),
     ("suspended", "pozastavené"), ("guest", "člen v ďalšej (neprimárnej) skupine"), ("chair", "predseda skupiny"),
     ("no_club", "bez skupiny"), ("expelled", "vylúčený zo SSS"), ("reduced_fee", "zľavnené členské"),
+    ("ecp", "vydaný eCP (Google Wallet)"),
 ]
 
 templates.env.filters["membership_icon"] = membership_icon

@@ -44,12 +44,18 @@
   <ul>{% for r in pending %}<li>{{ r.data.last_name }} {{ r.data.first_name }}</li>{% endfor %}</ul>
 </section>
 {% endif %}{% endif %}
+{% from "admin/_icons.html" import icon, legend %}
 <h2>Členovia ({{ view.rows|length }})</h2>
 <div class="table-wrap"><table class="stack">
   <thead><tr><th>Meno</th><th>Stav</th><th>Telefón</th><th>E-mail</th>{% if view.full %}<th>Bydlisko</th><th>Č. preukazu</th>{% endif %}</tr></thead>
   <tbody>
   {% for r in view.rows %}{% set d = r.data %}
-    <tr><td>{% if view.can_manage %}<a href="/portal/clubs/{{ view.club.id }}/members/{{ r.member_id }}">{{ d.last_name }} {{ d.first_name }}</a>{% else %}{{ d.last_name }} {{ d.first_name }}{% endif %}</td>
+    <tr><td>{% if r.is_chair %}{{ icon("chair", "predseda skupiny") }}{% else %}{{ icon(r.status|membership_icon, r.status|label) }}{% endif %}
+      {% if view.can_manage %}<a href="/portal/clubs/{{ view.club.id }}/members/{{ r.member_id }}">{{ d.last_name }} {{ d.first_name }}</a>{% else %}{{ d.last_name }} {{ d.first_name }}{% endif %}
+      {% if view.full %}{# the chair (and delegate) only; not ordinary members (R54) #}
+      {% if d.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}
+      {% if r.has_ecp %}{{ icon("ecp", "vydaný eCP (Google Wallet)") }}{% endif %}
+      {% endif %}</td>
       <td data-label="Stav">{{ r.status|label }}</td>
       <td data-label="Telefón">{% if d.phone %}<a href="tel:{{ d.phone|replace(' ', '') }}">{{ d.phone }}</a>{% endif %}</td>
       <td data-label="E-mail">{% if d.email %}<a href="mailto:{{ d.email }}">{{ d.email }}</a>{% endif %}</td>
@@ -57,5 +63,6 @@
   {% endfor %}
   </tbody>
 </table></div>
+{{ legend(view.full) }}
 {% if not view.full %}<p class="muted">Kontakty sú len pre potreby skupiny, nešírte ich ďalej.</p>{% endif %}
 {% endblock %}

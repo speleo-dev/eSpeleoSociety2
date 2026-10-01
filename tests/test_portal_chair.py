@@ -163,3 +163,13 @@ def test_role_badge_in_header(migrated_db, client, club):
     assert 'role-badge role-chair">Predseda<' in client.get("/portal").text
     _as(client, club, "plain")
     assert 'role-badge role-member">Člen<' in client.get("/portal").text
+
+
+def test_member_icons_by_role(migrated_db, client, club):
+    """R54: chair icon first; reduced fee and eCP icons for the chair, not for ordinary members."""
+    _as(client, club, "chair")
+    page = client.get(f"/portal/clubs/{club['id']}").text
+    assert 'title="predseda skupiny"' in page and 'title="vydaný eCP (Google Wallet)"' in page
+    _as(client, club, "plain")
+    page = client.get(f"/portal/clubs/{club['id']}").text
+    assert 'title="predseda skupiny"' in page and "vydaný eCP" not in page

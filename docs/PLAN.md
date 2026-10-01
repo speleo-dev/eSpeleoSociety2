@@ -304,6 +304,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Odkaz „Administrácia“ z portálu vedie na `<admin>/ecp`: zruší prihlásenie Googlom v tomto prehliadači
     a použije rolu administrátora z eCP. V administrácii: superadmin s dostupnou rolou admin z eCP má
     „Prepnúť na administrátora (eCP)“; admin z eCP má „Prihlásiť sa Googlom (superadmin)“.
+- **R54** – **Ikony v zozname členov** (2026-10-01): vľavo od mena stav člena – predseda skupiny má ikonu
+  „predseda“, inak stav v primárnej skupine (člen, čakateľ, pozastavený…). Vpravo od mena „zľavnené členské“
+  a „vydaný eCP (Google Wallet)“ – vidí ich len administrátor (zoznam členov) a predseda / zástupca (portál),
+  nie bežný člen ani superadmin.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.

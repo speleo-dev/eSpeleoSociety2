@@ -22,10 +22,13 @@
   <tbody>
   {% for r in rows %}
     <tr>
-      <td>{% if r.sss_status.value == "member" and r.clubs %}{{ icon(r.clubs[0][1]|membership_icon, r.clubs[0][1]|label) }}{% else %}{{ icon(r.sss_status|sss_icon, r.sss_status|label) }}{% endif %}
+      <td>{# left: the member's state – chair first, then the primary club status (R54) #}
+        {% if r.is_chair %}{{ icon("chair", "predseda skupiny") }}{% elif r.clubs %}{{ icon(r.clubs[0][1]|membership_icon, r.clubs[0][1]|label) }}{% else %}{{ icon(r.sss_status|sss_icon, r.sss_status|label) }}{% endif %}
         <a href="{{ A }}/members/{{ r.id }}">{{ r.data.last_name }} {{ r.data.first_name }}</a>
-        {% if r.is_chair %}{{ icon("chair", "predseda skupiny") }}{% endif %}
-        {% if r.data.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}</td>
+        {% if admin.is_admin %}{# right: administrators only (not the superadmin, R54) #}
+        {% if r.data.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}
+        {% if r.has_ecp %}{{ icon("ecp", "vydaný eCP (Google Wallet)") }}{% endif %}
+        {% endif %}</td>
       <td>{% for name, st, primary in r.clubs %}<span class="chip">{{ icon(st|membership_icon(primary), st|label if primary else "člen v ďalšej skupine") }} {{ name }}{% if st.value != "member" %} · {{ st|label }}{% endif %}</span>{% endfor %}</td>
       <td>{{ r.data.email or "" }}</td>
       <td>{{ r.sss_status|label }}</td>
@@ -35,7 +38,7 @@
   {% endfor %}
   </tbody>
 </table></div>
-{{ legend() }}
+{{ legend(admin.is_admin) }}
 {% if pages > 1 %}
 <p>
   {% if page > 1 %}<a href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}">← predchádzajúca</a>{% endif %}

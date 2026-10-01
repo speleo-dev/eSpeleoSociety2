@@ -35,6 +35,7 @@ class MemberRow:
     clubs: list[tuple[str, MembershipStatus, bool]] = field(default_factory=list)  # (club, status, primary)
     sss_status: SssStatus = SssStatus.NEVER
     is_chair: bool = False
+    has_ecp: bool = False  # an eCP that is not revoked
 
     @property
     def sort_key(self) -> tuple[str, str]:
@@ -51,6 +52,11 @@ def _sss_status(member: Member, has_open: bool, had_any: bool) -> SssStatus:
     return SssStatus.AWAITING_DECISION if had_any else SssStatus.NEVER
 
 
+def ecp_holders(session: Session) -> set[uuid.UUID]:
+    """Members with an issued eCP (not revoked) – for the Google Wallet icon."""
+    return set(session.scalars(select(EcpPass.member_id).where(EcpPass.state != "revoked")))
+
+
 def list_members(
     session: Session,
     query: str | None = None,
@@ -64,6 +70,7 @@ def list_members(
     had_any = set(session.scalars(select(Membership.member_id).distinct()))
     chairs = set(session.scalars(select(PositionHolder.member_id).where(
         PositionHolder.position_code == "club_chair", PositionHolder.valid_to.is_(None))))
+    with_ecp = ecp_holders(session)
 
     needle = normalize_for_index(query) if query else None
     rows = []
@@ -85,6 +92,7 @@ def list_members(
                 clubs=[(clubs[m.club_id], m.status, m.is_primary) for m in sorted(open_ms, key=lambda m: not m.is_primary)],
                 sss_status=_sss_status(member, bool(open_ms), member.id in had_any),
                 is_chair=member.id in chairs,
+                has_ecp=member.id in with_ecp,
             )
         )
     rows.sort(key=lambda r: r.sort_key)

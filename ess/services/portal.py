@@ -47,6 +47,8 @@ class ClubMemberRow:
     member_id: uuid.UUID
     data: MemberData
     status: MembershipStatus
+    is_chair: bool = False
+    has_ecp: bool = False
 
 
 @dataclass
@@ -78,7 +80,11 @@ def club_view(session: Session, member: Member, club_id: uuid.UUID) -> ClubView:
     # Every member of the club sees everybody in it, candidates too (contacts for club events, R42).
     query = (select(Member, Membership.status).join(Membership, Membership.member_id == Member.id)
              .where(Membership.club_id == club_id, Membership.valid_to.is_(None)))
-    rows = [ClubMemberRow(m.id, members.read_member(m), status) for m, status in session.execute(query)]
+    from ess.services.directory import ecp_holders
+
+    with_ecp = ecp_holders(session) if full else set()
+    rows = [ClubMemberRow(m.id, members.read_member(m), status, m.id == chair_id, m.id in with_ecp)
+            for m, status in session.execute(query)]
     rows.sort(key=lambda r: (normalize_for_index(r.data.last_name), normalize_for_index(r.data.first_name)))
     names = {r.member_id: r.data.full_name() for r in rows}
     eligible = set(delegations.eligible_ids(session, club_id)) if is_chair and delegation is None else set()
