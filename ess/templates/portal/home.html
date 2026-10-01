@@ -44,8 +44,10 @@
 </form></details>
 {% endif %}
 <h2>Členstvo</h2>
-<ul>
-  {% for club, status, primary in home.clubs %}<li>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</li>
+<ul class="club-list">{# fixed logo box: different logo sizes or a missing logo keep the names aligned #}
+  {% for club, status, primary in home.clubs %}<li>
+    <span class="logo-box">{% if club.logo_url %}<img src="{{ club.logo_url }}" alt="">{% endif %}</span>
+    <span>{% if club.is_unaffiliated %}{{ club.name }}{% else %}<a href="/portal/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}{% if primary %} (primárna){% endif %}{% if status.value != "member" %} – {{ status|label }}{% endif %}</span></li>
   {% else %}<li class="muted">Nie ste v žiadnej skupine.</li>{% endfor %}
 </ul>
 <p>Členské zaplatené: {% if home.paid_years %}{{ home.paid_years|join(", ") }} (eCP platí do {{ home.valid_until|date }}){% else %}zatiaľ žiadny záznam{% endif %}</p>
