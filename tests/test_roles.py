@@ -136,3 +136,16 @@ def test_member_list_icons_by_role(migrated_db, google, client):  # noqa: F811
     login(client, google, email="super@example.org")
     page = client.get("/admin/members").text
     assert "vydaný eCP" not in page and "zľavnené členské" not in page and 'title="člen"' in page
+
+
+def test_member_list_columns(migrated_db, google, client):  # noqa: F811
+    with migrated_db() as s:
+        _member(s, _club(s), city="Liptovský Mikuláš")
+        s.commit()
+    login(client, google)
+    page = client.get("/admin/members").text
+    assert "<th>Obec</th>" in page and "Liptovský Mikuláš" in page and "Stav v SSS" not in page
+    assert '<span class="chip"><img' not in page  # no status icon at the club
+    login(client, google, email="super@example.org")
+    page = client.get("/admin/members").text
+    assert "<th>Obec</th>" not in page and "Liptovský Mikuláš" not in page

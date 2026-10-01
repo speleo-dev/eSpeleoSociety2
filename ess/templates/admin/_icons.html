@@ -1,2 +1,2 @@
 {% macro icon(name, title) %}<img class="icon" src="/static/icons/{{ name }}.png" alt="{{ title }}" title="{{ title }}" width="20" height="20">{% endmacro %}
-{% macro legend(full=True) %}<p class="legend muted">{% for name, title in ICON_LEGEND if full or name not in ("reduced_fee", "ecp") %}<span>{{ icon(name, title) }} {{ title }}</span>{% endfor %}</p>{% endmacro %}
+{% macro legend(full=True, skip=()) %}<p class="legend muted">{% for name, title in ICON_LEGEND if (full or name not in ("reduced_fee", "ecp")) and name not in skip %}<span>{{ icon(name, title) }} {{ title }}</span>{% endfor %}</p>{% endmacro %}

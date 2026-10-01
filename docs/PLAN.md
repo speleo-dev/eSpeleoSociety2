@@ -307,7 +307,8 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R54** – **Ikony v zozname členov** (2026-10-01): vľavo od mena stav člena – predseda skupiny má ikonu
   „predseda“, inak stav v primárnej skupine (člen, čakateľ, pozastavený…). Vpravo od mena „zľavnené členské“
   a „vydaný eCP (Google Wallet)“ – vidí ich len administrátor (zoznam členov) a predseda / zástupca (portál),
-  nie bežný člen ani superadmin.
+  nie bežný člen ani superadmin. Sú v samostatnom stĺpci. Zoznam členov v administrácii: Meno · (ikony) · Skupiny
+  (bez ikon, „ďalšia“ pri neprimárnej) · Obec · E-mail; stĺpec „Stav v SSS“ zrušený. Obec a ikony len administrátor.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.
