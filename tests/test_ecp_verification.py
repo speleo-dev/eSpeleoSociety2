@@ -99,8 +99,16 @@ def test_web_page_headers_and_content(migrated_db):
     from ess.storage import get_media_store
     from ess.wallet import get_wallet
 
+    from ess.models import Club, Membership
+    from ess.services import payments
+    from ess.services.access import SYSTEM
+    from datetime import date as _date
+
     with migrated_db() as s:
-        wallet, ecp_pass, _ = _issued(s)
+        wallet, ecp_pass, member_id = _issued(s)
+        club = s.get(Club, s.query(Membership.club_id).filter(Membership.member_id == member_id).scalar())
+        club.logo_url = "https://storage.example/logos/js.png"
+        payments.mark_paid(s, SYSTEM, member_id, _date.today().year, "hotovosť")
         token = _qr_token(wallet, ecp_pass)
         s.commit()
     app = create_app()
@@ -110,5 +118,7 @@ def test_web_page_headers_and_content(migrated_db):
     assert response.status_code == 200 and "Člen Slovenskej speleologickej spoločnosti" in response.text
     assert "Ján Žiadateľ" in response.text and re.search(r"Overené \d\d\.\d\d\.\d{4}", response.text)
     assert response.headers["cache-control"] == "no-store" and "noindex" in response.headers["x-robots-tag"]
+    assert 'src="https://storage.example/logos/js.png" alt="Logo skupiny"' in response.text
+    assert f"zaplatené do 31. 12. {_date.today().year}" in response.text
     bad = client.get("/v/nonsense")
     assert "Preukaz sa nepodarilo overiť" in bad.text and "Ján" not in bad.text

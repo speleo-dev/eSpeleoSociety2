@@ -7,7 +7,9 @@
   .verdict.warn { background:#b26a00; color:#fff; }
   .verdict small { display:block; font-size:.9rem; font-weight:400; margin-top:.3rem; }
   .person { display:flex; flex-wrap:wrap; gap:1rem 1.5rem; align-items:flex-start; }
-  .person img { width:176px; height:240px; object-fit:cover; border-radius:.4rem; border:1px solid var(--line); }
+  .person img.portrait { width:176px; height:240px; object-fit:cover; border-radius:.4rem; border:1px solid var(--line); }
+  .club-line { display:flex; align-items:center; gap:.5rem; }
+  .club-line img { max-height:48px; max-width:96px; }
 </style>
 {% if r.outcome == O.VALID %}
   <div class="verdict ok">✔ Člen Slovenskej speleologickej spoločnosti – jaskyniar
@@ -26,13 +28,13 @@
 
 {% if r.outcome in (O.VALID, O.SUSPENDED) %}
 <div class="person">
-  {% if photo_url %}<img src="{{ photo_url }}" alt="Fotka držiteľa">{% endif %}
+  {% if photo_url %}<img class="portrait" src="{{ photo_url }}" alt="Fotka držiteľa">{% endif %}
   <dl>
     <dt>Meno</dt><dd><strong>{{ r.full_name }}</strong></dd>
     <dt>Bydlisko</dt><dd>{{ r.address or "—" }}</dd>
-    <dt>Skupina</dt><dd>{{ r.club_name or "—" }}</dd>
+    <dt>Skupina</dt><dd class="club-line">{% if r.club_logo_url %}<img src="{{ r.club_logo_url }}" alt="Logo skupiny">{% endif %}{{ r.club_name or "—" }}</dd>
     <dt>Člen SSS od</dt><dd>{{ r.member_since.year if r.member_since else "—" }}</dd>
-    <dt>Členské</dt><dd class="muted">evidencia platieb sa pripravuje</dd>
+    <dt>Členské</dt><dd>{% if r.paid_until %}zaplatené do {{ r.paid_until|date }}{% else %}<span class="muted">nezaplatené</span>{% endif %}</dd>
   </dl>
 </div>
 <p class="muted">Porovnajte fotku s držiteľom preukazu.</p>

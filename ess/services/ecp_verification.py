@@ -44,7 +44,9 @@ class VerificationResult:
     full_name: str = ""
     address: str = ""
     club_name: str = ""
+    club_logo_url: str | None = None  # public logo of the primary club
     member_since: date | None = None
+    paid_until: date | None = None  # end of the last paid year (None = no fee paid)
     photo: str | None = None
     contacts: list[Contact] = field(default_factory=list)
     documents: list[Document] = field(default_factory=list)
@@ -53,6 +55,12 @@ class VerificationResult:
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _paid_until(session: Session, member_id) -> date | None:
+    from ess.services import ecp_content
+
+    return ecp_content.valid_until(session, member_id)
 
 
 def _primary_club(session: Session, member_id) -> Club | None:
@@ -127,6 +135,7 @@ def verify(session: Session, token: str, wallet: WalletClient, base_url: str) ->
     outcome = Outcome.VALID if ecp_pass.state == EcpPassState.ACTIVE.value else Outcome.SUSPENDED
     return VerificationResult(
         outcome=outcome, full_name=data.full_name(), address=data.full_address(),
-        club_name=club.name if club else "", member_since=member.member_since, photo=ecp_pass.photo,
+        club_name=club.name if club else "", club_logo_url=club.logo_url if club else None,
+        member_since=member.member_since, photo=ecp_pass.photo, paid_until=_paid_until(session, member.id),
         contacts=_contacts(session, club), documents=documents.valid_documents(session), checked_at=now,
     )
