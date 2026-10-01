@@ -326,7 +326,7 @@ def board_page(request: Request, session: Db):
 
     if _member(request, session) is None:
         return RedirectResponse("/portal", status_code=303)
-    return _page(request, "portal/board.html", holders=directory.current_positions(session))
+    return _page(request, "portal/board.html", holders=directory.board_positions(session))
 
 
 @router.get("/portal/documents")

@@ -81,7 +81,8 @@ def test_membership_positions_certificates_and_expulsion(client, google, migrate
                                                                  "back": f"/admin/members/{member_id}"})
     page = client.get(f"/admin/members/{member_id}").text
     assert "Predseda skupiny" in page and "SRT2" in page
-    assert "Peter Hrubý" in client.get("/admin/organization").text
+    assert "Peter Hrubý" not in client.get("/admin/organization").text  # club chairs are not in Výbor
+    assert "Hrubý" in client.get("/admin/clubs").text  # but in the club list
 
     client.post(f"/admin/members/{member_id}/expel", data={"csrf_token": token, "reason": "Uznesenie VZ 3/2026"})
     with migrated_db() as s:

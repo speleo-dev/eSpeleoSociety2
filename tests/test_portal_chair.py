@@ -142,7 +142,8 @@ def test_member_menu_pages(migrated_db, client, club):
     assert client.get(f"/portal/clubs/{club['id']}/edit").status_code == 403
     for path in ("/portal/board", "/portal/documents", "/portal/notifications"):
         assert client.get(path).status_code == 200, path
-    assert "Predseda skupiny" in client.get("/portal/board").text
+    assert "Predseda skupiny" not in client.get("/portal/board").text  # chairs are listed with the clubs
+    assert "Predseda" in client.get("/portal/clubs").text
 
 
 def test_chair_edits_club_contacts(migrated_db, client, club):

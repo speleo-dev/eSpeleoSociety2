@@ -103,7 +103,7 @@ prístupom administrátora; skupiny len číta. Na mobile ☰.
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |
 | Požiadavky | A | Aktivovať / Zamietnuť · Zaradiť do nezaradených / Ukončiť členstvo v SSS · Posúdiť žiadosť · Priradiť platbu / Vybavené | podľa typu požiadavky |
 | Žiadosť o eCP / kartičku | A | Orezať fotku znova (hneď pod fotkou) · Schváliť a vydať eCP (pri kartičke „Schváliť kartičku SSS“) · Zamietnuť (dôvod) | len podaná žiadosť |
-| Výbor | A, SA | Ukončiť (SA každú funkciu, A len predsedu skupiny) | – |
+| Výbor | A, SA | len funkcie SSS (predsedovia skupín sú v zozname Skupiny) · Ukončiť (len SA) | – |
 | Detail člena (SA) | SA | Priradiť funkciu (aj Výbor) · Udeliť / Odobrať prístup administrátora (R51) | – |
 | Dokumenty | A | Pridať · Odstrániť | – |
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |

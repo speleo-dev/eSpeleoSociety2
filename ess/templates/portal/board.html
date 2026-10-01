@@ -1,15 +1,16 @@
 {% extends "portal/_layout.html" %}
-{% block title %}Výbor – portál eSS{% endblock %}
+{% block title %}Výbor – portál eSS<p class="muted">Predsedovia skupín sú v zozname <a href="/portal/clubs">Skupiny</a>.</p>
+{% endblock %}
 {% block portal %}
-<h1>Výbor a funkcie SSS</h1>
+<h1>Výbor SSS</h1>
 <div class="table-wrap"><table class="stack">
-  <thead><tr><th>Funkcia</th><th>Meno</th><th>Skupina</th><th>Telefón</th></tr></thead>
+  <thead><tr><th>Funkcia</th><th>Meno</th><th>Telefón</th></tr></thead>
   <tbody>
   {% for h in holders %}
     <tr><td>{{ h.position_name }}</td><td data-label="Meno">{{ h.full_name }}</td>
-      <td data-label="Skupina">{{ h.club_name or "" }}</td>
       <td data-label="Telefón">{% if h.phone %}<a href="tel:{{ h.phone|replace(' ', '') }}">{{ h.phone }}</a>{% endif %}</td></tr>
-  {% else %}<tr><td colspan="4" class="muted">Žiadne funkcie.</td></tr>{% endfor %}
+  {% else %}<tr><td colspan="3" class="muted">Žiadne funkcie.</td></tr>{% endfor %}
   </tbody>
 </table></div>
+<p class="muted">Predsedovia skupín sú v zozname <a href="/portal/clubs">Skupiny</a>.</p>
 {% endblock %}

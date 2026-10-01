@@ -147,7 +147,7 @@ def club_logo_remove(request: Request, club_id: uuid.UUID, admin: RegisterAdmin,
 
 @router.get("/organization")
 def organization(request: Request, admin: Admin, session: Db):
-    return render(request, "admin/organization.html", admin, session, holders=directory.current_positions(session))
+    return render(request, "admin/organization.html", admin, session, holders=directory.board_positions(session))
 
 
 # --- administrative access (system administrators only) -----------------------------------------------

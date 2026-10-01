@@ -259,6 +259,11 @@ class HolderRow:
     valid_from: date
 
 
+def board_positions(session: Session) -> list[HolderRow]:
+    """Výbor: positions of the SSS bodies only; club chairs are shown with their clubs."""
+    return [h for h in current_positions(session) if h.club_id is None]
+
+
 def current_positions(session: Session) -> list[HolderRow]:
     """All currently held positions (SSS bodies and club chairs), ordered by position."""
     rows = session.execute(
