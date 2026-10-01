@@ -9,6 +9,9 @@
   #camera-video { width:100%; max-width:28rem; transform:scaleX(-1); background:#000; }
 </style>
 <h1>Fotka a súhlasy</h1>
+<p class="muted">eCP sa ukladá do aplikácie
+  <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel" target="_blank" rel="noopener">Peňaženka Google (Google Wallet)</a>
+  v telefóne s Androidom – nainštalujte si ju, ak ju ešte nemáte.</p>
 <p>E-mail je overený. Nahrajte fotku tváre ako na doklad alebo sa odfoťte kamerou: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
    jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
@@ -37,8 +40,18 @@
     sa kontrolórovi zobrazí moje meno, fotka, adresa bydliska, skupina, dátum členstva a stav členského. *</label>
   <label class="check"><input type="checkbox" name="notifications" checked>
     Chcem dostávať oznámenia SSS do preukazu v Peňaženke Google.</label>
-  <label class="check"><input type="checkbox" name="wants_card">
-    Chcem aj kartičku SSS na vytlačenie (PDF, príde e-mailom).</label>
+  {% if ask_card %}
+  <fieldset class="choice">
+    <legend>Chcem aj kartičku SSS (náhrada papierového preukazu, príde e-mailom)</legend>
+    <label class="check"><input type="radio" name="card_format" value="" checked> Nie, stačí mi eCP</label>
+    <label class="check"><input type="radio" name="card_format" value="pdf"> Áno, ako <strong>PDF</strong> – na vytlačenie a vystrihnutie</label>
+    <label class="check"><input type="radio" name="card_format" value="png"> Áno, ako <strong>obrázok (PNG)</strong> –
+      súbor s obrázkom kartičky na vytlačenie alebo uloženie do mobilu</label>
+    <p class="muted"><img src="/static/preview-card.png" width="120" alt="Ukážka kartičky SSS" style="vertical-align:middle">
+      Kartička len potvrdzuje členstvo a zaplatené členské na jeden rok; nie je to plastová karta.
+      Pošleme ju po schválení, ak máte zaplatené členské, inak po zaplatení.</p>
+  </fieldset>
+  {% endif %}
   <p><button class="primary">Odoslať žiadosť</button></p>
 </form>
 <script src="/static/crop.js" defer></script>

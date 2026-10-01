@@ -20,8 +20,9 @@ from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, after_commit, error_text, render
 from ess.web.templates import FEE_METHOD_LABELS
+from ess.web.paths import A
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 MAX_STATEMENT = 10 * 1024 * 1024  # bytes
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
 
@@ -35,7 +36,7 @@ def _create_and_show(request: Request, session: Db, back: str, create) -> Redire
         session.rollback()
         request.session["flash"] = {"kind": "error", "text": error_text(exc)}
         return RedirectResponse(back, status_code=303)
-    return RedirectResponse(f"/admin/payments/{reference.id}", status_code=303)
+    return RedirectResponse(f"{A}/payments/{reference.id}", status_code=303)
 
 
 @router.get("/payments")
@@ -117,12 +118,12 @@ async def statement_upload(request: Request, admin: Admin, session: Db):
 
         outbox.discard(session)
         request.session["flash"] = {"kind": "error", "text": error_text(exc)}
-        return RedirectResponse("/admin/statements", status_code=303)
+        return RedirectResponse(f"{A}/statements", status_code=303)
     request.session["statement_result"] = {"counts": result.counts, "duplicates": result.duplicates}
     request.session["flash"] = {"kind": "ok", "text": "Výpis bol spracovaný."}
     if not after_commit(request, session):
         request.session["flash"] = {"kind": "error", "text": "Výpis bol spracovaný, niektorý e-mail sa však nepodarilo odoslať."}
-    return RedirectResponse("/admin/statements", status_code=303)
+    return RedirectResponse(f"{A}/statements", status_code=303)
 
 
 @router.post("/tasks/{task_id}/assign-payment", dependencies=[Depends(verify_csrf)])
@@ -130,7 +131,7 @@ def task_assign_payment(request: Request, task_id: uuid.UUID, admin: Admin, sess
                         code: Annotated[str, Form()] = ""):
     from ess.services import bank_statements
 
-    return act(request, session, "/admin/tasks", lambda: bank_statements.assign(session, admin.actor, task_id, code),
+    return act(request, session, f"{A}/tasks", lambda: bank_statements.assign(session, admin.actor, task_id, code),
                "Platba bola priradená.")
 
 
@@ -139,27 +140,27 @@ def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: Admin, ses
                          note: Annotated[str, Form()] = ""):
     from ess.services import bank_statements
 
-    return act(request, session, "/admin/tasks", lambda: bank_statements.resolve(session, admin.actor, task_id, note),
+    return act(request, session, f"{A}/tasks", lambda: bank_statements.resolve(session, admin.actor, task_id, note),
                "Požiadavka bola vybavená.")
 
 
 @router.post("/payments/push", dependencies=[Depends(verify_csrf)])
 def push_links(request: Request, admin: Admin, session: Db):
     """Send the next batch (after_commit sends it; nothing else changes)."""
-    return act(request, session, "/admin/payments", lambda: None, "Ďalšia dávka eCP bola odoslaná.")
+    return act(request, session, f"{A}/payments", lambda: None, "Ďalšia dávka eCP bola odoslaná.")
 
 
 @router.post("/members/{member_id}/payment-link", dependencies=[Depends(verify_csrf)])
 def member_payment_link(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
                         year: Annotated[int, Form()]):
-    return _create_and_show(request, session, f"/admin/members/{member_id}",
+    return _create_and_show(request, session, f"{A}/members/{member_id}",
                             lambda: payments.member_reference(session, admin.actor, member_id, year))
 
 
 @router.post("/members/{member_id}/fee-paid", dependencies=[Depends(verify_csrf)])
 def fee_paid(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
              year: Annotated[int, Form()], note: Annotated[str, Form()] = ""):
-    return act(request, session, f"/admin/members/{member_id}",
+    return act(request, session, f"{A}/members/{member_id}",
                lambda: payments.mark_paid(session, admin.actor, member_id, year, note),
                f"Členské na rok {year} bolo označené ako zaplatené.")
 
@@ -183,7 +184,7 @@ def payment_page(request: Request, reference_id: uuid.UUID, admin: Admin, sessio
 
 @router.post("/payments/{reference_id}/cancel", dependencies=[Depends(verify_csrf)])
 def payment_cancel(request: Request, reference_id: uuid.UUID, admin: Admin, session: Db):
-    return act(request, session, f"/admin/payments/{reference_id}",
+    return act(request, session, f"{A}/payments/{reference_id}",
                lambda: payments.cancel_reference(session, admin.actor, reference_id), "Platobný odkaz bol zrušený.")
 
 
@@ -217,7 +218,7 @@ async def sticker_action(request: Request, admin: Admin, session: Db, store: Sto
             request.session["flash"] = {"kind": "ok", "text": f"Ročná známka na rok {year} je zverejnená. "
                                         "Platba členského cez eCP je otvorená."}
             after_commit(request, session)
-            return RedirectResponse("/admin/sticker", status_code=303)
+            return RedirectResponse(f"{A}/sticker", status_code=303)
         png = sticker.render(*args)
         session.commit()
     except (DomainError, PermissionDenied, ValueError) as exc:
@@ -231,7 +232,7 @@ async def sticker_action(request: Request, admin: Admin, session: Db, store: Sto
 def sticker_template(request: Request, admin: Admin, session: Db, store: Store,
                      template: Annotated[UploadFile, File()]):
     data = template.file.read(MAX_UPLOAD_BYTES + 1)
-    return act(request, session, "/admin/sticker", lambda: sticker.upload_template(session, admin.actor, store, data),
+    return act(request, session, f"{A}/sticker", lambda: sticker.upload_template(session, admin.actor, store, data),
                "Šablóna známky bola nahraná.")
 
 

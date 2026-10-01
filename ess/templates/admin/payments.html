@@ -5,7 +5,7 @@
 <form class="filters" method="get">
   <label>Rok<select name="year">{% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
   <button>Zobraziť</button>
-  <a href="/admin/payments/export.csv?year={{ year }}"><button type="button">Export CSV</button></a>
+  <a href="{{ A }}/payments/export.csv?year={{ year }}"><button type="button">Export CSV</button></a>
 </form>
 <p>Zaplatilo <strong>{{ paid_count }}</strong> z {{ total_count }} členov, spolu {{ paid_total|money }}.</p>
 <div class="table-wrap"><table class="stack">
@@ -22,12 +22,12 @@
 
 {% if rows %}
 <h2 id="clenovia">{{ rows[0].club_name }} – členské {{ year }}</h2>
-<p><a href="/admin/payments/export.csv?year={{ year }}&club={{ club }}">Export CSV tejto skupiny</a></p>
+<p><a href="{{ A }}/payments/export.csv?year={{ year }}&club={{ club }}">Export CSV tejto skupiny</a></p>
 <div class="table-wrap"><table class="stack">
   <thead><tr><th>Meno</th><th>Suma</th><th>Stav</th></tr></thead>
   <tbody>
   {% for r in rows %}
-    <tr><td><a href="/admin/members/{{ r.member_id }}">{{ r.last_name }} {{ r.first_name }}</a></td>
+    <tr><td><a href="{{ A }}/members/{{ r.member_id }}">{{ r.last_name }} {{ r.first_name }}</a></td>
         <td data-label="Suma">{{ r.amount|money }}{% if r.reduced %} (zľavnené){% endif %}</td>
         <td data-label="Stav">{% if r.paid_at %}zaplatené {{ r.paid_at|date }} ({{ r.method|fee_method_label }}){% else %}nezaplatené{% endif %}</td></tr>
   {% endfor %}
@@ -39,16 +39,16 @@
 <p>V eCP sa zobrazuje platobný odkaz na členské na rok <strong>{{ due_year }}</strong>, kým nie je zaplatené.</p>
 {% else %}
 <p>Platba členského na rok <strong>{{ due_year }}</strong> cez eCP je zatvorená – otvorí sa zverejnením
-  <a href="/admin/sticker">ročnej známky</a>.</p>
+  <a href="{{ A }}/sticker">ročnej známky</a>.</p>
 {% endif %}
 {% if pending %}
 <p>Na odoslanie do Google Wallet čaká <strong>{{ pending }}</strong> eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.</p>
-<form method="post" action="/admin/payments/push">
+<form method="post" action="{{ A }}/payments/push">
   {% include "admin/_csrf.html" %}
   <button>Odoslať ďalšiu dávku</button>
 </form>
 {% else %}<p class="muted">Všetky eCP sú aktuálne.</p>{% endif %}
 <p class="muted">Obdobie platby na ďalší rok začína podľa nastavenia „Platba na ďalší rok od (dní pred koncom roka)“.
   Hromadnú platbu robí predseda skupiny na portáli.</p>
-<p><a href="/admin/statements">Bankové výpisy →</a></p>
+<p><a href="{{ A }}/statements">Bankové výpisy →</a></p>
 {% endblock %}

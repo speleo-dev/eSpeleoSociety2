@@ -32,7 +32,7 @@
 {% endif %}
 
 {% if view.can_manage %}
-<p><a href="/portal/clubs/{{ view.club.id }}/members/new"><button class="primary">Pridať čakateľa / navrhnúť člena</button></a>
+<p><a href="/portal/clubs/{{ view.club.id }}/members/new"><button class="primary">Nový člen / čakateľ</button></a>
    <a href="/portal/clubs/{{ view.club.id }}/payments"><button>Členské a hromadná platba</button></a></p>
 {% endif %}
 {% if view.full %}{% set pending = view.rows|selectattr("status.value", "equalto", "pending_activation")|list %}

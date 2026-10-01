@@ -2,33 +2,33 @@
 {% block title %}{% block page_title %}Administrácia{% endblock %} – eSS{% endblock %}
 {% block header %}
 <header>
-  <a class="brand" href="/admin"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
+  <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> eSS administrácia</a>
   <nav class="menu">
-    <a href="/admin/members">Členovia</a>
-    <a href="/admin/clubs">Skupiny</a>
+    <a href="{{ A }}/members">Členovia</a>
+    <a href="{{ A }}/clubs">Skupiny</a>
     <details><summary>Správa organizácie</summary><div>
-      <a href="/admin/organization">Organizačná štruktúra</a>
-      <a href="/admin/payments">Členské</a>
-      <a href="/admin/sticker">Ročná známka</a>
-      <a href="/admin/statements">Bankové výpisy</a>
-      <a href="/admin/tasks">Požiadavky</a>
-      <a href="/admin/documents">Dokumenty</a>
+      <a href="{{ A }}/organization">Organizačná štruktúra</a>
+      <a href="{{ A }}/payments">Členské</a>
+      <a href="{{ A }}/sticker">Ročná známka</a>
+      <a href="{{ A }}/statements">Bankové výpisy</a>
+      <a href="{{ A }}/tasks">Požiadavky</a>
+      <a href="{{ A }}/documents">Dokumenty</a>
     </div></details>
-    <a href="/admin/notifications">Notifikácie</a>
+    <a href="{{ A }}/notifications">Notifikácie</a>
     {% if admin.is_system_admin %}
     <details><summary>Nastavenia</summary><div>
-      <a href="/admin/settings">Nastavenia aplikácie</a>
-      <a href="/admin/import">Import</a>
-      <a href="/admin/access">Prístupy</a>
+      <a href="{{ A }}/settings">Nastavenia aplikácie</a>
+      <a href="{{ A }}/import">Import</a>
+      <a href="{{ A }}/access">Prístupy</a>
     </div></details>
-    {% else %}<a href="/admin/settings">Nastavenia</a>{% endif %}
+    {% else %}<a href="{{ A }}/settings">Nastavenia</a>{% endif %}
     {% if badges %}
-    <a class="badge badge-tasks" href="/admin/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
-    <a class="badge badge-unpaid" href="/admin/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
+    <a class="badge badge-tasks" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
+    <a class="badge badge-unpaid" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
     {% endif %}
     <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
       <span class="muted">{{ admin.role|label }}</span>
-      <form method="post" action="/admin/logout">
+      <form method="post" action="{{ A }}/logout">
         <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="link">Odhlásiť</button>
       </form>
     </div></details>
@@ -42,7 +42,7 @@
 </script>
 {% endblock %}
 {% block content %}
-  {% block back %}<p class="back"><a href="/admin" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
+  {% block back %}<p class="back"><a href="{{ A }}" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
   {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
   {% block body %}{% endblock %}
 {% endblock %}

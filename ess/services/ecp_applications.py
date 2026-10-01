@@ -236,15 +236,19 @@ def random_photo_name(prefix: str) -> str:
 
 def submit_photo(
     session: Session, application_id: uuid.UUID, photo: bytes, crop: tuple[float, float, float, float] | None,
-    gdpr_consent: bool, notifications: bool, wants_card: bool, store,
+    gdpr_consent: bool, notifications: bool, card_format: str | None, store,
 ) -> PhotoUpload:
-    """The applicant uploads a face photo and gives consents; the application goes to the administrator."""
+    """The applicant uploads a face photo and gives consents; the application goes to the administrator.
+
+    `card_format` (pdf / png) asks for the SSS card too; ignored when the member already receives cards (R47)."""
     from ess.images import crop_portrait, normalize_original
     from ess.models import Consent, TaskType
     from ess.services import tasks
 
     if not gdpr_consent:
         raise DomainError("gdpr_consent_required")
+    if card_format not in (None, "pdf", "png"):
+        raise DomainError("invalid_value")
     if store is None:
         raise DomainError("media_store_not_configured")
     application = session.get(EcpApplication, application_id, with_for_update=True)
@@ -256,7 +260,10 @@ def submit_photo(
     store.put(original_name, original, "image/jpeg")
     store.put(portrait_name, portrait, "image/jpeg")
     application.photo_original, application.photo_cropped = original_name, portrait_name
-    application.wants_card = wants_card
+    member = session.get(Member, application.member_id)
+    if member is not None and member.card_format:
+        card_format = None  # chosen by the chair or an administrator already
+    application.card_format, application.wants_card = card_format, card_format is not None
     application.status = S.SUBMITTED.value
     application.submitted_at = _now()
     for kind, granted in ((CONSENT_GDPR, True), (CONSENT_NOTIFICATIONS, notifications)):
@@ -336,3 +343,10 @@ def open_photo_invite(session: Session, token: str) -> EcpApplication | None:
         return None
     application.email_verified_at = _now()
     return application
+
+
+def asks_for_card(session: Session, application_id: uuid.UUID) -> bool:
+    """The photo form asks about the SSS card only when nobody chose its format for the member yet (R47)."""
+    application = session.get(EcpApplication, application_id)
+    member = session.get(Member, application.member_id) if application else None
+    return member is not None and not member.card_format

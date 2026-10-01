@@ -46,13 +46,12 @@ def create_app() -> FastAPI:
         https_only=settings.environment == "prod" or (settings.public_base_url or "").startswith("https://"),
     )
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
-    app.include_router(auth.router)
-    # Specific routes (/members/new, /clubs/new) before parametrised ones.
-    app.include_router(admin_members.router)
-    app.include_router(admin_org.router)
-    app.include_router(admin_ecp.router)
-    app.include_router(admin_payments.router)
-    app.include_router(admin.router)
+    # Administration under its own path (R48); specific routes (/members/new) before parametrised ones.
+    admin_prefix = "/" + settings.admin_path
+    if settings.environment == "prod" and settings.admin_path == "admin":
+        logger.warning("ESS_ADMIN_PATH is not set - the administration is at the guessable /admin")
+    for module in (auth, admin_members, admin_org, admin_ecp, admin_payments, admin):
+        app.include_router(module.router, prefix=admin_prefix)
     app.include_router(public.router)
     app.include_router(public.verify_router)
     app.include_router(portal_chair.router)

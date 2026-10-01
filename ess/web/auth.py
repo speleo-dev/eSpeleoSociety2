@@ -18,8 +18,9 @@ from ess.db import get_session
 from ess.models import AdminRole
 from ess.services import admin_access
 from ess.services.access import Actor
+from ess.web.paths import A
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 oauth = OAuth()
 _registered = False
 
@@ -93,7 +94,7 @@ async def verify_csrf(request: Request) -> None:
 def _redirect_uri(request: Request) -> str:
     base = get_settings().public_base_url
     if base:
-        return base.rstrip("/") + "/admin/auth/callback"
+        return base.rstrip("/") + f"{A}/auth/callback"
     return str(request.url_for("admin_auth_callback"))
 
 
@@ -143,7 +144,7 @@ async def admin_auth_callback(request: Request, session: Session = Depends(get_s
     csrf_token(request)
     audit.record(session, actor_type="admin", actor_id=actor_id, action="admin.login", details={"role": role.value})
     session.commit()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse(str(A), status_code=303)
 
 
 @router.post("/logout")

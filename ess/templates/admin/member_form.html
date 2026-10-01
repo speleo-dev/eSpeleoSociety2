@@ -1,7 +1,7 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}{% if member_id %}Úprava člena{% else %}Nový člen{% endif %}{% endblock %}
 {% block body %}
-<h1>{% if member_id %}Úprava údajov člena{% else %}Nový člen{% endif %}</h1>
+<h1>{% if member_id %}Úprava údajov člena{% else %}Nový člen / čakateľ{% if fixed_club %} – {{ fixed_club.name }}{% endif %}{% endif %}</h1>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form">
   {% include "admin/_csrf.html" %}
@@ -9,11 +9,16 @@
   <label class="check"><input type="checkbox" name="reduced_fee" {% if raw.reduced_fee %}checked{% endif %}> Zľavnené členské (napr. ZTP; podľa veku sa nastaví automaticky)</label>
   {% if not member_id %}
   <div class="grid">
+    {% if fixed_club %}
+    <label>Skupina<input value="{{ fixed_club.name }}" readonly></label>
+    <input type="hidden" name="club_id" value="{{ fixed_club.id }}"><input type="hidden" name="club_fixed" value="1">
+    {% else %}
     <label>Skupina *
       <select name="club_id" required>
         <option value="">— vyberte —</option>
         {% for c in clubs %}<option value="{{ c.id }}" {% if club_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select></label>
+    {% endif %}
     <label>Stav
       <select name="status">
         <option value="member" {% if status == "member" %}selected{% endif %}>člen</option>
@@ -34,6 +39,6 @@
   {% endif %}
   <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
   <p><button class="primary">Uložiť</button>
-     <a href="{% if member_id %}/admin/members/{{ member_id }}{% else %}/admin/members{% endif %}">Zrušiť</a></p>
+     <a href="{% if member_id %}{{ A }}/members/{{ member_id }}{% elif fixed_club %}{{ A }}/members?club={{ fixed_club.id }}{% else %}{{ A }}/members{% endif %}">Zrušiť</a></p>
 </form>
 {% endblock %}

@@ -29,7 +29,7 @@ from ess.models import (
     VerificationToken,
 )
 from ess.security import pii
-from ess.services import ecp_content, members, portal_auth, tasks
+from ess.services import ecp_content, members, payments, portal_auth, tasks
 from ess.services.access import Actor, DomainError, require_admin
 from ess.services.ecp_applications import random_photo_name
 from ess.wallet import PassContent, WalletClient, WalletError, build_pass_object
@@ -165,6 +165,15 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
     except WalletError:
         raise DomainError("wallet_error") from None
     ecp_pass.wallet_state = ecp_pass.state
+
+    if application.card_format and not member.card_format:  # the applicant wants the SSS card too (R47)
+        from ess.services import sss_cards
+
+        member.card_format = application.card_format
+        for year in payments.payment_years(session):  # paid years now, later years after payment
+            fee = payments.get_fee(session, member.id, year)
+            if fee is not None and fee.paid_at is not None:
+                sss_cards.issue_after_payment(session, member.id, year)
 
     application.status = S.APPROVED.value
     application.decided_at, application.decided_by = _now(), actor.id

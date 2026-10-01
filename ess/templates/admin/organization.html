@@ -8,12 +8,12 @@
   <tbody>
   {% for h in holders %}
     <tr><td>{{ h.position_name }}</td>
-      <td data-label="Meno"><a href="/admin/members/{{ h.member_id }}">{{ h.full_name }}</a></td>
+      <td data-label="Meno"><a href="{{ A }}/members/{{ h.member_id }}">{{ h.full_name }}</a></td>
       <td data-label="Skupina">{{ h.club_name or "" }}</td>
       <td data-label="Telefón">{{ h.phone or "" }}</td>
       <td data-label="Od">{{ h.valid_from|date }}</td>
-      <td><form class="inline" method="post" action="/admin/positions/{{ h.holder_id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
-        {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="/admin/organization"><button>Ukončiť</button></form></td></tr>
+      <td><form class="inline" method="post" action="{{ A }}/positions/{{ h.holder_id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+        {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ A }}/organization"><button>Ukončiť</button></form></td></tr>
   {% else %}
     <tr><td colspan="6" class="muted">Žiadne funkcie.</td></tr>
   {% endfor %}

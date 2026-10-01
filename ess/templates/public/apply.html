@@ -4,6 +4,7 @@
 <h1>Žiadosť o elektronický jaskyniarsky preukaz (eCP)</h1>
 <p>Žiadosť je pre existujúcich členov SSS. Údaje musia presne zodpovedať evidencii SSS.
    Nový člen dostane eCP cez predsedu svojej skupiny.</p>
+{% include "public/_documents.html" %}
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form" autocomplete="on">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">

@@ -245,8 +245,8 @@ def test_submit_photo_opens_task_and_records_consents(session):
 
     app, member_id = _verified(session)
     store = MemoryMediaStore()
-    upload = apps.submit_photo(session, app.id, _photo(), None, True, False, True, store)
-    assert app.status == "submitted" and app.wants_card and app.submitted_at
+    upload = apps.submit_photo(session, app.id, _photo(), None, True, False, "png", store)
+    assert app.status == "submitted" and app.wants_card and app.card_format == "png" and app.submitted_at
     assert sorted(store.objects) == sorted(upload.objects) and len(upload.objects) == 2
     assert all(len(n.split("/")[1]) == 64 + len(".jpg") for n in upload.objects)
     task = session.scalar(select(Task).where(Task.task_type == "ecp_issue"))
@@ -254,7 +254,7 @@ def test_submit_photo_opens_task_and_records_consents(session):
     consents = {c.kind: c.granted for c in session.scalars(select(Consent))}
     assert consents == {"gdpr_ecp": True, "notifications": False}
     with pytest.raises(DomainError) as exc:  # only once
-        apps.submit_photo(session, app.id, _photo(), None, True, False, False, store)
+        apps.submit_photo(session, app.id, _photo(), None, True, False, None, store)
     assert exc.value.code == "application_not_open"
 
 
@@ -264,7 +264,7 @@ def test_submit_photo_requires_consent_and_store(session):
     app, _ = _verified(session)
     for args, code in (((False, MemoryMediaStore()), "gdpr_consent_required"), ((True, None), "media_store_not_configured")):
         with pytest.raises(DomainError) as exc:
-            apps.submit_photo(session, app.id, _photo(), None, args[0], True, False, args[1])
+            apps.submit_photo(session, app.id, _photo(), None, args[0], True, None, args[1])
         assert exc.value.code == code
     assert app.status == "photo_pending"
 

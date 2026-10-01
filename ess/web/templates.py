@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from ess.models import AdminRole, MembershipEndReason, MembershipStatus
 from ess.services.members import SssStatus
+from ess.web.paths import A
 
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
 
@@ -222,6 +223,7 @@ ICON_LEGEND = [
 templates.env.filters["membership_icon"] = membership_icon
 templates.env.filters["sss_icon"] = sss_icon
 templates.env.globals["ICON_LEGEND"] = ICON_LEGEND
+templates.env.globals["A"] = A  # administration base path (R48)
 templates.env.filters["label"] = label
 templates.env.filters["date"] = fmt_date
 

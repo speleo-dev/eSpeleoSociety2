@@ -67,7 +67,7 @@ def build_pass_object(content: PassContent) -> dict:
         {"id": "birth_date", "header": "Dátum narodenia", "body": _date(content.birth_date)},
     ]
     barcode = {"type": "QR_CODE", "value": content.check_url}
-    links = [{"id": "homepage", "uri": "https://www.speleology.sk", "description": "Web SSS"}]
+    links = []  # the SSS website link comes from the pass class (the object would show it twice)
     if content.portal_url:
         links.insert(0, {"id": "portal", "uri": content.portal_url, "description": "Portál eSS"})
     if content.payment:
@@ -85,7 +85,7 @@ def build_pass_object(content: PassContent) -> dict:
         "barcode": barcode,
         "imageModulesData": [{"id": "photo", "mainImage": {"sourceUri": {"uri": content.photo_url}}}],
         "textModulesData": modules,
-        "linksModuleData": {"uris": links},
+        "linksModuleData": {"uris": links},  # an empty list removes the object's own links
         **({"heroImage": {"sourceUri": {"uri": content.hero_url}}} if content.hero_url else {}),
     }
 

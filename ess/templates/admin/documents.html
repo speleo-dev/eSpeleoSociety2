@@ -10,7 +10,7 @@ po dátume platnosti sa skryjú. Samotný súbor musí byť zverejnený inde (od
   {% for d in docs %}
     <tr><td><a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a></td>
       <td data-label="Platný do">{{ d.valid_until|date or "bez obmedzenia" }}</td><td data-label="Poradie">{{ d.sort_order }}</td>
-      <td><form class="inline" method="post" action="/admin/documents/{{ d.id }}/delete" onsubmit="return confirm('Odstrániť dokument?')">
+      <td><form class="inline" method="post" action="{{ A }}/documents/{{ d.id }}/delete" onsubmit="return confirm('Odstrániť dokument?')">
         {% include "admin/_csrf.html" %}<button>Odstrániť</button></form></td></tr>
   {% else %}
     <tr><td colspan="4" class="muted">Žiadne dokumenty.</td></tr>

@@ -10,8 +10,9 @@ from ess.models import MembershipStatus, TaskType
 from ess.services import certificates, directory, members, memberships, portal_auth, sss_cards, tasks
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act as _act, render as _render, safe_back as _safe_back
+from ess.web.paths import A
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 PAGE_SIZE = 50
 
 
@@ -54,7 +55,7 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
 @router.post("/memberships/{membership_id}/status", dependencies=[Depends(verify_csrf)])
 def membership_status(
     request: Request, membership_id: uuid.UUID, admin: Admin, session: Db,
-    new_status: Annotated[str, Form()], back: Annotated[str, Form()] = "/admin",
+    new_status: Annotated[str, Form()], back: Annotated[str, Form()] = "",
 ):
     target = MembershipStatus(new_status)
     action = lambda: memberships.change_status(session, admin.actor, membership_id, target)  # noqa: E731
@@ -63,7 +64,7 @@ def membership_status(
 
 @router.post("/memberships/{membership_id}/terminate", dependencies=[Depends(verify_csrf)])
 def membership_terminate(
-    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = "/admin"
+    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return _act(request, session, _safe_back(back),
                 lambda: memberships.terminate(session, admin.actor, membership_id),
@@ -88,32 +89,32 @@ def task_list(request: Request, admin: Admin, session: Db, show: str = "open", t
 def task_activate(
     request: Request, task_id: uuid.UUID, admin: Admin, session: Db, card_number: Annotated[str, Form()] = ""
 ):
-    return _act(request, session, "/admin/tasks", lambda: tasks.activate(session, admin.actor, task_id, card_number),
+    return _act(request, session, f"{A}/tasks", lambda: tasks.activate(session, admin.actor, task_id, card_number),
                 "Člen bol aktivovaný.")
 
 
 @router.post("/tasks/{task_id}/reject", dependencies=[Depends(verify_csrf)])
 def task_reject(request: Request, task_id: uuid.UUID, admin: Admin, session: Db, reason: Annotated[str, Form()] = ""):
-    return _act(request, session, "/admin/tasks",
+    return _act(request, session, f"{A}/tasks",
                 lambda: tasks.reject_activation(session, admin.actor, task_id, reason),
                 "Návrh bol zamietnutý.")
 
 
 @router.post("/tasks/{task_id}/keep-unaffiliated", dependencies=[Depends(verify_csrf)])
 def task_keep_unaffiliated(request: Request, task_id: uuid.UUID, admin: Admin, session: Db):
-    return _act(request, session, "/admin/tasks", lambda: tasks.keep_as_unaffiliated(session, admin.actor, task_id),
+    return _act(request, session, f"{A}/tasks", lambda: tasks.keep_as_unaffiliated(session, admin.actor, task_id),
                 "Člen bol zaradený do „SSS – nezaradení“.")
 
 
 @router.post("/tasks/{task_id}/end-sss", dependencies=[Depends(verify_csrf)])
 def task_end_sss(request: Request, task_id: uuid.UUID, admin: Admin, session: Db, note: Annotated[str, Form()] = ""):
-    return _act(request, session, "/admin/tasks", lambda: tasks.end_sss(session, admin.actor, task_id, note),
+    return _act(request, session, f"{A}/tasks", lambda: tasks.end_sss(session, admin.actor, task_id, note),
                 "Členstvo v SSS bolo ukončené.")
 
 
 @router.post("/members/{member_id}/restore-unaffiliated", dependencies=[Depends(verify_csrf)])
 def member_restore(
-    request: Request, member_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = "/admin"
+    request: Request, member_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return _act(request, session, _safe_back(back),
                 lambda: members.restore_to_unaffiliated(session, admin.actor, member_id),
@@ -123,7 +124,7 @@ def member_restore(
 @router.get("/activations")
 @router.get("/awaiting")
 def old_lists():
-    return RedirectResponse("/admin/tasks", status_code=301)
+    return RedirectResponse(f"{A}/tasks", status_code=301)
 
 
 @router.get("/clubs")

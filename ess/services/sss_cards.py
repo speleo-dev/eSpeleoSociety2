@@ -106,6 +106,20 @@ def issue(session: Session, actor: Actor, member_id: uuid.UUID, year: int, base_
     return _new_card(session, actor, member, year, base_url)
 
 
+def set_format(session: Session, actor: Actor, member_id: uuid.UUID, card_format: str) -> None:
+    """The member wants SSS cards (e.g. chosen by the chair when adding them); they come after payment (R47)."""
+    if card_format not in FORMATS:
+        raise DomainError("invalid_value")
+    member = _member_for_card(session, member_id)
+    clubs = session.scalars(select(Club).join(Membership, Membership.club_id == Club.id).where(
+        Membership.member_id == member_id, Membership.valid_to.is_(None))).all()
+    if not actor.is_admin and not any(can_manage_club(session, actor, c) for c in clubs):
+        raise PermissionDenied("club_manager")
+    member.card_format = card_format
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="sss_card.format",
+                 entity_type="member", entity_id=str(member_id), details={"card_format": card_format})
+
+
 def issue_after_payment(session: Session, member_id: uuid.UUID, year: int) -> SssCard | None:
     """The fee of the year was paid: a member who receives cards gets the year's card by e-mail (R33).
 

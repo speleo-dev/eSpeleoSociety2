@@ -37,7 +37,7 @@ def test_active_member_is_invited_at_once(session):
     opened = apps.open_photo_invite(session, token)
     assert opened.id == app.id and opened.email_verified_at
     assert apps.open_photo_invite(session, token) is None  # single use
-    apps.submit_photo(session, app.id, _photo(), None, True, True, False, MemoryMediaStore())
+    apps.submit_photo(session, app.id, _photo(), None, True, True, None, MemoryMediaStore())
     assert app.status == "submitted"
 
 

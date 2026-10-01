@@ -4,7 +4,7 @@
 <h1>{% if ref.kind == "bulk" %}Hromadná platba{% else %}Platba člena{% endif %} – členské {{ ref.year }}</h1>
 <dl>
   <dt>Referencia platiteľa</dt><dd><code>{{ ref.code }}</code></dd>
-  {% if club %}<dt>Skupina</dt><dd><a href="/admin/clubs/{{ club.id }}">{{ club.name }}</a></dd>{% endif %}
+  {% if club %}<dt>Skupina</dt><dd><a href="{{ A }}/clubs/{{ club.id }}">{{ club.name }}</a></dd>{% endif %}
   <dt>Suma</dt><dd>{{ ref.expected_amount|money }}</dd>
   <dt>Prijaté</dt><dd>{{ ref.paid_amount|money }}</dd>
   <dt>Stav</dt><dd>{{ ref.status|payment_status_label }}</dd>
@@ -24,14 +24,14 @@
   <thead><tr><th>Meno</th><th>Suma</th><th>Členské</th></tr></thead>
   <tbody>
   {% for l in lines %}
-    <tr><td><a href="/admin/members/{{ l.member_id }}">{{ l.name }}</a></td><td data-label="Suma">{{ l.amount|money }}</td>
+    <tr><td><a href="{{ A }}/members/{{ l.member_id }}">{{ l.name }}</a></td><td data-label="Suma">{{ l.amount|money }}</td>
         <td data-label="Členské">{% if l.fee_paid_at %}zaplatené{% else %}nezaplatené{% endif %}</td></tr>
   {% endfor %}
   </tbody>
 </table></div>
 
 {% if ref.status == "open" %}
-<form method="post" action="/admin/payments/{{ ref.id }}/cancel" onsubmit="return confirm('Zrušiť platobný odkaz?')">
+<form method="post" action="{{ A }}/payments/{{ ref.id }}/cancel" onsubmit="return confirm('Zrušiť platobný odkaz?')">
   {% include "admin/_csrf.html" %}
   <button>Zrušiť platobný odkaz</button>
 </form>

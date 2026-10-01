@@ -29,6 +29,7 @@ audit, história sa nemaže). Pravidlá: R18, R22–R26 v `docs/PLAN.md`.
 | `photo_original` | názov originálu v buckete (aby mohol administrátor fotku orezať znova); po rozhodnutí sa zmaže |
 | `photo_cropped` | názov orezanej fotky (64 náhodných znakov) |
 | `wants_wallet`, `wants_card` | eCP v Google Wallet a/alebo PDF kartička |
+| `card_format` | želaná kartička SSS: `pdf` / `png` / prázdne = nie (R47; migrácia 0025) |
 | `reject_reason` | dôvod zamietnutia (text pre žiadateľa, bez osobných údajov) |
 | `email_verified_at`, `submitted_at`, `decided_at`, `decided_by` | priebeh |
 

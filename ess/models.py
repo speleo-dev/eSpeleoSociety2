@@ -374,6 +374,7 @@ class EcpApplication(TimestampMixin, Base):
     photo_cropped: Mapped[str | None] = mapped_column(String(200))
     wants_wallet: Mapped[bool] = mapped_column(Boolean, default=True)
     wants_card: Mapped[bool] = mapped_column(Boolean, default=False)
+    card_format: Mapped[str | None] = mapped_column(String(3))  # wanted SSS card: pdf / png (R47)
     reject_reason: Mapped[str | None] = mapped_column(Text)  # shown to the applicant; no personal data
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

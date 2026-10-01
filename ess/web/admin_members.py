@@ -15,10 +15,11 @@ from ess.services.members import MemberData
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, after_commit, base_url, error_text, parse_date, render
 from ess.web.mailing import render_mail, send
+from ess.web.paths import A
 
 MailerDep = Annotated[Mailer | None, Depends(get_mailer)]
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 
 S = MembershipStatus
 MEMBER_FIELDS = ("title_before", "first_name", "last_name", "title_after", "birth_date", "email", "phone",
@@ -58,10 +59,27 @@ def _raw_from(data: MemberData) -> dict:
 
 
 @router.get("/members/new")
-def member_new(request: Request, admin: Admin, session: Db):
-    return render(request, "admin/member_form.html", admin, session, raw={}, member_id=None,
-                  clubs=directory.active_clubs(session), S=S, club_id="", status="member",
-                  card_years=sss_cards.allowed_years(session))
+def member_new(request: Request, admin: Admin, session: Db, club: str = ""):
+    """From a club page (`?club=`) the club is filled in and fixed, as for a chair; otherwise chosen."""
+    return _new_form(request, admin, session, club_id=club if _club_of(session, club) else "",
+                     fixed=bool(_club_of(session, club)), status="member")
+
+
+def _club_of(session, club_id: str):
+    from ess.models import Club
+
+    try:
+        return session.get(Club, uuid.UUID(club_id)) if club_id else None
+    except ValueError:
+        return None
+
+
+def _new_form(request: Request, admin, session, status_code: int = 200, **values):
+    fixed = values.pop("fixed", False)
+    club = _club_of(session, values.get("club_id", "")) if fixed else None
+    return render(request, "admin/member_form.html", admin, session, status_code=status_code,
+                  **{"raw": {}, **values}, member_id=None, clubs=directory.active_clubs(session), S=S,
+                  fixed_club=club, card_years=sss_cards.allowed_years(session))
 
 
 @router.post("/members/new", dependencies=[Depends(verify_csrf)])
@@ -93,9 +111,8 @@ async def member_create(request: Request, admin: Admin, session: Db):
     except (DomainError, PermissionDenied) as exc:
         outbox.discard(session)
         session.rollback()
-        return render(request, "admin/member_form.html", admin, session, status_code=400, raw=raw, member_id=None,
-                      clubs=directory.active_clubs(session), S=S, club_id=club_id, status=status, error=error_text(exc),
-                      issue_ecp=issue_ecp, issue_card=issue_card, card_years=sss_cards.allowed_years(session))
+        return _new_form(request, admin, session, 400, raw=raw, club_id=club_id, fixed=form.get("club_fixed") == "1",
+                         status=status, error=error_text(exc), issue_ecp=issue_ecp, issue_card=issue_card)
     text = "Člen bol pridaný." + (" Poslali sme mu e-mail na nahratie fotky pre eCP." if issue_ecp else "")
     if card is not None:
         text += (" Kartička SSS mu bola poslaná e-mailom." if card.email
@@ -103,7 +120,7 @@ async def member_create(request: Request, admin: Admin, session: Db):
     if not after_commit(request, session):
         text = "Člen bol pridaný, ale e-mail na nahratie fotky sa nepodarilo odoslať."
     request.session["flash"] = {"kind": "ok", "text": text}
-    return RedirectResponse(f"/admin/members/{membership.member_id}", status_code=303)
+    return RedirectResponse(f"{A}/members/{membership.member_id}", status_code=303)
 
 
 @router.get("/members/{member_id}/edit")
@@ -127,11 +144,11 @@ async def member_update(request: Request, member_id: uuid.UUID, admin: Admin, se
         return render(request, "admin/member_form.html", admin, session, status_code=400, raw=raw,
                       member_id=member_id, error=error_text(exc))
     request.session["flash"] = {"kind": "ok", "text": "Údaje boli uložené."}
-    return RedirectResponse(f"/admin/members/{member_id}", status_code=303)
+    return RedirectResponse(f"{A}/members/{member_id}", status_code=303)
 
 
 def _back(member_id: uuid.UUID) -> str:
-    return f"/admin/members/{member_id}"
+    return f"{A}/members/{member_id}"
 
 
 @router.post("/members/{member_id}/memberships", dependencies=[Depends(verify_csrf)])
@@ -146,7 +163,7 @@ def membership_add(
 
 @router.post("/memberships/{membership_id}/primary", dependencies=[Depends(verify_csrf)])
 def membership_primary(
-    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = "/admin"
+    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return act(request, session, back, lambda: memberships.set_primary(session, admin.actor, membership_id),
                "Primárna skupina bola zmenená.")
@@ -178,7 +195,7 @@ def position_assign(
 def position_assign_any(
     request: Request, admin: Admin, session: Db, member_id: Annotated[str, Form()] = "",
     position_code: Annotated[str, Form()] = "", club_id: Annotated[str, Form()] = "",
-    valid_from: Annotated[str, Form()] = "", back: Annotated[str, Form()] = "/admin/organization",
+    valid_from: Annotated[str, Form()] = "", back: Annotated[str, Form()] = f"{A}/organization",
 ):
     def assign():
         if not member_id:
@@ -192,7 +209,7 @@ def position_assign_any(
 @router.post("/positions/{holder_id}/end", dependencies=[Depends(verify_csrf)])
 def position_end(
     request: Request, holder_id: uuid.UUID, admin: Admin, session: Db,
-    on: Annotated[str, Form()] = "", back: Annotated[str, Form()] = "/admin/organization",
+    on: Annotated[str, Form()] = "", back: Annotated[str, Form()] = f"{A}/organization",
 ):
     return act(request, session, back, lambda: positions.end_position(session, admin.actor, holder_id, parse_date(on)),
                "Funkcia bola ukončená.")
@@ -212,7 +229,7 @@ def certificate_add(
 
 @router.post("/certificates/{certificate_id}/delete", dependencies=[Depends(verify_csrf)])
 def certificate_delete(
-    request: Request, certificate_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = "/admin"
+    request: Request, certificate_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return act(request, session, back, lambda: certificates.remove_certificate(session, admin.actor, certificate_id),
                "Certifikát bol odstránený.")
@@ -247,7 +264,7 @@ def issue_card(request: Request, member_id: uuid.UUID, admin: Admin, session: Db
                year: Annotated[int, Form()], card_format: Annotated[str, Form()] = "pdf",
                delivery: Annotated[str, Form()] = "download"):
     """First SSS card of the year, once (R33)."""
-    return _deliver_card(request, session, mailer, f"/admin/members/{member_id}",
+    return _deliver_card(request, session, mailer, f"{A}/members/{member_id}",
                          lambda: sss_cards.issue(session, admin.actor, member_id, year, base_url(request), card_format),
                          delivery, card_format)
 
@@ -257,7 +274,7 @@ def card_again(request: Request, card_id: uuid.UUID, admin: Admin, session: Db, 
                member_id: Annotated[uuid.UUID, Form()], delivery: Annotated[str, Form()] = "download",
                card_format: Annotated[str, Form()] = ""):
     """The same card (same QR) again – e.g. a printing problem or a lost e-mail."""
-    return _deliver_card(request, session, mailer, f"/admin/members/{member_id}",
+    return _deliver_card(request, session, mailer, f"{A}/members/{member_id}",
                          lambda: sss_cards.again(session, admin.actor, card_id, base_url(request)), delivery, card_format)
 
 
@@ -266,7 +283,7 @@ def card_replace(request: Request, card_id: uuid.UUID, admin: Admin, session: Db
                  member_id: Annotated[uuid.UUID, Form()], reason: Annotated[str, Form()],
                  delivery: Annotated[str, Form()] = "download", card_format: Annotated[str, Form()] = ""):
     """Lost / stolen / damaged card: the old QR shows that state, a new card is issued (R32)."""
-    return _deliver_card(request, session, mailer, f"/admin/members/{member_id}",
+    return _deliver_card(request, session, mailer, f"{A}/members/{member_id}",
                          lambda: sss_cards.replace(session, admin.actor, card_id, reason, base_url(request)),
                          delivery, card_format)
 
@@ -276,6 +293,6 @@ def portal_logout_all(request: Request, member_id: uuid.UUID, admin: Admin, sess
     """Lost phone etc.: end all portal sessions of the member (R38)."""
     from ess.services import portal_auth
 
-    return act(request, session, f"/admin/members/{member_id}",
+    return act(request, session, f"{A}/members/{member_id}",
                lambda: portal_auth.log_out_everywhere(session, admin.actor, member_id),
                "Člen bol odhlásený z portálu na všetkých zariadeniach.")

@@ -47,7 +47,7 @@
 <h2>Typy certifikátov</h2>
 <p>{% for t in cert_types %}<span class="chip">{{ t.name }}</span>{% endfor %}</p>
 {% if can_edit %}
-<form method="post" action="/admin/settings/certificate-types" class="form">
+<form method="post" action="{{ A }}/settings/certificate-types" class="form">
   {% include "admin/_csrf.html" %}
   <div class="grid">
     <label>Kód (bez medzier)<input name="code" required pattern="[a-z0-9_-]+"></label>
@@ -58,7 +58,7 @@
 {% endif %}
 {% if sa %}
 <h2>E-mail</h2>
-<form method="post" action="/admin/settings/test-mail" class="form">
+<form method="post" action="{{ A }}/settings/test-mail" class="form">
   {% include "admin/_csrf.html" %}
   <div class="grid"><label>Poslať testovací e-mail na adresu<input type="email" name="to" required></label></div>
   <p><button>Odoslať</button></p>

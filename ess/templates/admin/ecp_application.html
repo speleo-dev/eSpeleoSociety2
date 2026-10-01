@@ -9,12 +9,25 @@
   td.diff { background:var(--err); }
 </style>
 {% set a = v.application %}
-<h1>Žiadosť o eCP – <a href="/admin/members/{{ v.member.id }}">{{ v.register.full_name() }}</a></h1>
+<h1>Žiadosť o eCP – <a href="{{ A }}/members/{{ v.member.id }}">{{ v.register.full_name() }}</a></h1>
 <p class="muted">Podaná {{ a.submitted_at|date }}{% if a.status != "submitted" %} · stav: {{ a.status }}{% endif %}</p>
 
 <div class="cards">
   <div>
     {% if portrait_url %}<img class="portrait" src="{{ portrait_url }}" alt="Fotka na preukaz">{% else %}<p class="muted">Bez fotky.</p>{% endif %}
+    {% if original_url and a.status == "submitted" %}
+    <details>
+      <summary>Orezať fotku znova</summary>
+      <form method="post" action="{{ A }}/ecp-applications/{{ a.id }}/recrop" class="form">
+        {% include "admin/_csrf.html" %}
+        <div id="crop-stage" hidden><img id="crop-img" data-src="{{ original_url }}" alt="Pôvodná fotka"><div id="crop-frame"></div></div>
+        <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
+        {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
+        <p><button>Uložiť nový výrez</button></p>
+      </form>
+      <script src="/static/crop.js" defer></script>
+    </details>
+    {% endif %}
   </div>
   <div class="table-wrap"><table>
     <thead><tr><th></th><th>Žiadosť</th><th>Evidencia</th></tr></thead>
@@ -27,16 +40,17 @@
       <tr><th>Člen SSS od</th><td>{{ v.member_since_year }}</td>
           <td {% if "member_since" in v.fills %}class="diff"{% endif %}>{{ v.member.member_since.year if v.member.member_since else "chýba – doplní sa zo žiadosti" }}</td></tr>
       <tr><th>Skupina</th><td colspan="2">{{ v.club_name }}</td></tr>
-      <tr><th>Kartička SSS</th><td colspan="2">{{ "áno" if a.wants_card else "nie" }}</td></tr>
+      <tr><th>Kartička SSS</th><td colspan="2">{% if a.card_format == "png" %}áno – obrázok (PNG){% elif a.card_format or a.wants_card %}áno – PDF{% else %}nie{% endif %}
+          {% if a.card_format %}<span class="muted">· pri schválení sa pošle, ak je členské zaplatené; inak po zaplatení</span>{% endif %}</td></tr>
     </tbody>
   </table></div>
 </div>
 
 {% if a.status == "submitted" %}
 <section class="box">
-  <form class="inline" method="post" action="/admin/ecp-applications/{{ a.id }}/approve">
+  <form class="inline" method="post" action="{{ A }}/ecp-applications/{{ a.id }}/approve">
     {% include "admin/_csrf.html" %}<button class="primary">Schváliť a vydať eCP</button></form>
-  <form class="inline" method="post" action="/admin/ecp-applications/{{ a.id }}/reject">
+  <form class="inline" method="post" action="{{ A }}/ecp-applications/{{ a.id }}/reject">
     {% include "admin/_csrf.html" %}
     <input name="reason" required size="40" placeholder="Dôvod pre žiadateľa (napr. nevyhovujúca fotka)" aria-label="Dôvod zamietnutia">
     <button>Zamietnuť</button></form>
@@ -44,18 +58,5 @@
      Pri zamietnutí príde žiadateľovi e-mail s dôvodom a fotky sa zmažú.</p>
 </section>
 
-{% if original_url %}
-<details>
-  <summary>Orezať fotku znova</summary>
-  <form method="post" action="/admin/ecp-applications/{{ a.id }}/recrop" class="form">
-    {% include "admin/_csrf.html" %}
-    <div id="crop-stage" hidden><img id="crop-img" data-src="{{ original_url }}" alt="Pôvodná fotka"><div id="crop-frame"></div></div>
-    <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
-    {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
-    <p><button>Uložiť nový výrez</button></p>
-  </form>
-  <script src="/static/crop.js" defer></script>
-</details>
-{% endif %}
 {% endif %}
 {% endblock %}

@@ -1,6 +1,6 @@
 # Obrazovky a tlačidlá – prehľad na upratanie
 
-Stav: 2026-09-30 (po fáze 5); 1. kolo úprav podľa R42 je zapracované (menu, štítky, „Späť“, hromadná platba len na portáli, „Ďalšie akcie“). Podklad na kontrolu prípadov použitia: **kde** je tlačidlo, **kto** ho vidí
+Stav: 2026-10-01 (po fáze 5); 1. kolo úprav podľa R42 je zapracované (menu, štítky, „Späť“, hromadná platba len na portáli, „Ďalšie akcie“). Podklad na kontrolu prípadov použitia: **kde** je tlačidlo, **kto** ho vidí
 a **kedy** je dostupné. Oprávnenie sa vždy kontroluje aj na serveri – skryté tlačidlo nie je jediná ochrana.
 
 Skratky rolí: **V** verejnosť · **Č** člen s aktívnym eCP · **P** predseda skupiny (bez zástupcu) · **Z** zástupca
@@ -12,10 +12,11 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 | Obrazovka | Adresa | Kto | Tlačidlá / obsah | Kedy |
 |---|---|---|---|---|
-| Žiadosť o eCP | `/ecp/apply` | V | Odoslať (meno, priezvisko, dátum narodenia, e-mail, č. preukazu, člen od, skupina) | vždy; rovnaká odpoveď, aj keď člen neexistuje |
+| Úvod | `/` | V | **Požiadať o eCP** (odkaz na administráciu tu nie je – R48) | vždy |
+| Žiadosť o eCP | `/ecp/apply` | V | popis eCP a kartičky s malou ukážkou, odkaz na inštaláciu Peňaženky Google · Odoslať (meno, priezvisko, dátum narodenia, e-mail, č. preukazu, člen od, skupina) | vždy; rovnaká odpoveď, aj keď člen neexistuje |
 | Žiadosť odoslaná | `/ecp/apply/sent` | V | – | po odoslaní |
 | Overenie e-mailu | `/ecp/email/<token>` | V | – (presmeruje na fotku) | odkaz z e-mailu, jednorazový, 24 h |
-| Fotka a súhlasy | `/ecp/apply/photo` | V | Výber súboru · **Odfotiť kamerou** · Odfotiť / Zrušiť · posun a veľkosť výrezu · súhlas GDPR (povinný) · oznámenia · kartička · **Odoslať žiadosť** | po overení e-mailu; „Odfotiť kamerou“ len ak prehliadač má kameru |
+| Fotka a súhlasy | `/ecp/apply/photo` | V | Výber súboru · **Odfotiť kamerou** · Odfotiť / Zrušiť · posun a veľkosť výrezu · súhlas GDPR (povinný) · oznámenia · kartička: nie / PDF / obrázok PNG · **Odoslať žiadosť** | po overení e-mailu; „Odfotiť kamerou“ len ak prehliadač má kameru; voľba kartičky len ak člen ešte nemá zvolený formát (R47) |
 | Fotka nového člena | `/ecp/photo/<token>` | V | ako vyššie | odkaz z e-mailu po aktivácii člena s voľbou „Vydať eCP“ |
 | Hotovo | `/ecp/apply/done` | V | – | po odoslaní žiadosti |
 | Overenie eCP | `/v/<token>` | V (kontrolór) | – (výsledok, fotka, údaje, kontakty, dokumenty) | QR z eCP; jednorazový, 15 min ochranná lehota |
@@ -57,7 +58,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 | Obrazovka | Tlačidlá | Kedy |
 |---|---|---|
-| Pridať do skupiny | Uložiť (čakateľ / nový člen, voľba **Vydať eCP**) | „čakateľ“ len ak skupina používa čakateľov |
+| Pridať do skupiny („Nový člen / čakateľ“ v skupine, skupina vyplnená) | Uložiť (čakateľ / nový člen, voľba **Vydať eCP**, kartička SSS: nie / PDF / PNG – R47) | „čakateľ“ len ak skupina používa čakateľov |
 | Detail člena | Upraviť údaje | člen skupiny |
 | Detail člena – stav | Navrhnúť za člena | čakateľ |
 |  | Vrátiť medzi čakateľov | navrhnutý (čaká na aktiváciu) |
@@ -69,7 +70,7 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 | Členské | výber roka · Vytvoriť platobný odkaz (výber členov) | rok platby; ďalší rok v období platby |
 | Hromadná platba | **Zaplatiť X €** · Zrušiť platobný odkaz | vytvoriť len po zverejnení ročnej známky na daný rok (R45); zrušiť len kým nie je nič zaplatené |
 
-## 4. Administrácia (`/admin`, Google prihlásenie)
+## 4. Administrácia (tajná adresa `/<ESS_ADMIN_PATH>`, vo vývoji `/admin`; Google prihlásenie – R48)
 
 Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Ročná známka, Bankové výpisy,
 Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“, R44; SA: všetky nastavenia, Import, Prístupy) · štítky:
@@ -78,8 +79,8 @@ Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s �
 | Obrazovka | Kto | Tlačidlá | Kedy |
 |---|---|---|---|
 | Prehľad | A | karty: požiadavky, členovia SSS, skupiny | – |
-| Členovia | A | hľadanie, filtre skupina/stav · Nový člen | – |
-| Nový člen | A | Uložiť (skupina, člen/čakateľ, **Vydať eCP**, **Vydať kartičku** + rok, formát) | – |
+| Členovia | A | hľadanie, filtre skupina/stav · Nový člen / čakateľ (pri filtri skupiny „v tejto skupine“) | – |
+| Nový člen / čakateľ | A | Uložiť (skupina, člen/čakateľ, **Vydať eCP**, **Vydať kartičku** + rok, formát) | zo skupiny je skupina vyplnená a nemenná, zo zoznamu SSS ju admin vyberie |
 | Detail člena – hlavička | A | Upraviť údaje | – |
 | Detail člena – portál | A | Odhlásiť zo všetkých zariadení | člen je prihlásený aspoň na 1 zariadení |
 | Detail člena – členské | A | Platobný odkaz člena (rok) · Označiť ako zaplatené (rok, poznámka; len A, nie SA – R46) | nezaplatený rok platby; nie pri vylúčenom / ukončenom |
@@ -90,13 +91,13 @@ Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s �
 | Detail člena – certifikáty | A | Odstrániť · Pridať certifikát | – |
 | Detail člena – vylúčenie | A | Vylúčiť zo SSS (dôvod) | nie vylúčený; nevratné |
 | Skupiny | A | Nová skupina · detail | – |
-| Detail skupiny | A | Uložiť · Nahrať / odstrániť logo · Zadať predsedu · Určiť zástupcu / Ukončiť zastupovanie · Členovia skupiny | zastupovanie nie pri „SSS – nezaradení“ |
+| Detail skupiny | A | Uložiť · Nahrať / odstrániť logo · Zadať predsedu · Určiť zástupcu / Ukončiť zastupovanie · Členovia skupiny · **Nový člen / čakateľ** | zastupovanie nie pri „SSS – nezaradení“ |
 | Členské | A | rok · Export CSV · stav platby cez eCP (odkaz na Ročnú známku) · Odoslať ďalšiu dávku · Bankové výpisy | „dávka“ len ak čakajú eCP |
 | Ročná známka | A | Vygenerovať náhľad / Iné farby · **Zverejniť túto známku** (potvrdenie) · Nahrať šablónu | len kým známka na rok splatnosti nie je zverejnená (R45); inak len obrázok |
 | Platobný odkaz (detail) | A | Otvoriť PAYMe · Zrušiť | zrušiť len otvorený |
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |
 | Požiadavky | A | Aktivovať / Zamietnuť · Zaradiť do nezaradených / Ukončiť členstvo v SSS · Posúdiť žiadosť · Priradiť platbu / Vybavené | podľa typu požiadavky |
-| Žiadosť o eCP | A | Schváliť a vydať eCP · Zamietnuť (dôvod) · Uložiť nový výrez | len podaná žiadosť |
+| Žiadosť o eCP | A | Orezať fotku znova (hneď pod fotkou) · Schváliť a vydať eCP · Zamietnuť (dôvod) | len podaná žiadosť |
 | Organizácia | A | – (funkcie) | – |
 | Dokumenty | A | Pridať · Odstrániť | – |
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |

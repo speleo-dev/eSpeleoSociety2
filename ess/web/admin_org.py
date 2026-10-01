@@ -17,11 +17,12 @@ from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, act, error_text, forbidden, parse_date, render
+from ess.web.paths import A
 
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
 Mailer_ = Annotated[Mailer | None, Depends(get_mailer)]
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 
 SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
                 "payment_iban", "payment_account_name",
@@ -59,7 +60,7 @@ async def club_create(request: Request, admin: Admin, session: Db):
         return render(request, "admin/club_form.html", admin, session, status_code=400, club=None, raw=raw,
                       error=error_text(exc))
     request.session["flash"] = {"kind": "ok", "text": "Skupina bola vytvorená."}
-    return RedirectResponse(f"/admin/clubs/{club.id}", status_code=303)
+    return RedirectResponse(f"{A}/clubs/{club.id}", status_code=303)
 
 
 @router.get("/clubs/{club_id}")
@@ -85,13 +86,13 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
 @router.post("/clubs/{club_id}/delegation", dependencies=[Depends(verify_csrf)])
 def club_delegate(request: Request, club_id: uuid.UUID, admin: Admin, session: Db,
                   member_id: Annotated[uuid.UUID, Form()]):
-    return act(request, session, f"/admin/clubs/{club_id}",
+    return act(request, session, f"{A}/clubs/{club_id}",
                lambda: delegations.delegate(session, admin.actor, club_id, member_id), "Zástupca predsedu bol určený.")
 
 
 @router.post("/clubs/{club_id}/delegation/end", dependencies=[Depends(verify_csrf)])
 def club_delegation_end(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
-    return act(request, session, f"/admin/clubs/{club_id}", lambda: delegations.take_back(session, admin.actor, club_id),
+    return act(request, session, f"{A}/clubs/{club_id}", lambda: delegations.take_back(session, admin.actor, club_id),
                "Zastupovanie bolo ukončené, skupinu spravuje predseda.")
 
 
@@ -104,7 +105,7 @@ async def club_update(request: Request, club_id: uuid.UUID, admin: Admin, sessio
         clubs.update_club(session, admin.actor, club_id, raw["name"], raw["short_name"], raw["uses_candidates"],
                           raw["active"], raw["code"], raw["logo_url"], contact)
 
-    return act(request, session, f"/admin/clubs/{club_id}", update, "Skupina bola uložená.")
+    return act(request, session, f"{A}/clubs/{club_id}", update, "Skupina bola uložená.")
 
 
 def _logo_action(request: Request, session: Db, store: MediaStore | None, club_id: uuid.UUID, action, success: str):
@@ -117,7 +118,7 @@ def _logo_action(request: Request, session: Db, store: MediaStore | None, club_i
     except (DomainError, PermissionDenied) as exc:
         session.rollback()
         request.session["flash"] = {"kind": "error", "text": error_text(exc)}
-        return RedirectResponse(f"/admin/clubs/{club_id}", status_code=303)
+        return RedirectResponse(f"{A}/clubs/{club_id}", status_code=303)
     except Exception:
         session.rollback()
         if change and change.new_object and store:
@@ -125,7 +126,7 @@ def _logo_action(request: Request, session: Db, store: MediaStore | None, club_i
         raise
     if change.old_object and store:
         store.delete(change.old_object)
-    return RedirectResponse(f"/admin/clubs/{club_id}", status_code=303)
+    return RedirectResponse(f"{A}/clubs/{club_id}", status_code=303)
 
 
 @router.post("/clubs/{club_id}/logo", dependencies=[Depends(verify_csrf)])
@@ -164,14 +165,14 @@ def access_grant(
     request: Request, admin: Admin, session: Db, email: Annotated[str, Form()] = "",
     name: Annotated[str, Form()] = "", role: Annotated[str, Form()] = "admin",
 ):
-    return act(request, session, "/admin/access",
+    return act(request, session, f"{A}/access",
                lambda: admin_access.grant_access(session, admin.actor, email, name, AdminRole(role)),
                "Prístup bol udelený.")
 
 
 @router.post("/access/{user_id}/revoke", dependencies=[Depends(verify_csrf)])
 def access_revoke(request: Request, user_id: uuid.UUID, admin: Admin, session: Db):
-    return act(request, session, "/admin/access", lambda: admin_access.revoke_access(session, admin.actor, user_id),
+    return act(request, session, f"{A}/access", lambda: admin_access.revoke_access(session, admin.actor, user_id),
                "Prístup bol odobratý.")
 
 
@@ -201,14 +202,14 @@ async def settings_save(request: Request, admin: Admin, session: Db):
             if new != (settings.get_setting(session, key) or ""):
                 settings.set_setting(session, admin.actor, key, new)
 
-    return act(request, session, "/admin/settings", save, "Nastavenia boli uložené.")
+    return act(request, session, f"{A}/settings", save, "Nastavenia boli uložené.")
 
 
 @router.post("/settings/certificate-types", dependencies=[Depends(verify_csrf)])
 def certificate_type_add(
     request: Request, admin: Admin, session: Db, code: Annotated[str, Form()] = "", name: Annotated[str, Form()] = ""
 ):
-    return act(request, session, "/admin/settings",
+    return act(request, session, f"{A}/settings",
                lambda: certificates.add_certificate_type(session, admin.actor, code, name),
                "Typ certifikátu bol pridaný.")
 
@@ -233,7 +234,7 @@ def test_mail(request: Request, admin: Admin, session: Db, mailer: Mailer_, to: 
         except MailError as exc:
             text, kind = f"E-mail sa nepodarilo odoslať ({exc}).", "error"
     request.session["flash"] = {"kind": kind, "text": text}
-    return RedirectResponse("/admin/settings", status_code=303)
+    return RedirectResponse(f"{A}/settings", status_code=303)
 
 
 # --- documents ----------------------------------------------------------------------------------------
@@ -249,7 +250,7 @@ def document_save(
     valid_until: Annotated[str, Form()] = "", sort_order: Annotated[int, Form()] = 0,
     document_id: Annotated[str, Form()] = "",
 ):
-    return act(request, session, "/admin/documents",
+    return act(request, session, f"{A}/documents",
                lambda: documents.save_document(session, admin.actor, title, url, parse_date(valid_until), sort_order,
                                                uuid.UUID(document_id) if document_id else None),
                "Dokument bol uložený.")
@@ -269,19 +270,19 @@ def notification_send(request: Request, admin: Admin, session: Db, header: Annot
                       body: Annotated[str, Form()] = ""):
     from ess.services import ecp_notifications
 
-    return act(request, session, "/admin/notifications",
+    return act(request, session, f"{A}/notifications",
                lambda: ecp_notifications.send(session, admin.actor, header, body),
                "Notifikácia sa odosiela do eCP.")
 
 
 @router.post("/notifications/push", dependencies=[Depends(verify_csrf)])
 def notification_push(request: Request, admin: Admin, session: Db):
-    return act(request, session, "/admin/notifications", lambda: None, "Ďalšia dávka bola odoslaná.")
+    return act(request, session, f"{A}/notifications", lambda: None, "Ďalšia dávka bola odoslaná.")
 
 
 @router.post("/documents/{document_id}/delete", dependencies=[Depends(verify_csrf)])
 def document_delete(request: Request, document_id: uuid.UUID, admin: Admin, session: Db):
-    return act(request, session, "/admin/documents", lambda: documents.delete_document(session, admin.actor, document_id),
+    return act(request, session, f"{A}/documents", lambda: documents.delete_document(session, admin.actor, document_id),
                "Dokument bol odstránený.")
 
 

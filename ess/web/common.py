@@ -99,7 +99,10 @@ def act(request: Request, session: Session, back: str, action, success: str) -> 
 
 def safe_back(back: str) -> str:
     """Only allow redirects inside the administration (no open redirect)."""
-    return back if back.startswith("/admin") and "//" not in back else "/admin"
+    from ess.web.paths import A
+
+    base = str(A)
+    return back if (back == base or back.startswith(base + "/") or back.startswith(base + "?")) and "//" not in back else base
 
 
 def parse_date(value: str | None) -> date | None:

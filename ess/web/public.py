@@ -126,10 +126,11 @@ def photo_invite(request: Request, token: str, session: Session = Depends(get_se
 
 
 @router.get("/apply/photo")
-def apply_photo(request: Request):
-    if _application_in_session(request) is None:
+def apply_photo(request: Request, session: Session = Depends(get_session)):
+    application_id = _application_in_session(request)
+    if application_id is None:
         return _page(request, "public/link_invalid.html", status_code=410)
-    return _page(request, "public/apply_photo.html")
+    return _page(request, "public/apply_photo.html", ask_card=ecp_applications.asks_for_card(session, application_id))
 
 
 @router.post("/apply/photo", dependencies=[Depends(verify_public_csrf)])
@@ -145,11 +146,12 @@ async def apply_photo_submit(request: Request, session: Session = Depends(get_se
     try:
         result = await run_in_threadpool(
             ecp_applications.submit_photo, session, application_id, data, _crop(form), form.get("gdpr") == "on",
-            form.get("notifications") == "on", form.get("wants_card") == "on", store)
+            form.get("notifications") == "on", str(form.get("card_format", "")) or None, store)
         session.commit()
     except DomainError as exc:
         session.rollback()
         return _page(request, "public/apply_photo.html", status_code=400,
+                     ask_card=ecp_applications.asks_for_card(session, application_id),
                      error=ERRORS.get(exc.code, "Fotku sa nepodarilo spracovať."))
     except Exception:
         session.rollback()

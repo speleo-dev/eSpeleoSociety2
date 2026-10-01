@@ -247,6 +247,21 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     z administrácie a ručné označenie platby nie sú zablokované.
 - **R46** – **Platbu v hotovosti (ručné označenie ako zaplatené) eviduje len administrátor** (`admin`), nie
   systémový administrátor (2026-09-30). Superadmin tlačidlo nevidí a server ho odmietne.
+- **R47** – **Formát kartičky SSS** (2026-10-01):
+  - Predseda (aj zástupca) pri pridaní člena / čakateľa zvolí „Kartička SSS: nie / PDF / obrázok (PNG)“.
+    Voľba sa uloží k členovi (`members.card_format`); kartička príde po zaplatení členského (R33).
+    Administrátor ju pri pridaní člena môže aj rovno vydať (ako doteraz).
+  - Ak má člen formát už zvolený, formulár s fotkou pre eCP sa na kartičku nepýta.
+  - Člen, ktorý žiada o eCP sám, si vyberie „nie / PDF / obrázok (PNG)“ (`ecp_applications.card_format`).
+    Pri schválení eCP sa formát uloží k členovi a kartička sa pošle, ak má zaplatené členské; inak po zaplatení.
+  - Stránka žiadosti vysvetľuje oba doklady s malou ukážkou (fiktívne údaje, `ess.tools.make_previews`):
+    eCP (funkcie, vyžaduje Android a aplikáciu Peňaženka Google – odkaz na inštaláciu) a kartičku
+    (len potvrdenie členstva a členského na rok; PDF alebo obrázok PNG na vytlačenie či do mobilu, nie plastová karta).
+  - Samostatná žiadosť len o kartičku (bez eCP) cez verejnú stránku zatiaľ nie je – vybavuje ju predseda.
+- **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
+  napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
+  Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.
+- V eCP bol odkaz na web SSS dvakrát (z triedy preukazu aj z objektu) – objekt ho už nepridáva.
 
 ## 4. Architektúra
 

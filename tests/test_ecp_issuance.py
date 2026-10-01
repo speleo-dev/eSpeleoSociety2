@@ -40,7 +40,7 @@ def _submitted(session, store, **member_kw):
     member_id = _member(session, club_id, **member_kw)
     mail = apps.start_public(session, _form(club_id))
     app = apps.verify_email(session, mail.token)
-    apps.submit_photo(session, app.id, _photo(), None, True, True, False, store)
+    apps.submit_photo(session, app.id, _photo(), None, True, True, None, store)
     return app, member_id
 
 

@@ -116,11 +116,14 @@ async def member_create(request: Request, club_id: uuid.UUID, session: Db):
     form = await request.form()
     status = S.PENDING_ACTIVATION if form.get("status") == "pending_activation" else S.CANDIDATE
     issue_ecp = form.get("issue_ecp") == "on"
+    card_format = str(form.get("card_format", ""))
     raw: dict = {}
     try:
         data, raw = await _member_form(request)
         data.reduced_fee = False  # set by administrators only
         membership = memberships.add_new_member_to_club(session, actor, data, club_id, status)
+        if card_format:
+            sss_cards.set_format(session, actor, membership.member_id, card_format)
         if issue_ecp:
             ecp_applications.request_for_new_member(session, actor, membership.member_id, club_id)
         session.commit()
@@ -128,11 +131,13 @@ async def member_create(request: Request, club_id: uuid.UUID, session: Db):
         outbox.discard(session)
         session.rollback()
         return _page(request, "portal/member_form.html", status_code=400, club=club, raw=raw, member_id=None,
-                     status=status.value, issue_ecp=issue_ecp, error=_error(exc))
+                     status=status.value, issue_ecp=issue_ecp, card_format=card_format, error=_error(exc))
     text = ("Čakateľ bol pridaný." if status == S.CANDIDATE
             else "Nový člen bol navrhnutý – administrátor ho aktivuje po doručení prihlášky.")
     if issue_ecp:
         text += " Po aktivácii mu príde e-mail na nahratie fotky pre eCP."
+    if card_format:
+        text += " Kartičku SSS dostane po zaplatení členského."
     after_commit(request, session)
     _flash(request, "ok", text)
     return RedirectResponse(f"/portal/clubs/{club_id}/members/{membership.member_id}", status_code=303)

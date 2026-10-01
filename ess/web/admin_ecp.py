@@ -16,8 +16,9 @@ from ess.web.auth import verify_csrf
 from ess.web.common import Admin, Db, error_text, render
 from ess.web.mailing import render_mail, send
 from ess.web.public import _crop, base_url
+from ess.web.paths import A
 
-router = APIRouter(prefix="/admin")
+router = APIRouter()  # mounted under the admin path (R48)
 
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
 MailerDep = Annotated[Mailer | None, Depends(get_mailer)]
@@ -25,7 +26,7 @@ Wallet = Annotated[WalletClient, Depends(get_wallet)]
 
 
 def _page_url(application_id: uuid.UUID) -> str:
-    return f"/admin/ecp-applications/{application_id}"
+    return f"{A}/ecp-applications/{application_id}"
 
 
 @router.get("/ecp-applications/{application_id}")

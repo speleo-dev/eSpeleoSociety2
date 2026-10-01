@@ -18,8 +18,8 @@ v <code>docs/import.md</code>.</p>
 
 <h2>1. Skupiny</h2>
 <p>Stĺpce: <code>kod; nazov; skratka; cakatelia; logo</code> (cakatelia: X = skupina používa čakateľov; logo: adresa https://…).
-<a href="/admin/import/template/clubs.csv">Stiahnuť vzor</a> · <a href="/admin/import/club-codes.csv">Stiahnuť kódy existujúcich skupín</a></p>
-<form method="post" action="/admin/import/clubs" enctype="multipart/form-data" class="form">
+<a href="{{ A }}/import/template/clubs.csv">Stiahnuť vzor</a> · <a href="{{ A }}/import/club-codes.csv">Stiahnuť kódy existujúcich skupín</a></p>
+<form method="post" action="{{ A }}/import/clubs" enctype="multipart/form-data" class="form">
   {% include "admin/_csrf.html" %}
   <div class="grid"><label>Súbor CSV<input type="file" name="file" accept=".csv,text/csv" required></label></div>
   <label class="check"><input type="checkbox" name="execute"> Vykonať import (inak len kontrola)</label>
@@ -29,8 +29,8 @@ v <code>docs/import.md</code>.</p>
 <h2>2. Členovia</h2>
 <p>Jeden riadok = jedno členstvo v skupine. Údaje o osobe sa berú z riadku označeného v stĺpci
 <code>primarna</code> znakom X; v ďalších riadkoch toho istého člena stačí kód skupiny, meno a priezvisko.
-<a href="/admin/import/template/members.csv">Stiahnuť vzor</a></p>
-<form method="post" action="/admin/import/members" enctype="multipart/form-data" class="form">
+<a href="{{ A }}/import/template/members.csv">Stiahnuť vzor</a></p>
+<form method="post" action="{{ A }}/import/members" enctype="multipart/form-data" class="form">
   {% include "admin/_csrf.html" %}
   <div class="grid"><label>Súbor CSV<input type="file" name="file" accept=".csv,text/csv" required></label></div>
   <label class="check"><input type="checkbox" name="execute"> Vykonať import (inak len kontrola)</label>

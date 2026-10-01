@@ -4,6 +4,7 @@ Secrets are never stored in the repository. In Cloud Run they are injected from 
 as environment variables.
 """
 
+import re
 from functools import lru_cache
 
 from pydantic import field_validator
@@ -53,6 +54,10 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     mail_from: str = "Slovenská speleologická spoločnosť <ess@sss.sk>"
 
+    # URL path of the administration (R48): in production a long random string instead of "admin", so the
+    # login page is not found by guessing. Letters, digits, "-" and "_" only.
+    admin_path: str = "admin"
+
     # Shared secret of the Cloud Scheduler job that calls /internal/tick (cave trip reminders, batches).
     scheduler_token: str | None = None
 
@@ -66,6 +71,14 @@ class Settings(BaseSettings):
     def _check_environment(cls, value: str) -> str:
         if value not in {"dev", "test", "prod"}:
             raise ValueError("ESS_ENVIRONMENT must be one of: dev, test, prod")
+        return value
+
+    @field_validator("admin_path")
+    @classmethod
+    def _check_admin_path(cls, value: str) -> str:
+        value = value.strip().strip("/")
+        if not re.fullmatch(r"[A-Za-z0-9_-]{5,64}", value) or value in {"static", "portal", "ecp", "internal"}:
+            raise ValueError("ESS_ADMIN_PATH: 5-64 letters, digits, '-' or '_'")
         return value
 
 

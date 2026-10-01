@@ -19,7 +19,7 @@ Prístup nie je viazaný na členstvo ani funkciu v SSS.</p>
   {% for u in users %}
     <tr><td>{{ u.name }}</td><td data-label="E-mail">{{ u.email }}</td><td data-label="Rola">{{ u.role|label }}</td>
       <td data-label="Stav">{{ "aktívny" if u.active else "odobratý" }}</td>
-      <td>{% if u.active %}<form class="inline" method="post" action="/admin/access/{{ u.id }}/revoke" onsubmit="return confirm('Odobrať prístup?')">
+      <td>{% if u.active %}<form class="inline" method="post" action="{{ A }}/access/{{ u.id }}/revoke" onsubmit="return confirm('Odobrať prístup?')">
         {% include "admin/_csrf.html" %}<button>Odobrať</button></form>{% endif %}</td></tr>
   {% else %}
     <tr><td colspan="5" class="muted">Zatiaľ nikto ďalší.</td></tr>

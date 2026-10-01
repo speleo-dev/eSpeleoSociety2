@@ -249,6 +249,7 @@ gcloud run deploy ess --source . --region $REGION --allow-unauthenticated --max-
 ```
 
 Potom otvor `<URL>/admin` a prihlás sa. Ďalších administrátorov bude možné pridať v aplikácii.
+(Po kroku 20 je administrácia na tajnej adrese namiesto `/admin`.)
 
 **Riešenie problémov:**
 - *„The OAuth client was not found“ / `invalid_client`* – zlá hodnota `ESS_GOOGLE_CLIENT_ID` (Google ho
@@ -469,6 +470,40 @@ unset ESS_DATABASE_URL
 
 Potom v administrácii Nastavenia → Import: najprv stiahnite „kódy skupín“, potom importujte členov.
 eCP vydané testovacím členom v Peňaženke Google ostanú, ale ich QR a odkazy už nebudú platné.
+
+## 20. Tajná adresa administrácie (R48)
+
+Administrácia nebude na `/admin`, ale na náhodnej adrese, ktorú poznajú len administrátori. Ochranou je
+naďalej prihlásenie cez Google – tajná adresa len odfiltruje roboty, ktoré skúšajú bežné adresy.
+Kým tento krok neurobíš, administrácia ostáva na `/admin`.
+
+**a)** Vytvor náhodnú adresu (len do Secret Manager) a zobraz si ju – ulož si ju do záložiek:
+
+```bash
+gcloud config set project espeleosociety
+printf 'sprava-%s' "$(openssl rand -hex 12)" | gcloud secrets create ess-admin-path --data-file=-
+gcloud secrets add-iam-policy-binding ess-admin-path \
+  --member="serviceAccount:116532825256-compute@developer.gserviceaccount.com" --role=roles/secretmanager.secretAccessor
+URL=$(gcloud run services describe ess --region europe-west3 --format='value(status.url)')
+echo "$URL/$(gcloud secrets versions access latest --secret ess-admin-path)"
+echo "$URL/$(gcloud secrets versions access latest --secret ess-admin-path)/auth/callback"
+```
+
+**b)** V konzole *Google Auth Platform* → *Clients* → `eSS` pridaj do *Authorized redirect URIs* druhú
+vypísanú adresu (končí `/auth/callback`) a ulož. Starú `…/admin/auth/callback` zatiaľ nechaj.
+
+**c)** Zapni tajnú adresu v službe:
+
+```bash
+gcloud run services update ess --region europe-west3 --update-secrets ESS_ADMIN_PATH=ess-admin-path:latest
+```
+
+**d)** Otvor prvú vypísanú adresu a prihlás sa. Over, že `<URL>/admin` vráti „Not Found“. Potom v konzole
+odstráň starú adresu `…/admin/auth/callback` z *Authorized redirect URIs*.
+
+Adresu pošli ostatným administrátorom súkromne (nie do verejných skupín). Zmena adresy: pridaj novú verziu
+tajomstva (`printf 'sprava-%s' "$(openssl rand -hex 12)" | gcloud secrets versions add ess-admin-path --data-file=-`),
+zopakuj b) a c).
 
 ## Neskôr
 

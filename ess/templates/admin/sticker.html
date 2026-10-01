@@ -11,7 +11,7 @@
 <p>Pripravte známku na rok <strong>{{ edit_year }}</strong>. Keď ju zverejníte, zmeniť ju už nebude možné až do
   ďalšieho roka, <strong>otvorí sa platba členského na rok {{ edit_year }} cez eCP</strong> a odkaz na platbu sa
   pošle do všetkých eCP.</p>
-<form method="post" action="/admin/sticker" class="form">
+<form method="post" action="{{ A }}/sticker" class="form">
   {% include "admin/_csrf.html" %}
   <input type="hidden" name="year" value="{{ edit_year }}">
   <div class="grid">
@@ -31,7 +31,7 @@
 </form>
 <details>
   <summary>Vlastná šablóna ({{ "nahratá" if sticker.template else "predvolená" }})</summary>
-  <form method="post" action="/admin/sticker/template" enctype="multipart/form-data" class="form">
+  <form method="post" action="{{ A }}/sticker/template" enctype="multipart/form-data" class="form">
     {% include "admin/_csrf.html" %}
     <label>PNG 256 × 256 px, priehľadné pozadie; farby #000000 (okraj), #606060 a #404040 (výplň)
       <input type="file" name="template" accept="image/png" required></label>
@@ -42,5 +42,5 @@
 <p class="muted">Známka na rok {{ due_year }} je zverejnená. Známku na ďalší rok možno pripraviť, keď sa začne
   obdobie platby členského na ďalší rok.</p>
 {% endif %}
-<p><a href="/admin/payments">← Členské</a></p>
+<p><a href="{{ A }}/payments">← Členské</a></p>
 {% endblock %}

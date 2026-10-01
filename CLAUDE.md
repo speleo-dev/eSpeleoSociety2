@@ -139,6 +139,7 @@ ESS_DATABASE_URL=... .venv/bin/alembic upgrade head          # migrácie DB
 .venv/bin/python -m ess.tools.seed_test_data                  # fiktívne testovacie dáta do PRÁZDNEJ dev DB (skupiny sú skutočné)
 .venv/bin/python -m ess.tools.load_clubs                      # skupiny SSS a ich logá (ess/data/clubs), aj do produkcie
 .venv/bin/python -m ess.tools.purge_test_data --yes           # zmaže VŠETKÝCH členov a skupiny (testovacie dáta; nie v prod)
+.venv/bin/python -m ess.tools.make_previews                   # ukážky eCP a kartičky pre stránku žiadosti (fiktívne údaje)
 ```
 
 DB testy: `ESS_TEST_DATABASE_URL` (prázdna testovacia DB, testy ju mažú!) a `ESS_DB_SSLMODE=disable` pre
@@ -146,7 +147,8 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 
 ## Štruktúra
 
-- `ess/main.py` – FastAPI aplikácia; `ess/config.py` – konfigurácia (premenné `ESS_*`)
+- `ess/main.py` – FastAPI aplikácia; `ess/config.py` – konfigurácia (premenné `ESS_*`); administrácia je pod
+  cestou `ESS_ADMIN_PATH` (vo vývoji `/admin`, R48) – v kóde `ess.web.paths.A` (`f"{A}/members"`), v šablónach `{{ A }}`
 - `ess/db.py` – pool spojení, `Base` pre modely; `ess/audit.py` – auditný log
 - `ess/security/crypto.py` – šifrovanie osobných údajov (AES-GCM, kontext ako AAD) a blind index (HMAC);
   `ess/security/pii.py` – prístup ku kľúčom z konfigurácie

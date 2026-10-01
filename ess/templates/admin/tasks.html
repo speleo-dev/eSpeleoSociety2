@@ -20,40 +20,40 @@
     <tr>
       <td><strong>{{ t.task_type|task_label }}</strong><br><span class="muted">{{ t|task_description }}</span>
         {% set b = bank.get(t.id) %}{% if b %}<br><span class="muted">Platiteľ: {{ b.payer_name or "—" }}{% if b.payer_iban %}, {{ b.payer_iban }}{% endif %}{% if b.transaction.payer_reference %}; referencia: {{ b.transaction.payer_reference }}{% endif %}{% if b.message %}; správa: {{ b.message }}{% endif %}</span>{% endif %}</td>
-      <td data-label="Člen">{% if t.member_id %}<a href="/admin/members/{{ t.member_id }}">{{ r.full_name }}</a>{% endif %}</td>
+      <td data-label="Člen">{% if t.member_id %}<a href="{{ A }}/members/{{ t.member_id }}">{{ r.full_name }}</a>{% endif %}</td>
       <td data-label="Skupina">{{ r.club_name or "" }}</td>
       <td data-label="{% if show == 'open' %}Od{% else %}Vybavené{% endif %}">{{ (t.created_at if show == "open" else t.resolved_at)|date }}</td>
       <td>
       {% if show == "open" %}
         {% if t.task_type == T.MEMBER_ACTIVATION.value %}
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/activate">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/activate">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="card_number" placeholder="Č. papierového preukazu (ak bol vydaný)" aria-label="Číslo papierového preukazu">
             <button class="primary">Aktivovať</button></form>
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/reject">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/reject">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="reason" required placeholder="Dôvod zamietnutia" aria-label="Dôvod zamietnutia">
             <button>Zamietnuť</button></form>
         {% elif t.task_type == T.SSS_DECISION.value %}
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/keep-unaffiliated">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/keep-unaffiliated">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="primary">Zaradiť do „SSS – nezaradení“</button></form>
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/end-sss" onsubmit="return confirm('Ukončiť členstvo v SSS?')">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/end-sss" onsubmit="return confirm('Ukončiť členstvo v SSS?')">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="note" placeholder="Poznámka (napr. číslo uznesenia)" aria-label="Poznámka">
             <button>Ukončiť členstvo v SSS</button></form>
         {% elif t.task_type in (T.PAYMENT_UNMATCHED.value, T.PAYMENT_OVERPAID.value) %}
           {% if t.task_type == T.PAYMENT_UNMATCHED.value %}
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/assign-payment">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/assign-payment">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="code" required placeholder="Referencia (12 znakov)" aria-label="Referencia" autocomplete="off">
             <button class="primary">Priradiť</button></form>
           {% endif %}
-          <form class="inline" method="post" action="/admin/tasks/{{ t.id }}/resolve-payment">
+          <form class="inline" method="post" action="{{ A }}/tasks/{{ t.id }}/resolve-payment">
             <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
             <input name="note" required placeholder="Ako bolo vybavené (vrátené, dar…)" aria-label="Poznámka">
             <button>Vybavené</button></form>
         {% elif t.task_type == T.ECP_ISSUE.value %}
-          <a href="/admin/ecp-applications/{{ t.context.application_id }}"><button class="primary">Posúdiť žiadosť</button></a>
+          <a href="{{ A }}/ecp-applications/{{ t.context.application_id }}"><button class="primary">Posúdiť žiadosť</button></a>
         {% endif %}
       {% else %}
         {{ t.resolution|resolution_label }}{% if t.resolution_note %} – {{ t.resolution_note }}{% endif %}
