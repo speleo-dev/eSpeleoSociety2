@@ -1,5 +1,5 @@
 {% extends "admin/_layout.html" %}
-{% block page_title %}Žiadosť o eCP{% endblock %}
+{% block page_title %}{% if v.application.wants_wallet %}Žiadosť o eCP{% else %}Žiadosť o kartičku SSS{% endif %}{% endblock %}
 {% block body %}
 <style>
   #crop-stage { position:relative; max-width:28rem; touch-action:none; user-select:none; overflow:hidden; }
@@ -9,12 +9,14 @@
   td.diff { background:var(--err); }
 </style>
 {% set a = v.application %}
-<h1>Žiadosť o eCP – <a href="{{ A }}/members/{{ v.member.id }}">{{ v.register.full_name() }}</a></h1>
+<h1>{% if a.wants_wallet %}Žiadosť o eCP{% else %}Žiadosť o kartičku SSS{% endif %} – <a href="{{ A }}/members/{{ v.member.id }}">{{ v.register.full_name() }}</a></h1>
 <p class="muted">Podaná {{ a.submitted_at|date }}{% if a.status != "submitted" %} · stav: {{ a.status }}{% endif %}</p>
 
 <div class="cards">
   <div>
-    {% if portrait_url %}<img class="portrait" src="{{ portrait_url }}" alt="Fotka na preukaz">{% else %}<p class="muted">Bez fotky.</p>{% endif %}
+    {% if portrait_url %}<img class="portrait" src="{{ portrait_url }}" alt="Fotka na preukaz">
+    {% elif a.wants_wallet %}<p class="muted">Bez fotky.</p>
+    {% else %}<p class="muted">Len kartička SSS – bez eCP a bez fotky.</p>{% endif %}
     {% if original_url and a.status == "submitted" %}
     <details>
       <summary>Orezať fotku znova</summary>
@@ -49,13 +51,14 @@
 {% if a.status == "submitted" %}
 <section class="box">
   <form class="inline" method="post" action="{{ A }}/ecp-applications/{{ a.id }}/approve">
-    {% include "admin/_csrf.html" %}<button class="primary">Schváliť a vydať eCP</button></form>
+    {% include "admin/_csrf.html" %}<button class="primary">{% if a.wants_wallet %}Schváliť a vydať eCP{% else %}Schváliť kartičku SSS{% endif %}</button></form>
   <form class="inline" method="post" action="{{ A }}/ecp-applications/{{ a.id }}/reject">
     {% include "admin/_csrf.html" %}
     <input name="reason" required size="40" placeholder="Dôvod pre žiadateľa (napr. nevyhovujúca fotka)" aria-label="Dôvod zamietnutia">
     <button>Zamietnuť</button></form>
-  <p class="muted">Pri schválení sa vytvorí preukaz v Google Wallet a žiadateľovi príde e-mail s tlačidlom na jeho pridanie.
-     Pri zamietnutí príde žiadateľovi e-mail s dôvodom a fotky sa zmažú.</p>
+  <p class="muted">{% if a.wants_wallet %}Pri schválení sa vytvorí preukaz v Google Wallet a žiadateľovi príde e-mail s tlačidlom na jeho pridanie.
+     {% else %}Pri schválení bude člen dostávať kartičky SSS: na zaplatený rok hneď, inak po zaplatení členského.{% endif %}
+     Pri zamietnutí príde žiadateľovi e-mail s dôvodom{% if a.wants_wallet %} a fotky sa zmažú{% endif %}.</p>
 </section>
 
 {% endif %}

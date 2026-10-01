@@ -1,5 +1,5 @@
 {% extends "public/_layout.html" %}
-{% block title %}Žiadosť o eCP – fotka{% endblock %}
+{% block title %}Žiadosť – druh dokladu a súhlasy{% endblock %}
 {% block content %}
 <style>
   #crop-stage { position:relative; max-width:28rem; touch-action:none; user-select:none; }
@@ -7,53 +7,89 @@
   #crop-frame { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; }
   #crop-stage { overflow:hidden; }
   #camera-video { width:100%; max-width:28rem; transform:scaleX(-1); background:#000; }
+  fieldset.choice { border:1px solid var(--line); border-radius:.5rem; padding:.8rem; margin:1rem 0; }
+  fieldset.choice legend { font-weight:600; padding:0 .3rem; }
 </style>
-<h1>Fotka a súhlasy</h1>
-<p class="muted">eCP sa ukladá do aplikácie
-  <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel" target="_blank" rel="noopener">Peňaženka Google (Google Wallet)</a>
-  v telefóne s Androidom – nainštalujte si ju, ak ju ešte nemáte.</p>
-<p>E-mail je overený. Nahrajte fotku tváre ako na doklad alebo sa odfoťte kamerou: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
-   jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
+<h1>{% if offer_card_only %}Druh dokladu, fotka a súhlasy{% else %}Fotka a súhlasy{% endif %}</h1>
+<p>E-mail je overený.</p>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" enctype="multipart/form-data" class="form">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <label>Fotka (JPEG alebo PNG, najviac 5 MB) *
-    <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required></label>
-  <p><button type="button" id="camera-open" hidden>Odfotiť kamerou</button></p>
-  <p id="camera-message" class="flash error" hidden></p>
-  <div id="camera-box" hidden>
-    <video id="camera-video" autoplay playsinline muted></video>
-    <p class="muted">Pozerajte priamo do kamery, tvár dobre osvetlená spredu, jednoduché pozadie.</p>
-    <p><button type="button" class="primary" id="camera-shoot">Odfotiť</button>
-       <button type="button" id="camera-cancel">Zrušiť</button></p>
-  </div>
-  <div id="crop-stage" hidden>
-    <img id="crop-img" alt="Náhľad fotky">
-    <div id="crop-frame"></div>
-  </div>
-  <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
-  {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
 
-  <label class="check"><input type="checkbox" name="gdpr" required>
-    Súhlasím so spracovaním mojich osobných údajov Slovenskou speleologickou spoločnosťou na účel vydania
-    a overovania elektronického jaskyniarskeho preukazu. Beriem na vedomie, že po naskenovaní QR kódu z preukazu
-    sa kontrolórovi zobrazí moje meno, fotka, adresa bydliska, skupina, dátum členstva a stav členského. *</label>
-  <label class="check"><input type="checkbox" name="notifications" checked>
-    Chcem dostávať oznámenia SSS do preukazu v Peňaženke Google.</label>
+  {% if offer_card_only %}
+  <fieldset class="choice">
+    <legend>O aký doklad žiadate? *</legend>
+    <label class="check"><input type="radio" name="document" value="ecp" {% if document != "card" %}checked{% endif %}><span><strong>eCP</strong> – preukaz v mobile (Android, aplikácia Peňaženka Google); kartičku SSS si môžete pridať nižšie</span></label>
+    <label class="check"><input type="radio" name="document" value="card" {% if document == "card" %}checked{% endif %}><span><strong>Len kartička SSS</strong> – bez smartfónu; bez fotky</span></label>
+  </fieldset>
+  {% else %}<input type="hidden" name="document" value="ecp">{% endif %}
+
+  <div id="ecp-part">
+    <p class="muted">eCP sa ukladá do aplikácie
+      <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel" target="_blank" rel="noopener">Peňaženka Google (Google Wallet)</a>
+      v telefóne s Androidom – nainštalujte si ju, ak ju ešte nemáte.</p>
+    <p>Nahrajte fotku tváre ako na doklad alebo sa odfoťte kamerou: tvár spredu, bez okuliarov proti slnku a pokrývky hlavy,
+       jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
+    <label>Fotka (JPEG alebo PNG, najviac 5 MB) *
+      <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" {% if not offer_card_only %}required{% endif %}></label>
+    <p><button type="button" id="camera-open" hidden>Odfotiť kamerou</button></p>
+    <p id="camera-message" class="flash error" hidden></p>
+    <div id="camera-box" hidden>
+      <video id="camera-video" autoplay playsinline muted></video>
+      <p class="muted">Pozerajte priamo do kamery, tvár dobre osvetlená spredu, jednoduché pozadie.</p>
+      <p><button type="button" class="primary" id="camera-shoot">Odfotiť</button>
+         <button type="button" id="camera-cancel">Zrušiť</button></p>
+    </div>
+    <div id="crop-stage" hidden>
+      <img id="crop-img" alt="Náhľad fotky">
+      <div id="crop-frame"></div>
+    </div>
+    <label>Veľkosť výrezu<input type="range" id="crop-size" min="30" max="100" value="80"></label>
+    {% for k in ("x", "y", "w", "h") %}<input type="hidden" id="crop_{{ k }}" name="crop_{{ k }}">{% endfor %}
+    <label class="check"><input type="checkbox" name="notifications" checked>
+      Chcem dostávať oznámenia SSS do preukazu v Peňaženke Google.</label>
+  </div>
+
   {% if ask_card %}
   <fieldset class="choice">
-    <legend>Chcem aj kartičku SSS (náhrada papierového preukazu, príde e-mailom)</legend>
-    <label class="check"><input type="radio" name="card_format" value="" checked> Nie, stačí mi eCP</label>
-    <label class="check"><input type="radio" name="card_format" value="pdf"> Áno, ako <strong>PDF</strong> – na vytlačenie a vystrihnutie</label>
-    <label class="check"><input type="radio" name="card_format" value="png"> Áno, ako <strong>obrázok (PNG)</strong> –
-      súbor s obrázkom kartičky na vytlačenie alebo uloženie do mobilu</label>
-    <p class="muted"><img src="/static/preview-card.png" width="120" alt="Ukážka kartičky SSS" style="vertical-align:middle">
+    <legend id="card-legend">Kartička SSS (náhrada papierového preukazu, príde e-mailom)</legend>
+    <label class="check" id="card-none"><input type="radio" name="card_format" value="" {% if not card_format %}checked{% endif %}><span>Nie, stačí mi eCP</span></label>
+    <label class="check"><input type="radio" name="card_format" value="pdf" {% if card_format == "pdf" %}checked{% endif %}><span>Áno, ako <strong>PDF</strong> – na vytlačenie a vystrihnutie</span></label>
+    <label class="check"><input type="radio" name="card_format" value="png" {% if card_format == "png" %}checked{% endif %}><span>Áno, ako <strong>obrázok (PNG)</strong> –
+      súbor s obrázkom kartičky na vytlačenie alebo uloženie do mobilu</span></label>
+    <p class="muted"><img src="/static/preview-card.png" width="120" alt="Ukážka kartičky SSS" style="display:block;margin-bottom:.3rem">
       Kartička len potvrdzuje členstvo a zaplatené členské na jeden rok; nie je to plastová karta.
       Pošleme ju po schválení, ak máte zaplatené členské, inak po zaplatení.</p>
   </fieldset>
   {% endif %}
+
+  <label class="check"><input type="checkbox" name="gdpr" required>
+    Súhlasím so spracovaním mojich osobných údajov Slovenskou speleologickou spoločnosťou na účel vydania
+    a overovania elektronického jaskyniarskeho preukazu alebo kartičky SSS. Beriem na vedomie, že po naskenovaní
+    QR kódu z eCP sa kontrolórovi zobrazí moje meno, fotka, adresa bydliska, skupina, dátum členstva a stav členského;
+    pri kartičke len informácia o členstve a zaplatenom členskom. *</label>
   <p><button class="primary">Odoslať žiadosť</button></p>
 </form>
+{% if offer_card_only %}
+<script>
+  // Card only: no photo, the card format is required (checked again on the server).
+  (function () {
+    const ecpPart = document.getElementById("ecp-part"), photo = document.getElementById("photo");
+    const none = document.getElementById("card-none");
+    function update() {
+      const cardOnly = document.querySelector('input[name="document"]:checked').value === "card";
+      ecpPart.hidden = cardOnly;
+      photo.required = !cardOnly;
+      if (none) {
+        none.style.display = cardOnly ? "none" : "";
+        if (cardOnly && none.querySelector("input").checked) document.querySelector('input[name="card_format"][value="pdf"]').checked = true;
+      }
+    }
+    document.querySelectorAll('input[name="document"]').forEach((r) => r.addEventListener("change", update));
+    update();
+  })();
+</script>
+{% endif %}
 <script src="/static/crop.js" defer></script>
 <script src="/static/camera.js" defer></script>
 {% endblock %}

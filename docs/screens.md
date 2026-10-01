@@ -12,11 +12,11 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 | Obrazovka | Adresa | Kto | Tlačidlá / obsah | Kedy |
 |---|---|---|---|---|
-| Úvod | `/` | V | **Požiadať o eCP** (odkaz na administráciu tu nie je – R48) | vždy |
-| Žiadosť o eCP | `/ecp/apply` | V | popis eCP a kartičky s malou ukážkou, odkaz na inštaláciu Peňaženky Google · Odoslať (meno, priezvisko, dátum narodenia, e-mail, č. preukazu, člen od, skupina) | vždy; rovnaká odpoveď, aj keď člen neexistuje |
+| Úvod | `/` | V | **Požiadať o eCP alebo kartičku SSS** (odkaz na administráciu tu nie je – R48) | vždy |
+| Žiadosť o eCP / kartičku | `/ecp/apply` | V | popis eCP a kartičky s malou ukážkou, odkaz na inštaláciu Peňaženky Google, upozornenie, že druh dokladu sa volí v 2. kroku · Odoslať (meno, priezvisko, dátum narodenia, e-mail, č. preukazu, člen od, skupina) | vždy; rovnaká odpoveď, aj keď člen neexistuje |
 | Žiadosť odoslaná | `/ecp/apply/sent` | V | – | po odoslaní |
 | Overenie e-mailu | `/ecp/email/<token>` | V | – (presmeruje na fotku) | odkaz z e-mailu, jednorazový, 24 h |
-| Fotka a súhlasy | `/ecp/apply/photo` | V | Výber súboru · **Odfotiť kamerou** · Odfotiť / Zrušiť · posun a veľkosť výrezu · súhlas GDPR (povinný) · oznámenia · kartička: nie / PDF / obrázok PNG · **Odoslať žiadosť** | po overení e-mailu; „Odfotiť kamerou“ len ak prehliadač má kameru; voľba kartičky len ak člen ešte nemá zvolený formát (R47) |
+| Druh dokladu, fotka a súhlasy | `/ecp/apply/photo` | V | **Druh dokladu: eCP / len kartička SSS** (R49; pri kartičke bez fotky, formát povinný) · Výber súboru · **Odfotiť kamerou** · Odfotiť / Zrušiť · posun a veľkosť výrezu · súhlas GDPR (povinný) · oznámenia · kartička: nie / PDF / obrázok PNG · **Odoslať žiadosť** | po overení e-mailu; „Odfotiť kamerou“ len ak prehliadač má kameru; voľba kartičky len ak člen ešte nemá zvolený formát (R47) |
 | Fotka nového člena | `/ecp/photo/<token>` | V | ako vyššie | odkaz z e-mailu po aktivácii člena s voľbou „Vydať eCP“ |
 | Hotovo | `/ecp/apply/done` | V | – | po odoslaní žiadosti |
 | Overenie eCP | `/v/<token>` | V (kontrolór) | – (výsledok, fotka, údaje, kontakty, dokumenty) | QR z eCP; jednorazový, 15 min ochranná lehota |
@@ -97,7 +97,7 @@ Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s �
 | Platobný odkaz (detail) | A | Otvoriť PAYMe · Zrušiť | zrušiť len otvorený |
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |
 | Požiadavky | A | Aktivovať / Zamietnuť · Zaradiť do nezaradených / Ukončiť členstvo v SSS · Posúdiť žiadosť · Priradiť platbu / Vybavené | podľa typu požiadavky |
-| Žiadosť o eCP | A | Orezať fotku znova (hneď pod fotkou) · Schváliť a vydať eCP · Zamietnuť (dôvod) | len podaná žiadosť |
+| Žiadosť o eCP / kartičku | A | Orezať fotku znova (hneď pod fotkou) · Schváliť a vydať eCP (pri kartičke „Schváliť kartičku SSS“) · Zamietnuť (dôvod) | len podaná žiadosť |
 | Organizácia | A | – (funkcie) | – |
 | Dokumenty | A | Pridať · Odstrániť | – |
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |

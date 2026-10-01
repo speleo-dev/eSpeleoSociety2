@@ -1,6 +1,6 @@
 Dobrý deň {{ first_name }},
 
-vašu žiadosť o elektronický jaskyniarsky preukaz (eCP) sme nemohli schváliť.
+vašu žiadosť o {{ document or "elektronický jaskyniarsky preukaz (eCP)" }} sme nemohli schváliť.
 
 Dôvod: {{ reason }}
 

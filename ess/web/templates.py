@@ -58,6 +58,7 @@ ERRORS = {
     "card_already_issued": "Na tento rok už kartička vydaná bola. Stiahnite ju znova; novú môže vydať len administrátor ako náhradu (stratená / ukradnutá / poškodená).",
     "card_not_available": "Kartička už neplatí alebo ju nemožno znova stiahnuť.",
     "invalid_sticker_template": "Šablóna musí byť PNG 256 × 256 px s priehľadným pozadím a sivými farbami #000000, #606060, #404040.",
+    "card_format_required": "Pri kartičke SSS zvoľte formát – PDF alebo obrázok (PNG).",
     "sticker_locked": "Ročná známka je už zverejnená; ďalšiu možno pripraviť v nasledujúcom období platby členského.",
     "sticker_wrong_year": "Teraz možno pripraviť známku len na rok obdobia platby členského.",
     "bulk_payment_not_open": "Hromadná platba na tento rok sa otvorí po zverejnení ročnej známky SSS.",
@@ -151,7 +152,7 @@ def fmt_date(value) -> str:
 TASK_LABELS = {
     "member_activation": "Aktivácia člena",
     "sss_decision": "Rozhodnutie o členstve v SSS",
-    "ecp_issue": "Vydanie eCP",
+    "ecp_issue": "Žiadosť o eCP / kartičku",
     "payment_unmatched": "Nespárovaná platba",
     "payment_overpaid": "Preplatok",
 }
@@ -189,6 +190,8 @@ def task_description(task) -> str:
     if task.task_type == "sss_decision":
         return "Nie je v žiadnej skupine (členom SSS ostáva). Rozhodnite o zaradení do „SSS – nezaradení“ alebo o ukončení členstva v SSS."
     if task.task_type == "ecp_issue":
+        if (task.context or {}).get("card_only"):
+            return "Žiadosť len o kartičku SSS (bez eCP). Skontrolujte údaje a schváľte alebo zamietnite."
         return "Žiadosť o eCP s fotkou. Skontrolujte fotku a schváľte alebo zamietnite."
     ctx = task.context or {}
     amount = money(Decimal(ctx["amount"])) if ctx.get("amount") else ""

@@ -3,7 +3,7 @@
 <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
 <div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:5px">
   <h2>Dobrý deň {{ first_name }},</h2>
-  <p>vašu žiadosť o elektronický jaskyniarsky preukaz (eCP) sme nemohli schváliť.</p>
+  <p>vašu žiadosť o {{ document or "elektronický jaskyniarsky preukaz (eCP)" }} sme nemohli schváliť.</p>
   <p><strong>Dôvod:</strong> {{ reason }}</p>
   <p>Po úprave môžete <a href="{{ apply_url }}">podať novú žiadosť</a>. Ak máte otázky, obráťte sa na predsedu svojej skupiny.</p>
   <p>S pozdravom<br>Slovenská speleologická spoločnosť</p>

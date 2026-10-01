@@ -130,7 +130,13 @@ def apply_photo(request: Request, session: Session = Depends(get_session)):
     application_id = _application_in_session(request)
     if application_id is None:
         return _page(request, "public/link_invalid.html", status_code=410)
-    return _page(request, "public/apply_photo.html", ask_card=ecp_applications.asks_for_card(session, application_id))
+    return _page(request, "public/apply_photo.html", **_photo_choices(session, application_id))
+
+
+def _photo_choices(session, application_id: uuid.UUID) -> dict:
+    """What the second step offers: the SSS card (R47) and the card instead of the eCP (R49)."""
+    return {"ask_card": ecp_applications.asks_for_card(session, application_id),
+            "offer_card_only": ecp_applications.offers_card_only(session, application_id)}
 
 
 @router.post("/apply/photo", dependencies=[Depends(verify_public_csrf)])
@@ -141,18 +147,20 @@ async def apply_photo_submit(request: Request, session: Session = Depends(get_se
         return _page(request, "public/link_invalid.html", status_code=410)
     form = await request.form()
     upload = form.get("photo")
-    data = await upload.read(MAX_UPLOAD_BYTES + 1) if hasattr(upload, "read") else b""
+    wants_wallet = form.get("document") != "card"
+    data = await upload.read(MAX_UPLOAD_BYTES + 1) if wants_wallet and hasattr(upload, "read") else b""
+    card_format = str(form.get("card_format", "")) or None
     result = None
     try:
         result = await run_in_threadpool(
             ecp_applications.submit_photo, session, application_id, data, _crop(form), form.get("gdpr") == "on",
-            form.get("notifications") == "on", str(form.get("card_format", "")) or None, store)
+            form.get("notifications") == "on", card_format, store, wants_wallet)
         session.commit()
     except DomainError as exc:
         session.rollback()
-        return _page(request, "public/apply_photo.html", status_code=400,
-                     ask_card=ecp_applications.asks_for_card(session, application_id),
-                     error=ERRORS.get(exc.code, "Fotku sa nepodarilo spracovať."))
+        return _page(request, "public/apply_photo.html", status_code=400, **_photo_choices(session, application_id),
+                     document="ecp" if wants_wallet else "card", card_format=card_format,
+                     error=ERRORS.get(exc.code, "Žiadosť sa nepodarilo spracovať."))
     except Exception:
         session.rollback()
         if result and store:

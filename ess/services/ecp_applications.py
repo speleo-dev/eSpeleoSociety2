@@ -219,7 +219,7 @@ def verify_email(session: Session, token: str) -> EcpApplication | None:
 
 CONSENT_GDPR = "gdpr_ecp"
 CONSENT_NOTIFICATIONS = "notifications"
-CONSENT_TEXT_VERSION = "2026-1"  # bump when the texts in public/apply_photo.html change
+CONSENT_TEXT_VERSION = "2026-2"  # bump when the texts in public/apply_photo.html change
 
 
 @dataclass
@@ -236,11 +236,13 @@ def random_photo_name(prefix: str) -> str:
 
 def submit_photo(
     session: Session, application_id: uuid.UUID, photo: bytes, crop: tuple[float, float, float, float] | None,
-    gdpr_consent: bool, notifications: bool, card_format: str | None, store,
+    gdpr_consent: bool, notifications: bool, card_format: str | None, store, wants_wallet: bool = True,
 ) -> PhotoUpload:
-    """The applicant uploads a face photo and gives consents; the application goes to the administrator.
+    """Second step: the applicant chooses the document, gives consents and (for the eCP) a face photo.
 
-    `card_format` (pdf / png) asks for the SSS card too; ignored when the member already receives cards (R47)."""
+    `card_format` (pdf / png) asks for the SSS card too; ignored when the member already receives cards (R47).
+    Without `wants_wallet` it is an application for the SSS card only – no photo, `card_format` required (R49).
+    """
     from ess.images import crop_portrait, normalize_original
     from ess.models import Consent, TaskType
     from ess.services import tasks
@@ -249,20 +251,28 @@ def submit_photo(
         raise DomainError("gdpr_consent_required")
     if card_format not in (None, "pdf", "png"):
         raise DomainError("invalid_value")
-    if store is None:
-        raise DomainError("media_store_not_configured")
     application = session.get(EcpApplication, application_id, with_for_update=True)
     if application is None or application.status != S.PHOTO_PENDING.value:
         raise DomainError("application_not_open")
-    original = normalize_original(photo)
-    portrait = crop_portrait(original, crop)
-    original_name, portrait_name = random_photo_name("originals"), random_photo_name("photos")
-    store.put(original_name, original, "image/jpeg")
-    store.put(portrait_name, portrait, "image/jpeg")
-    application.photo_original, application.photo_cropped = original_name, portrait_name
     member = session.get(Member, application.member_id)
     if member is not None and member.card_format:
         card_format = None  # chosen by the chair or an administrator already
+    objects: list[str] = []
+    if wants_wallet:
+        if store is None:
+            raise DomainError("media_store_not_configured")
+        original = normalize_original(photo)
+        portrait = crop_portrait(original, crop)
+        original_name, portrait_name = random_photo_name("originals"), random_photo_name("photos")
+        store.put(original_name, original, "image/jpeg")
+        store.put(portrait_name, portrait, "image/jpeg")
+        application.photo_original, application.photo_cropped = original_name, portrait_name
+        objects = [original_name, portrait_name]
+    else:
+        if application.source != EcpApplicationSource.PUBLIC.value or not card_format:
+            raise DomainError("card_format_required")  # the chair asked for the eCP; or no format chosen
+        notifications = False  # notifications go to the eCP only
+    application.wants_wallet = wants_wallet
     application.card_format, application.wants_card = card_format, card_format is not None
     application.status = S.SUBMITTED.value
     application.submitted_at = _now()
@@ -271,10 +281,17 @@ def submit_photo(
                             text_version=CONSENT_TEXT_VERSION, granted=granted, source="application",
                             application_id=application.id))
     tasks.open_task(session, PUBLIC, TaskType.ECP_ISSUE, application.member_id, club_id=application.club_id,
-                    context={"application_id": str(application.id)})
+                    context={"application_id": str(application.id), **({} if wants_wallet else {"card_only": True})})
     audit.record(session, actor_type=PUBLIC.audit_type, actor_id=None, action="ecp_application.submit",
-                 entity_type="ecp_application", entity_id=str(application.id))
-    return PhotoUpload(application, [original_name, portrait_name])
+                 entity_type="ecp_application", entity_id=str(application.id), details={"ecp": wants_wallet})
+    return PhotoUpload(application, objects)
+
+
+def offers_card_only(session: Session, application_id: uuid.UUID) -> bool:
+    """A member applying on the public page may ask for the SSS card instead of the eCP (R49)."""
+    application = session.get(EcpApplication, application_id)
+    return (application is not None and application.source == EcpApplicationSource.PUBLIC.value
+            and asks_for_card(session, application_id))
 
 
 # --- new member proposed with "issue eCP" (R23) ------------------------------------------------------------

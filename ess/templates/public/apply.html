@@ -1,10 +1,12 @@
 {% extends "public/_layout.html" %}
-{% block title %}Žiadosť o eCP{% endblock %}
+{% block title %}Žiadosť o eCP alebo kartičku SSS{% endblock %}
 {% block content %}
-<h1>Žiadosť o elektronický jaskyniarsky preukaz (eCP)</h1>
+<h1>Žiadosť o eCP alebo kartičku SSS</h1>
 <p>Žiadosť je pre existujúcich členov SSS. Údaje musia presne zodpovedať evidencii SSS.
-   Nový člen dostane eCP cez predsedu svojej skupiny.</p>
+   Nový člen dostane doklad cez predsedu svojej skupiny.</p>
 {% include "public/_documents.html" %}
+<p><strong>Druh dokladu (eCP, kartička SSS alebo oboje) si vyberiete až v druhom kroku</strong> – po overení
+   e-mailu. Teraz vyplňte údaje, podľa ktorých vás nájdeme v evidencii SSS.</p>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form" autocomplete="on">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
@@ -24,5 +26,6 @@
   <div style="position:absolute;left:-10000px" aria-hidden="true"><label>Nevypĺňajte<input name="website" tabindex="-1" autocomplete="off"></label></div>
   <p><button class="primary">Pokračovať</button></p>
 </form>
-<p class="muted">Po odoslaní vám pošleme e-mail s odkazom na overenie. V ďalšom kroku nahráte fotku tváre.</p>
+<p class="muted">Po odoslaní vám pošleme e-mail s odkazom na overenie. V druhom kroku si vyberiete doklad
+   a pri eCP nahráte fotku tváre.</p>
 {% endblock %}

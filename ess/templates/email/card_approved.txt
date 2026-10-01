@@ -1,0 +1,9 @@
+Dobrý deň {{ member_name }}!
+
+Vašu žiadosť o kartičku SSS sme schválili.
+{% if card_sent %}Kartičku na tento rok sme vám poslali v samostatnom e-maili.
+{% else %}Kartičku pošleme e-mailom hneď, ako bude zaplatené členské.
+{% endif %}Kartičky na ďalšie roky budú prichádzať automaticky po zaplatení členského.
+
+S pozdravom,
+Slovenská speleologická spoločnosť

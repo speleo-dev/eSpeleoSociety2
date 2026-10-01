@@ -113,3 +113,91 @@ def test_apply_page_describes_ecp_and_card(client):  # noqa: F811
     assert "Peňaženka Google" in page and "play.google.com" in page and "preview-ecp.png" in page
     assert "obrázok (PNG)" in page and "preview-card.png" in page
     assert re.search(r"Nie je to plastová karta", page)
+
+
+# --- application for the SSS card only (R49) ---------------------------------------------------------
+
+
+@pytest.mark.db
+def test_card_only_application_without_photo(session):
+    from ess.models import Task
+    from ess.services.access import DomainError
+
+    club_id = _club(session)
+    member_id = _member(session, club_id)
+    year = date.today().year
+    payments.mark_paid(session, SYSTEM, member_id, year, "hotovosť")
+    mail = apps.start_public(session, _form(club_id))
+    app = apps.verify_email(session, mail.token)
+    assert apps.offers_card_only(session, app.id)
+    with pytest.raises(DomainError, match="card_format_required"):
+        apps.submit_photo(session, app.id, b"", None, True, True, None, None, wants_wallet=False)
+    upload = apps.submit_photo(session, app.id, b"", None, True, True, "pdf", None, wants_wallet=False)
+    assert upload.objects == [] and app.status == "submitted" and not app.wants_wallet and app.photo_cropped is None
+    task = session.scalar(select(Task).where(Task.member_id == member_id, Task.status == "open"))
+    assert task.context["card_only"] is True
+
+    from ess.services import outbox
+
+    outbox.discard(session)
+    wallet = MemoryWalletClient()
+    decision = ecp_issuance.approve(session, ADMIN, app.id, None, wallet, "https://ess")  # no store needed
+    assert decision.card_sent and decision.save_url is None and wallet.objects == {}
+    assert app.status == "approved" and session.get(Member, member_id).card_format == "pdf"
+    assert [m.template for m in outbox.take(session)] == ["sss_card"]
+    assert task.status == "done"
+
+
+@pytest.mark.db
+def test_card_only_not_offered_to_invited_member(session):
+    from ess.services.access import DomainError
+
+    club_id = _club(session)
+    member_id = _member(session, club_id)
+    apps.invite_new_member(session, member_id, club_id)
+    from ess.models import EcpApplication
+
+    app = session.scalar(select(EcpApplication).where(EcpApplication.member_id == member_id))
+    assert not apps.offers_card_only(session, app.id)
+    with pytest.raises(DomainError, match="card_format_required"):
+        apps.submit_photo(session, app.id, b"", None, True, True, "pdf", None, wants_wallet=False)
+
+
+@pytest.mark.db
+def test_web_card_only(migrated_db, google, client):  # noqa: F811
+    from ess.mail import MemoryMailer, get_mailer
+
+    mailer = MemoryMailer()
+    client.app.dependency_overrides[get_mailer] = lambda: mailer
+    with migrated_db() as session:
+        club_id = _club(session)
+        _member(session, club_id)
+        session.commit()
+    page = client.get("/ecp/apply").text
+    assert "vyberiete až v druhom kroku" in page
+    token = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+    client.post("/ecp/apply", data={"csrf_token": token, "first_name": "Ján", "last_name": "Žiadateľ",
+                                    "birth_date": "1980-05-17", "email": "rodina@example.org", "card_number": "1234",
+                                    "member_since": "1995", "club_id": str(club_id)})
+    link = re.search(r"https?://\S+/ecp/email/\S+", mailer.sent[0].text).group(0)
+    client.get(link[link.index("/ecp/email/"):])
+    page = client.get("/ecp/apply/photo").text
+    assert 'value="card"' in page and "Len kartička SSS" in page
+    r = client.post("/ecp/apply/photo", follow_redirects=False,
+                    data={"csrf_token": token, "gdpr": "on", "document": "card", "card_format": ""})
+    assert r.status_code == 400 and "zvoľte formát" in r.text
+    r = client.post("/ecp/apply/photo", follow_redirects=False,
+                    data={"csrf_token": token, "gdpr": "on", "document": "card", "card_format": "png"})
+    assert r.headers["location"] == "/ecp/apply/done"
+
+    login(client, google)
+    page = client.get("/admin/tasks").text
+    assert "Žiadosť len o kartičku SSS" in page
+    app_url = re.search(r'href="(/admin/ecp-applications/[^"]+)"', page).group(1)
+    page = client.get(app_url).text
+    assert "Schváliť kartičku SSS" in page and "bez fotky" in page
+    mailer.sent.clear()
+    r = client.post(app_url + "/approve", data={"csrf_token": csrf(client)})
+    assert "Kartička SSS bola schválená" in r.text
+    [mail] = mailer.sent
+    assert mail.subject == "Kartička SSS" and "po zaplatení" in mail.text  # fee not paid yet

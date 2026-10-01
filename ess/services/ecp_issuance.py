@@ -63,6 +63,7 @@ class Decision:
     save_url: str | None = None
     cleanup: list[str] = field(default_factory=list)
     member_name: str = ""
+    card_sent: bool = False  # SSS card issued and e-mailed now (fee already paid)
 
 
 def _now() -> datetime:
@@ -124,26 +125,24 @@ def _primary_club_name(session: Session, member_id: uuid.UUID) -> str:
 
 def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wallet: WalletClient,
             base_url: str) -> Decision:
-    """Approve: fill missing register data, create the pass in Google Wallet, sign the save link."""
+    """Approve: fill missing register data, create the pass in Google Wallet, sign the save link.
+
+    An application for the SSS card only (R49) just starts sending the member's cards."""
     require_admin(actor)
-    if store is None:
-        raise DomainError("media_store_not_configured")
     info = view(session, actor, application_id)
     application = _open_application(session, application_id)
     member = info.member
     if member.expelled_at or member.sss_ended_at:
         raise DomainError("member_not_in_sss")
+    if not application.wants_wallet:
+        return _approve_card_only(session, actor, application, info)
+    if store is None:
+        raise DomainError("media_store_not_configured")
     if session.scalar(select(EcpPass.id).where(EcpPass.member_id == member.id,
                                                EcpPass.state != EcpPassState.REVOKED.value)):
         raise DomainError("member_has_ecp")
 
-    data = info.register
-    if "card_number" in info.fills:
-        data.card_number = info.card_number
-    if "member_since" in info.fills:
-        data.member_since = date(int(info.member_since_year), 1, 1)
-    if info.fills:
-        members.update_member(session, actor, member.id, data)
+    data = _fill_register(session, actor, info)
 
     ecp_pass = EcpPass(id=uuid.uuid4(), member_id=member.id, application_id=application.id,
                        wallet_object_id=f"{get_settings().wallet_issuer_id}.{secrets.token_hex(16)}",
@@ -166,14 +165,7 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
         raise DomainError("wallet_error") from None
     ecp_pass.wallet_state = ecp_pass.state
 
-    if application.card_format and not member.card_format:  # the applicant wants the SSS card too (R47)
-        from ess.services import sss_cards
-
-        member.card_format = application.card_format
-        for year in payments.payment_years(session):  # paid years now, later years after payment
-            fee = payments.get_fee(session, member.id, year)
-            if fee is not None and fee.paid_at is not None:
-                sss_cards.issue_after_payment(session, member.id, year)
+    _start_cards(session, member, application)
 
     application.status = S.APPROVED.value
     application.decided_at, application.decided_by = _now(), actor.id
@@ -184,6 +176,45 @@ def approve(session: Session, actor: Actor, application_id: uuid.UUID, store, wa
                  entity_type="ecp_pass", entity_id=str(ecp_pass.id),
                  details={"application_id": str(application.id), "filled": info.fills})
     return Decision(application, info.email, info.first_name, save_url, cleanup, member_name=data.full_name())
+
+
+def _fill_register(session: Session, actor: Actor, info: ApplicationView) -> members.MemberData:
+    data = info.register
+    if "card_number" in info.fills:
+        data.card_number = info.card_number
+    if "member_since" in info.fills:
+        data.member_since = date(int(info.member_since_year), 1, 1)
+    if info.fills:
+        members.update_member(session, actor, info.member.id, data)
+    return data
+
+
+def _start_cards(session: Session, member: Member, application: EcpApplication) -> bool:
+    """The applicant wants the SSS card (R47): paid years now, later years after payment. True = sent now."""
+    from ess.services import sss_cards
+
+    if not application.card_format or member.card_format:
+        return False
+    member.card_format = application.card_format
+    sent = False
+    for year in payments.payment_years(session):
+        fee = payments.get_fee(session, member.id, year)
+        if fee is not None and fee.paid_at is not None:
+            sent = sss_cards.issue_after_payment(session, member.id, year) is not None or sent
+    return sent
+
+
+def _approve_card_only(session: Session, actor: Actor, application: EcpApplication,
+                       info: ApplicationView) -> Decision:
+    """Application for the SSS card only (R49): the member receives cards, no Google Wallet pass."""
+    data = _fill_register(session, actor, info)
+    sent = _start_cards(session, info.member, application)
+    application.status = S.APPROVED.value
+    application.decided_at, application.decided_by = _now(), actor.id
+    tasks.close_tasks(session, actor, TaskType.ECP_ISSUE, TaskStatus.DONE, "approved", member_id=info.member.id)
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="sss_card.application_approve",
+                 entity_type="ecp_application", entity_id=str(application.id), details={"filled": info.fills})
+    return Decision(application, info.email, info.first_name, member_name=data.full_name(), card_sent=sent)
 
 
 def reject(session: Session, actor: Actor, application_id: uuid.UUID, reason: str) -> Decision:

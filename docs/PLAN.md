@@ -257,7 +257,15 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Stránka žiadosti vysvetľuje oba doklady s malou ukážkou (fiktívne údaje, `ess.tools.make_previews`):
     eCP (funkcie, vyžaduje Android a aplikáciu Peňaženka Google – odkaz na inštaláciu) a kartičku
     (len potvrdenie členstva a členského na rok; PDF alebo obrázok PNG na vytlačenie či do mobilu, nie plastová karta).
-  - Samostatná žiadosť len o kartičku (bez eCP) cez verejnú stránku zatiaľ nie je – vybavuje ju predseda.
+  - Samostatná žiadosť len o kartičku: R49.
+- **R49** – **Žiadosť len o kartičku SSS** (2026-10-01): rovnaká žiadosť ako o eCP – člen vyplní tie isté
+  údaje a overí e-mail. **Druh dokladu si vyberie až v druhom kroku** (po overení e-mailu): eCP (s fotkou,
+  voliteľne aj kartička) alebo len kartička (bez fotky, formát PDF / obrázok PNG povinný). Úvodná stránka to hovorí.
+  - Ponúka sa len pri verejnej žiadosti a len ak člen ešte nemá zvolený formát kartičky; pozvaný nový člen
+    (predseda zvolil „Vydať eCP“) dostane len eCP.
+  - Administrátor ju vidí v Požiadavkách ako „Žiadosť len o kartičku SSS“; schválenie nastaví členovi formát
+    kartičky a kartičku pošle hneď, ak má zaplatené členské, inak po zaplatení. Člen dostane e-mail o schválení.
+  - V dátach: `ecp_applications.wants_wallet = false`, `card_format` povinný; požiadavka má `card_only`.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.
