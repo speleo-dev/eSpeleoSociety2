@@ -285,6 +285,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   „Udeliť prístup administrátora“ (`admin_users.member_id`, migrácia 0026). Člen prihlásený na portáli cez eCP
   potom otvorí administráciu (tajná adresa) bez Google účtu; odhlásenie je odhlásenie z portálu. Prístup cez
   Google e-mail (Prístupy) ostáva; odobratie platí hneď.
+  - Hromadenie rolí (2026-10-01): jedna osoba môže byť naraz člen, predseda skupiny (funkcia), predseda SSS
+    (funkcia, bez práv v IS), administrátor (eCP) a superadmin (Google). V administrácii platí vždy jedna rola:
+    prihlásenie Googlom ako superadmin má prednosť; po odhlásení z neho platí rola admin z eCP. Pre testovanie
+    to ostáva tak. **Neskôr:** admin a superadmin nesmú byť tá istá osoba (kontrola pri udelení prístupu).
 - **R52** – **Jedno menu pre člena a predsedu na portáli** (2026-10-01): Členovia (členovia vlastných skupín;
   pri jednej skupine rovno jej stránka) · Skupiny (všetky skupiny s kontaktmi a predsedom; cudzia skupina bez
   zoznamu členov) · Organizácia (Výbor, Dokumenty, Notifikácie – len čítanie) · štítok s menom (Môj profil,
