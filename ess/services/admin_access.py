@@ -54,6 +54,39 @@ def resolve_role(session: Session, google_email: str) -> tuple[AdminRole, str] |
     return AdminRole.ADMIN, str(user.id)  # superadmins only from the server config (R50)
 
 
+def resolve_member(session: Session, member_id: uuid.UUID) -> tuple[AdminRole, str] | None:
+    """Administrator role of a member signed in with the eCP (R51), or None."""
+    user = session.scalar(select(AdminUser).where(AdminUser.member_id == member_id, AdminUser.active))
+    return (AdminRole.ADMIN, str(user.id)) if user is not None else None
+
+
+def grant_member_access(session: Session, actor: Actor, member_id: uuid.UUID) -> AdminUser:
+    """The superadmin makes a member an administrator who signs in with the eCP (R51)."""
+    from ess.models import Member
+    from ess.services import members
+
+    require_system_admin(actor)
+    member = session.get(Member, member_id)
+    if member is None or member.expelled_at:
+        raise DomainError("member_not_found")
+    user = session.scalar(select(AdminUser).where(AdminUser.member_id == member_id))
+    if user is None:
+        user = AdminUser(id=uuid.uuid4(), member_id=member_id)
+        session.add(user)
+    user.display_name_enc = pii.encrypt(members.read_member(member).full_name(), _CTX_NAME)
+    user.role = AdminRole.ADMIN
+    user.active = True
+    user.granted_by = actor.id
+    session.flush()
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="admin_access.grant",
+                 entity_type="admin_user", entity_id=str(user.id), details={"role": "admin", "via": "ecp"})
+    return user
+
+
+def member_access(session: Session, member_id: uuid.UUID) -> AdminUser | None:
+    return session.scalar(select(AdminUser).where(AdminUser.member_id == member_id))
+
+
 def grant_access(session: Session, actor: Actor, google_email: str, display_name: str, role: AdminRole) -> AdminUser:
     require_system_admin(actor)
     if role != AdminRole.ADMIN:
@@ -97,7 +130,8 @@ def list_users(session: Session) -> list[dict]:
     for user in session.scalars(select(AdminUser)):
         rows.append({
             "id": user.id,
-            "email": pii.decrypt(user.google_email_enc, _CTX_EMAIL),
+            "email": pii.decrypt(user.google_email_enc, _CTX_EMAIL) if user.google_email_enc else None,
+            "member_id": user.member_id,
             "name": pii.decrypt(user.display_name_enc, _CTX_NAME),
             "role": AdminRole.ADMIN,  # older system_admin grants act as admin (R50)
             "active": user.active,

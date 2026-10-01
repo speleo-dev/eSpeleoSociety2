@@ -281,6 +281,10 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     id osoby, ktorá import spustila).
   - V kóde: `Actor.is_admin` = administrátor evidencie, `is_staff` = administrátor alebo superadmin
     (`require_staff`); webové stránky evidencie používajú `RegisterAdmin`.
+- **R51** – **Administrátor sa môže prihlásiť aj cez eCP** (2026-10-01): superadmin v detaile člena klikne
+  „Udeliť prístup administrátora“ (`admin_users.member_id`, migrácia 0026). Člen prihlásený na portáli cez eCP
+  potom otvorí administráciu (tajná adresa) bez Google účtu; odhlásenie je odhlásenie z portálu. Prístup cez
+  Google e-mail (Prístupy) ostáva; odobratie platí hneď.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.

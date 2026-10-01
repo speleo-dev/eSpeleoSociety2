@@ -43,8 +43,11 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
     if not admin.is_admin:  # superadmin: limited view and positions of the SSS board (R50)
+        from ess.services import admin_access
+
         return _render(request, "admin/member_limited.html", admin, session, d=detail,
-                       positions=directory.positions_catalog(session))
+                       positions=directory.positions_catalog(session),
+                       access=admin_access.member_access(session, member_id))
     issuable = [y for y in sss_cards.allowed_years(session) if sss_cards.can_issue(session, member_id, y)]
     from ess.web.admin_payments import member_fee_rows
 

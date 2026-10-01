@@ -52,6 +52,7 @@ class AdminContext:
     display_name: str
     role: AdminRole
     csrf_token: str
+    via_ecp: bool = False  # signed in with the eCP on the portal (R51), not with Google
 
     @property
     def is_system_admin(self) -> bool:
@@ -87,10 +88,29 @@ def current_register_admin(request: Request, session: Session = Depends(get_sess
     return admin
 
 
+def _admin_from_ecp(request: Request, session: Session) -> AdminContext | None:
+    """A member signed in on the portal (eCP) who has the administrator role (R51)."""
+    from ess.services import members, portal_auth
+
+    token = request.cookies.get("ess_member")
+    if not token:
+        return None
+    member = portal_auth.current_member(session, token)
+    resolved = admin_access.resolve_member(session, member.id) if member is not None else None
+    if resolved is None:
+        return None
+    role, actor_id = resolved
+    return AdminContext(actor=Actor(kind=role.value, id=actor_id), display_name=members.read_member(member).full_name(),
+                        role=role, csrf_token=csrf_token(request), via_ecp=True)
+
+
 def current_admin(request: Request, session: Session = Depends(get_session)) -> AdminContext:
     email = request.session.get("admin_email")
     if not email:
-        raise LoginRequired()
+        admin = _admin_from_ecp(request, session)
+        if admin is None:
+            raise LoginRequired()
+        return admin
     resolved = admin_access.resolve_role(session, email)
     if resolved is None:
         request.session.clear()

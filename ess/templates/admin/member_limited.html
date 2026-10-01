@@ -11,4 +11,15 @@
 </dl>
 <p class="muted">Ďalšie údaje člena a ich zmeny spravuje administrátor.</p>
 {% include "admin/_positions.html" %}
+
+<h2>Prístup administrátora</h2>
+{% if access and access.active %}
+<p>Člen je <strong>administrátor</strong> – prihlasuje sa cez eCP na portáli (R51).</p>
+<form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/admin-access/revoke" onsubmit="return confirm('Odobrať prístup administrátora?')">
+  {% include "admin/_csrf.html" %}<button>Odobrať prístup</button></form>
+{% else %}
+<p class="muted">Administrátor vedie evidenciu členov, skupín a členského. Prihlasuje sa cez svoj eCP.</p>
+<form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/admin-access" onsubmit="return confirm('Udeliť členovi prístup administrátora?')">
+  {% include "admin/_csrf.html" %}<button class="primary">Udeliť prístup administrátora</button></form>
+{% endif %}
 {% endblock %}

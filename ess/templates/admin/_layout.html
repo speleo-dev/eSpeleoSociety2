@@ -28,7 +28,8 @@
     {% endif %}
     <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
       <span class="muted">{{ admin.role|label }}</span>
-      <form method="post" action="{{ A }}/logout">
+      {% if admin.via_ecp %}<a href="/portal">Môj portál (eCP)</a>{% endif %}
+      <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}">
         <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="link">Odhlásiť</button>
       </form>
     </div></details>

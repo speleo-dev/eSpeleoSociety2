@@ -221,8 +221,11 @@ class AdminUser(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     display_name_enc: Mapped[bytes] = mapped_column(LargeBinary)
-    google_email_enc: Mapped[bytes] = mapped_column(LargeBinary)
-    google_email_bidx: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    google_email_enc: Mapped[bytes | None] = mapped_column(LargeBinary)  # Google sign-in (optional, R51)
+    google_email_bidx: Mapped[bytes | None] = mapped_column(LargeBinary, unique=True)
+    member_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("members.id"))  # eCP sign-in (R51)
+    __table_args__ = (Index("uq_admin_users_member", "member_id", unique=True,
+                            postgresql_where=text("member_id IS NOT NULL")),)
     role: Mapped[AdminRole] = mapped_column(
         Enum(AdminRole, name="admin_role", values_callable=lambda e: [m.value for m in e])
     )

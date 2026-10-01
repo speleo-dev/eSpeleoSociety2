@@ -176,6 +176,25 @@ def access_revoke(request: Request, user_id: uuid.UUID, admin: Admin, session: D
                "Prístup bol odobratý.")
 
 
+@router.post("/members/{member_id}/admin-access", dependencies=[Depends(verify_csrf)])
+def member_access_grant(request: Request, member_id: uuid.UUID, admin: Admin, session: Db):
+    """The superadmin makes a member an administrator signing in with the eCP (R51)."""
+    return act(request, session, f"{A}/members/{member_id}",
+               lambda: admin_access.grant_member_access(session, admin.actor, member_id),
+               "Prístup administrátora bol udelený.")
+
+
+@router.post("/members/{member_id}/admin-access/revoke", dependencies=[Depends(verify_csrf)])
+def member_access_revoke(request: Request, member_id: uuid.UUID, admin: Admin, session: Db):
+    def revoke():
+        user = admin_access.member_access(session, member_id)
+        if user is None:
+            raise DomainError("admin_user_not_found")
+        admin_access.revoke_access(session, admin.actor, user.id)
+
+    return act(request, session, f"{A}/members/{member_id}", revoke, "Prístup administrátora bol odobratý.")
+
+
 # --- settings (system administrators only) ------------------------------------------------------------
 
 @router.get("/settings")
