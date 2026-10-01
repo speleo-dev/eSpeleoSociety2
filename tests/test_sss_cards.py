@@ -124,8 +124,9 @@ def test_web_download_email_and_public_page(migrated_db, monkeypatch):
     with migrated_db() as s:
         member_id = _member(s, _club(s))
         s.commit()
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
+    from tests.test_web_admin import login as _login
+
+    _login(client, google)  # administrator (R50)
     page = client.get(f"/admin/members/{member_id}").text
     assert "Vydať kartičku SSS" in page
     csrf = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
@@ -177,8 +178,9 @@ def test_web_new_member_with_card(migrated_db, monkeypatch):
     with migrated_db() as s:
         club_id = _club(s)
         s.commit()
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
+    from tests.test_web_admin import login as _login
+
+    _login(client, google)  # administrator (R50)
     csrf = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/admin/members/new").text).group(1)
     page = client.post("/admin/members/new", data={
         "csrf_token": csrf, "first_name": "Nový", "last_name": "Člen", "email": "novy@example.org",

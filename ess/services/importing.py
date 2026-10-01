@@ -20,7 +20,7 @@ from ess.security.crypto import normalize_for_index
 from ess.services import clubs as clubs_service
 from ess.services import members as members_service
 from ess.services import memberships
-from ess.services.access import Actor, DomainError, require_admin
+from ess.services.access import Actor, DomainError, require_staff
 from ess.services.members import MemberData
 
 CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia", "logo", "ulica", "psc", "obec", "krajina", "email", "telefon",
@@ -97,8 +97,15 @@ def _missing_columns(headers: list[str], required: list[str]) -> list[str]:
 
 # --- clubs ---------------------------------------------------------------------------------------------
 
+def _importer(actor: Actor) -> Actor:
+    """Both administrators and superadmins import (R50); the rows are written as a trusted import
+    (audit: actor type "system" with the importing person's id)."""
+    require_staff(actor)
+    return Actor(kind="system", id=actor.id)
+
+
 def import_clubs(session: Session, actor: Actor, content: bytes, dry_run: bool = True) -> ImportResult:
-    require_admin(actor)
+    actor = _importer(actor)
     headers, rows = read_csv(content)
     missing = _missing_columns(headers, ["kod", "nazov"])
     if missing:
@@ -176,7 +183,7 @@ def _identity(first: str, last: str) -> str:
 
 def import_members(session: Session, actor: Actor, content: bytes, dry_run: bool = True) -> ImportResult:
     """Import members; one row per membership. Personal data come from the primary row."""
-    require_admin(actor)
+    actor = _importer(actor)
     headers, rows = read_csv(content)
     missing = _missing_columns(headers, ["kod_skupiny", "primarna", "meno", "priezvisko"])
     if missing:

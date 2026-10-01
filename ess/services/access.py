@@ -2,6 +2,11 @@
 
 Administrative access (admin / system_admin) is separate from the organisation structure (R17).
 The only right derived from a position is: a club chair manages their own club.
+
+Roles (R50): the administrator (`admin`) keeps the register – members, clubs, fees, bank statements, requests,
+the yearly sticker. The superadmin (`system_admin`) runs the system – access, eCP settings, certificate types,
+positions of the SSS board, imports – and does not change the register. Both edit documents and send
+notifications. `system` (trusted scripts, tests) may do everything.
 """
 
 import uuid
@@ -36,12 +41,17 @@ class Actor:
 
     @property
     def is_admin(self) -> bool:
-        """Administrator or system administrator. `system` covers trusted scripts (import, test data)."""
-        return self.kind in ("admin", "system_admin", "system")
+        """Administrator of the register (not the superadmin, R50). `system` covers trusted scripts."""
+        return self.kind in ("admin", "system")
 
     @property
     def is_system_admin(self) -> bool:
         return self.kind in ("system_admin", "system")
+
+    @property
+    def is_staff(self) -> bool:
+        """Any administrative access: administrator or superadmin."""
+        return self.kind in ("admin", "system_admin", "system")
 
     @property
     def audit_type(self) -> str:
@@ -54,6 +64,12 @@ PUBLIC = Actor(kind="public", id="public")  # anonymous visitor of the public pa
 
 def require_admin(actor: Actor) -> None:
     if not actor.is_admin:
+        raise PermissionDenied("admin")
+
+
+def require_staff(actor: Actor) -> None:
+    """Administrator or superadmin (documents, notifications, eCP settings, certificate types, imports)."""
+    if not actor.is_staff:
         raise PermissionDenied("admin")
 
 

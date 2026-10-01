@@ -43,7 +43,7 @@ def test_admin_under_secret_path(migrated_db, google, monkeypatch):  # noqa: F81
     r = client.get("/sprava-x7Kq2/auth/callback", follow_redirects=False)
     assert r.headers["location"] == "/sprava-x7Kq2"
     page = client.get("/sprava-x7Kq2/members").text
-    assert 'href="/sprava-x7Kq2/members/new"' in page and 'href="/admin' not in page
+    assert 'href="/sprava-x7Kq2/members"' in page and 'href="/admin' not in page
 
 
 def test_admin_path_is_validated(monkeypatch):

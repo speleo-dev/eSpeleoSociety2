@@ -1,8 +1,9 @@
 {% extends "admin/_layout.html" %}
-{% block page_title %}Organizačná štruktúra{% endblock %}
+{% block page_title %}Výbor{% endblock %}
 {% block body %}
-<h1>Organizačná štruktúra</h1>
-<p class="muted">Funkcie sa priraďujú v detaile člena (predseda skupiny aj v detaile skupiny). Funkcie nedávajú prístup do administrácie.</p>
+<h1>Výbor</h1>
+<p class="muted">Funkcie sa priraďujú v detaile člena: funkcie vo Výbore SSS superadmin, predsedu skupiny administrátor
+  (aj v detaile skupiny). Funkcie nedávajú prístup do administrácie.</p>
 <div class="table-wrap"><table class="stack">
   <thead><tr><th>Funkcia</th><th>Meno</th><th>Skupina</th><th>Telefón</th><th>Od</th><th></th></tr></thead>
   <tbody>
@@ -12,8 +13,8 @@
       <td data-label="Skupina">{{ h.club_name or "" }}</td>
       <td data-label="Telefón">{{ h.phone or "" }}</td>
       <td data-label="Od">{{ h.valid_from|date }}</td>
-      <td><form class="inline" method="post" action="{{ A }}/positions/{{ h.holder_id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
-        {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ A }}/organization"><button>Ukončiť</button></form></td></tr>
+      <td>{% if admin.is_system_admin or h.club_name %}<form class="inline" method="post" action="{{ A }}/positions/{{ h.holder_id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+        {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ A }}/organization"><button>Ukončiť</button></form>{% endif %}</td></tr>
   {% else %}
     <tr><td colspan="6" class="muted">Žiadne funkcie.</td></tr>
   {% endfor %}

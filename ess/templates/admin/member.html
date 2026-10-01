@@ -166,25 +166,7 @@
 </p>
 {% endif %}
 
-<h2>Funkcie</h2>
-<ul>{% for p in d.positions %}<li>{{ p.name }}{% if p.club_name %} ({{ p.club_name }}){% endif %}: {{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}
-  {% if not p.valid_to %}<form class="inline" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
-    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Ukončiť</button></form>{% endif %}</li>
-{% else %}<li class="muted">Žiadne funkcie.</li>{% endfor %}</ul>
-{% if d.sss_status.value == "member" %}
-<details><summary>Priradiť funkciu</summary>
-<form method="post" action="{{ A }}/members/{{ d.member.id }}/positions" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Funkcia<select name="position_code" required>{% for p in positions %}<option value="{{ p.code }}">{{ p.name }}</option>{% endfor %}</select></label>
-    <label>Skupina (len pre predsedu skupiny)<select name="club_id"><option value="">—</option>
-      {% for v in d.open_memberships %}<option value="{{ v.membership.club_id }}">{{ v.club_name }}</option>{% endfor %}</select></label>
-    <label>Od<input type="date" name="valid_from"></label>
-  </div>
-  <button class="primary">Priradiť</button>
-  <p class="muted">Pri funkciách, ktoré môže zastávať len jeden človek (predseda SSS, predseda skupiny…), sa predchádzajúcemu držiteľovi funkcia ukončí k tomuto dátumu.</p>
-</form></details>
-{% endif %}
+{% include "admin/_positions.html" %}
 
 <h2>Certifikáty</h2>
 <ul>{% for c in d.certificates %}<li>{{ c.name }}{% if c.valid_from or c.valid_to %} ({{ c.valid_from|date or "?" }} – {{ c.valid_to|date or "bez obmedzenia" }}){% endif %}{% if c.note %} – {{ c.note }}{% endif %}

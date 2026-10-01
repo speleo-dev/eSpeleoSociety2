@@ -26,7 +26,7 @@ def test_mailer_not_configured_without_password(monkeypatch):
 def test_test_mail_from_settings(client, google, migrated_db):
     memory = MemoryMailer()
     client.app.dependency_overrides[get_mailer] = lambda: memory
-    login(client, google)
+    login(client, google, email="super@example.org")
     page = client.post("/admin/settings/test-mail", data={"csrf_token": csrf(client), "to": "admin@example.org"}).text
     assert [m.to for m in memory.sent] == ["admin@example.org"]
     assert "Testovací e-mail bol odoslaný." in page

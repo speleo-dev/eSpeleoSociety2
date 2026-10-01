@@ -86,8 +86,9 @@ def test_web_admin_creates_member_with_ecp(migrated_db, monkeypatch):
     with migrated_db() as s:
         club_id = _club(s)
         s.commit()
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
+    from tests.test_web_admin import login as _login
+
+    _login(client, google)  # administrator (R50)
     csrf = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/admin").text).group(1)
     page = client.post("/admin/members/new", data={
         "csrf_token": csrf, "first_name": "Nový", "last_name": "Člen", "email": "novy@example.org",

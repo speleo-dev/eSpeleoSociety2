@@ -174,7 +174,7 @@ def test_primary_membership_moves_on_termination(session):
 def test_expelled_member_cannot_rejoin(session):
     club = _club(session, "JS A")
     m = _active_member_in(session, club)
-    positions.assign_position(session, ADMIN, "board_member", m.id, valid_from=D0)
+    positions.assign_position(session, SYS_ADMIN, "board_member", m.id, valid_from=D0)
     with pytest.raises(PermissionDenied):
         members.expel_member(session, _chair_of(session, club), m.id, "Uznesenie VZ")
     members.expel_member(session, ADMIN, m.id, "Uznesenie VZ 2026/5", on=date(2026, 5, 1))
@@ -209,9 +209,11 @@ def test_position_rules(session):
         positions.assign_position(session, ADMIN, "club_chair", outsider.id, unaffiliated.id)
     with pytest.raises(PermissionDenied):
         positions.assign_position(session, Actor(kind="member", id=str(outsider.id)), "sss_chair", outsider.id)
-    positions.assign_position(session, ADMIN, "sss_chair", outsider.id, valid_from=D0)
+    with pytest.raises(PermissionDenied):  # R50: the SSS board (Výbor) only by the superadmin
+        positions.assign_position(session, ADMIN, "sss_chair", outsider.id)
+    positions.assign_position(session, SYS_ADMIN, "sss_chair", outsider.id, valid_from=D0)
     second = _active_member_in(session, club)
-    positions.assign_position(session, ADMIN, "sss_chair", second.id, valid_from=date(2026, 6, 1))
+    positions.assign_position(session, SYS_ADMIN, "sss_chair", second.id, valid_from=date(2026, 6, 1))
     assert [h.member_id for h in positions.current_holders(session, "sss_chair", on=date(2026, 6, 1))] == [second.id]
 
 
@@ -229,18 +231,20 @@ def test_admin_access(session):
 
 
 def test_settings(session):
+    """R50: fees – the administrator; eCP settings – administrator or superadmin."""
     assert settings.get_setting(session, "fee_amount") == "15.00"
     with pytest.raises(PermissionDenied):
-        settings.set_setting(session, ADMIN, "ecp_qr_daily_limit", "20")
+        settings.set_setting(session, SYS_ADMIN, "fee_amount", "20")
     with pytest.raises(PermissionDenied):
-        settings.set_setting(session, Actor(kind="member", id=str(uuid.uuid4())), "fee_amount", "20")
-    settings.set_setting(session, ADMIN, "fee_amount", "15.00")  # admins edit fee settings (R44)
+        settings.set_setting(session, Actor(kind="member", id=str(uuid.uuid4())), "ecp_qr_daily_limit", "20")
+    settings.set_setting(session, ADMIN, "ecp_qr_daily_limit", "20")
+    settings.set_setting(session, SYS_ADMIN, "ecp_qr_daily_limit", "21")
     assert settings.get_setting(session, "reduced_fee_amount") == "7.00"
     assert settings.get_setting(session, "reduced_fee_age") == "62"
-    settings.set_setting(session, SYS_ADMIN, "reduced_fee_amount", "7.50")
+    settings.set_setting(session, ADMIN, "reduced_fee_amount", "7.50")
     assert settings.get_setting(session, "reduced_fee_amount") == "7.50"
     with pytest.raises(DomainError, match="invalid_value"):
-        settings.set_setting(session, SYS_ADMIN, "fee_amount", "-1")
+        settings.set_setting(session, ADMIN, "fee_amount", "-1")
 
 
 def test_age_reduced_fee(session):
@@ -279,7 +283,7 @@ def test_leaving_last_club_waits_for_presidium_decision(session):
 def test_ending_sss_membership_ends_clubs_and_positions(session):
     club = _club(session, "JS A")
     m = _active_member_in(session, club)
-    positions.assign_position(session, ADMIN, "board_member", m.id, valid_from=D0)
+    positions.assign_position(session, SYS_ADMIN, "board_member", m.id, valid_from=D0)
     members.end_sss_membership(session, ADMIN, m.id, "", on=date(2026, 6, 1))
     assert _open(session, m.id) == []
     assert positions.current_holders(session, "board_member", on=date(2026, 6, 1)) == []

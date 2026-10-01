@@ -1,2 +1,5 @@
 {% extends "admin/_layout.html" %}
-{% block body %}<h1>Nemáte oprávnenie</h1><p>Túto stránku môže otvoriť len superadmin.</p>{% endblock %}
+{% block body %}<h1>Nemáte oprávnenie</h1>
+<p>{% if admin and admin.is_system_admin %}Túto časť spravuje administrátor (evidencia členov, skupín a členského).
+   {% else %}Túto stránku môže otvoriť len superadmin.{% endif %}</p>
+<p><a href="{{ A }}">← Prehľad</a></p>{% endblock %}

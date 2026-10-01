@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ess import audit
 from ess.models import Document
-from ess.services.access import Actor, DomainError, require_admin
+from ess.services.access import Actor, DomainError, require_staff
 
 
 def _validate(title: str, url: str) -> tuple[str, str]:
@@ -24,7 +24,7 @@ def save_document(
     session: Session, actor: Actor, title: str, url: str, valid_until: date | None, sort_order: int = 0,
     document_id: uuid.UUID | None = None,
 ) -> Document:
-    require_admin(actor)
+    require_staff(actor)
     title, url = _validate(title, url)
     doc = session.get(Document, document_id) if document_id else None
     if document_id and doc is None:
@@ -41,7 +41,7 @@ def save_document(
 
 
 def delete_document(session: Session, actor: Actor, document_id: uuid.UUID) -> None:
-    require_admin(actor)
+    require_staff(actor)
     doc = session.get(Document, document_id)
     if doc is None:
         raise DomainError("document_not_found")

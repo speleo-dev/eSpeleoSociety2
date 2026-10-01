@@ -1,6 +1,7 @@
-"""Administrative access (R17): Google accounts with the admin or system_admin role.
+"""Administrative access (R17, R50): administrators granted in the app, superadmins from the server config.
 
-The main system administrators come from ESS_SUPER_ADMIN_EMAILS and cannot be removed in the app.
+Superadmins (system_admin) come only from ESS_SUPER_ADMIN_EMAILS and are changed on the server. In the app a
+superadmin grants and revokes the administrator role; older grants stored as system_admin act as admin.
 """
 
 import uuid
@@ -50,11 +51,13 @@ def resolve_role(session: Session, google_email: str) -> tuple[AdminRole, str] |
     )
     if user is None or not user.active:
         return None
-    return user.role, str(user.id)
+    return AdminRole.ADMIN, str(user.id)  # superadmins only from the server config (R50)
 
 
 def grant_access(session: Session, actor: Actor, google_email: str, display_name: str, role: AdminRole) -> AdminUser:
     require_system_admin(actor)
+    if role != AdminRole.ADMIN:
+        raise DomainError("super_admin_is_configured")  # superadmins only on the server (R50)
     email = normalize_email(google_email)
     if "@" not in email:
         raise DomainError("invalid_email")
@@ -96,7 +99,7 @@ def list_users(session: Session) -> list[dict]:
             "id": user.id,
             "email": pii.decrypt(user.google_email_enc, _CTX_EMAIL),
             "name": pii.decrypt(user.display_name_enc, _CTX_NAME),
-            "role": user.role,
+            "role": AdminRole.ADMIN,  # older system_admin grants act as admin (R50)
             "active": user.active,
             "granted_at": user.granted_at,
         })

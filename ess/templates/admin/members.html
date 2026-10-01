@@ -3,8 +3,8 @@
 {% block body %}
 {% from "admin/_icons.html" import icon, legend %}
 <h1>Členovia <span class="muted">({{ total }})</span></h1>
-<p>{% if club %}<a href="{{ A }}/members/new?club={{ club }}"><button class="primary">Nový člen / čakateľ v tejto skupine</button></a>
-   {% else %}<a href="{{ A }}/members/new"><button class="primary">Nový člen / čakateľ</button></a>{% endif %}</p>
+{% if admin.is_admin %}<p>{% if club %}<a href="{{ A }}/members/new?club={{ club }}"><button class="primary">Nový člen / čakateľ v tejto skupine</button></a>
+   {% else %}<a href="{{ A }}/members/new"><button class="primary">Nový člen / čakateľ</button></a>{% endif %}</p>{% endif %}
 <form class="filters" method="get">
   <input name="q" value="{{ q }}" placeholder="Meno, e-mail, číslo preukazu" aria-label="Hľadať">
   <select name="club" aria-label="Skupina">

@@ -109,8 +109,9 @@ def test_web_action_pushes_state(migrated_db, monkeypatch):
     app = create_app()
     app.dependency_overrides.update({get_wallet: lambda: wallet, get_media_store: lambda: MemoryMediaStore()})
     client = TestClient(app)
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
+    from tests.test_web_admin import login as _login
+
+    _login(client, google)  # administrator (R50)
     csrf = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/admin").text).group(1)
     client.post(f"/admin/memberships/{membership_id}/status",
                 data={"csrf_token": csrf, "new_status": "suspended", "back": f"/admin/members/{member_id}"})

@@ -161,12 +161,12 @@ def test_admin_pages_member_link_manual_payment_and_bulk(migrated_db, google, cl
         a = _member(session, club_id, first_name="Anna", card_number="2")
         b = _member(session, club_id, first_name="Boris", card_number="3")
         session.commit()
-    login(client, google)  # superadmin: sees no cash payment form and may not use it (R46)
+    login(client, google, email="super@example.org")  # superadmin: no fees at all (R46, R50)
     page = client.get(f"/admin/members/{a}").text
-    assert "Platobný odkaz člena" in page and "Označiť ako zaplatené" not in page
+    assert "Platobný odkaz člena" not in page and "Označiť ako zaplatené" not in page
     r = client.post(f"/admin/members/{a}/fee-paid", data={"csrf_token": csrf(client), "year": date.today().year,
                                                           "note": "hotovosť"})
-    assert "eviduje administrátor" in r.text
+    assert r.status_code == 403
     _login_admin(client, google, migrated_db)
     token = csrf(client)
     this_year = date.today().year

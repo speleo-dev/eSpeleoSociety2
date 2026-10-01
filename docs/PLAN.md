@@ -266,6 +266,21 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Administrátor ju vidí v Požiadavkách ako „Žiadosť len o kartičku SSS“; schválenie nastaví členovi formát
     kartičky a kartičku pošle hneď, ak má zaplatené členské, inak po zaplatení. Člen dostane e-mail o schválení.
   - V dátach: `ecp_applications.wants_wallet = false`, `card_format` povinný; požiadavka má `card_only`.
+- **R50** – **Oprávnenia administrátora a superadmina** (2026-10-01; nahrádza R43/R44 v tom, kto čo vidí):
+  - **Administrátor (`admin`)** vedie evidenciu: členovia a skupiny (vidí aj mení), predseda skupiny (funkcia),
+    Členské (vrátane exportu a ručného označenia platby), Ročná známka, Bankové výpisy, Požiadavky, Dokumenty,
+    Notifikácie, Nastavenia – členské, eCP, typy certifikátov; Import. Nevidí Prístupy, nepoužíva testovací e-mail,
+    **nemení funkcie vo Výbore SSS**.
+  - **Superadmin (`system_admin`)** spravuje systém: členov vidí len obmedzene (meno, skupiny, e-mail, telefón)
+    a prideľuje im **funkcie vo Výbore** (aj predsedu skupiny); skupiny len číta; Výbor, Dokumenty (mení),
+    Notifikácie (posiela), Nastavenia – eCP, typy certifikátov (pridať/odobrať), testovací e-mail, Import, Prístupy
+    (udeľuje rolu administrátora). Nevidí Členské, Ročnú známku, Bankové výpisy ani Požiadavky a nemení evidenciu.
+  - **Superadmini sú len v konfigurácii servera** (`ESS_SUPER_ADMIN_EMAILS`); v aplikácii sa udeľuje len rola
+    administrátora. Staršie záznamy s rolou superadmin v aplikácii fungujú ako administrátor.
+  - „Organizačná štruktúra“ sa volá **Výbor**. Import zapisuje údaje ako dôveryhodný import (audit: typ „system“,
+    id osoby, ktorá import spustila).
+  - V kóde: `Actor.is_admin` = administrátor evidencie, `is_staff` = administrátor alebo superadmin
+    (`require_staff`); webové stránky evidencie používajú `RegisterAdmin`.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.

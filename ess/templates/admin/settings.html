@@ -2,10 +2,11 @@
 {% block page_title %}Nastavenia aplikácie{% endblock %}
 {% block body %}
 <h1>Nastavenia aplikácie</h1>
-{% set can_edit = True %}{% set sa = admin.is_system_admin %}
+{% set can_edit = True %}{% set sa = admin.is_system_admin %}{# R50: fees – admin; eCP – both; test mail – superadmin #}
 <form method="post" class="form" id="settings-form">
   {% include "admin/_csrf.html" %}
   <fieldset disabled id="settings-fields">
+  {% if admin.is_admin %}
   <h2>Členské</h2>
   <div class="grid">
     <label>Členské<input name="fee_amount" inputmode="decimal" value="{{ values.fee_amount }}"></label>
@@ -17,7 +18,7 @@
     <label>Názov príjemcu<input name="payment_account_name" value="{{ values.payment_account_name }}"></label>
   </div>
   <p class="muted">IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.</p>
-  {% if sa %}
+  {% endif %}
   <h2>eCP</h2>
   <div class="grid">
     <label>Platnosť odkazu v e-maile (hodín)<input name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}"></label>
@@ -26,7 +27,6 @@
     <label>Nových QR na eCP za deň (najviac)<input name="ecp_qr_daily_limit" inputmode="numeric" value="{{ values.ecp_qr_daily_limit }}"></label>
     <label>Portál: prihlásených zariadení na člena (najviac)<input name="portal_max_devices" inputmode="numeric" value="{{ values.portal_max_devices }}"></label>
   </div>
-  {% endif %}
   </fieldset>
   {% if can_edit %}
   <p><button type="button" id="settings-edit">Upraviť</button>
@@ -45,7 +45,9 @@
   {% endif %}
 </form>
 <h2>Typy certifikátov</h2>
-<p>{% for t in cert_types %}<span class="chip">{{ t.name }}</span>{% endfor %}</p>
+<p>{% for t in cert_types %}<span class="chip">{{ t.name }}
+  <form class="inline" method="post" action="{{ A }}/settings/certificate-types/{{ t.id }}/remove" onsubmit="return confirm('Odobrať typ certifikátu? Už zapísané certifikáty ostanú.')">
+    {% include "admin/_csrf.html" %}<button class="link" title="Odobrať typ" aria-label="Odobrať {{ t.name }}">×</button></form></span>{% endfor %}</p>
 {% if can_edit %}
 <form method="post" action="{{ A }}/settings/certificate-types" class="form">
   {% include "admin/_csrf.html" %}

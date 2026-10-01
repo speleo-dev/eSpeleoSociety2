@@ -121,8 +121,9 @@ def test_web_review_approve(migrated_db, monkeypatch):
         application, _ = _submitted(s, store)
         application_id = application.id
         s.commit()
-    google.userinfo = {"email": "super@example.org", "email_verified": True, "name": "Admin"}
-    client.get("/admin/auth/callback")
+    from tests.test_web_admin import login as _login
+
+    _login(client, google)  # administrator (R50)
     tasks_page = client.get("/admin/tasks").text
     assert f"/admin/ecp-applications/{application_id}" in tasks_page
     page = client.get(f"/admin/ecp-applications/{application_id}").text

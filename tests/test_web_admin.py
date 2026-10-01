@@ -50,7 +50,20 @@ def client(migrated_db):
     return TestClient(create_app())
 
 
-def login(client, google, email="super@example.org", verified=True):
+ADMIN_EMAIL = "office@example.org"  # administrator of the register (R50)
+SUPER_EMAIL = "super@example.org"  # superadmin from ESS_SUPER_ADMIN_EMAILS
+
+
+def login(client, google, email=ADMIN_EMAIL, verified=True):
+    """Sign in; the default is an administrator (granted here), SUPER_EMAIL is the superadmin."""
+    if email == ADMIN_EMAIL:
+        from ess.db import get_sessionmaker
+        from ess.services import admin_access as access
+
+        with get_sessionmaker()() as s:
+            if access.resolve_role(s, email) is None:
+                access.grant_access(s, SYSTEM, email, "Kancelária", AdminRole.ADMIN)
+                s.commit()
     google.userinfo = {"email": email, "email_verified": verified, "name": "Test Admin"}
     return client.get("/admin/auth/callback", follow_redirects=False)
 
@@ -92,7 +105,7 @@ def test_login_redirects_to_google(client, google):
 
 
 def test_super_admin_login_and_logout(client, google):
-    assert login(client, google).headers["location"] == "/admin"
+    assert login(client, google, email=SUPER_EMAIL).headers["location"] == "/admin"
     page = client.get("/admin")
     assert page.status_code == 200 and "role-system_admin" in page.text and "superadmin" in page.text
     assert client.post("/admin/logout", data={"csrf_token": csrf(client)}, follow_redirects=False).status_code == 303
@@ -101,7 +114,7 @@ def test_super_admin_login_and_logout(client, google):
 
 def test_unknown_or_unverified_account_is_denied(client, google, migrated_db):
     assert login(client, google, email="stranger@example.org").status_code == 403
-    assert login(client, google, verified=False).status_code == 403
+    assert login(client, google, email=SUPER_EMAIL, verified=False).status_code == 403
     assert client.get("/admin").status_code == 401
     with migrated_db() as session:
         denied = session.scalars(select(AuditLog).where(AuditLog.action == "admin.login_denied")).all()

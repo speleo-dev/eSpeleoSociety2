@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ess import audit
 from ess.models import Club, Member, Membership, MembershipStatus, OrgPosition, PositionHolder
-from ess.services.access import Actor, DomainError, is_open_on, require_admin
+from ess.services.access import Actor, DomainError, PermissionDenied, is_open_on
 
 
 def _is_active_member(session: Session, member_id: uuid.UUID, club_id: uuid.UUID | None = None) -> bool:
@@ -35,11 +35,11 @@ def assign_position(
     A new club chair is entered only after the club's documents are delivered; until then the old
     chair keeps the rights.
     """
-    require_admin(actor)
     valid_from = valid_from or date.today()
     position = session.get(OrgPosition, position_code)
     if position is None:
         raise DomainError("position_not_found")
+    require_position_rights(actor, position.is_club_bound)
     member = session.get(Member, member_id)
     if member is None:
         raise DomainError("member_not_found")
@@ -85,11 +85,17 @@ def assign_position(
     return holder
 
 
+def require_position_rights(actor: Actor, club_bound: bool) -> None:
+    """R50: positions of the SSS board (Výbor) – superadmin only; the club chair – administrator or superadmin."""
+    if not (actor.is_staff if club_bound else actor.is_system_admin):
+        raise PermissionDenied("positions")
+
+
 def end_position(session: Session, actor: Actor, holder_id: uuid.UUID, on: date | None = None) -> None:
-    require_admin(actor)
     holder = session.get(PositionHolder, holder_id)
     if holder is None or holder.valid_to is not None:
         raise DomainError("position_not_open")
+    require_position_rights(actor, holder.club_id is not None)
     holder.valid_to = on or date.today()
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="position.end",
                  entity_type="position_holder", entity_id=str(holder.id),

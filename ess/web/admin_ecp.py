@@ -13,7 +13,7 @@ from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.wallet import WalletClient, get_wallet, static_url
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, after_commit, error_text, render
+from ess.web.common import Admin, RegisterAdmin, Db, after_commit, error_text, render
 from ess.web.mailing import render_mail, send
 from ess.web.public import _crop, base_url
 from ess.web.paths import A
@@ -30,7 +30,7 @@ def _page_url(application_id: uuid.UUID) -> str:
 
 
 @router.get("/ecp-applications/{application_id}")
-def application_page(request: Request, application_id: uuid.UUID, admin: Admin, session: Db, store: Store):
+def application_page(request: Request, application_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store):
     try:
         v = ecp_issuance.view(session, admin.actor, application_id)
     except DomainError:
@@ -68,7 +68,7 @@ def _decide(request: Request, session, store, application_id, action, after, suc
 
 
 @router.post("/ecp-applications/{application_id}/approve", dependencies=[Depends(verify_csrf)])
-def approve(request: Request, application_id: uuid.UUID, admin: Admin, session: Db, store: Store,
+def approve(request: Request, application_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store,
             wallet: Wallet, mailer: MailerDep):
     def mail(d: ecp_issuance.Decision) -> bool:
         if not d.application.wants_wallet:  # SSS card only (R49)
@@ -88,7 +88,7 @@ def approve(request: Request, application_id: uuid.UUID, admin: Admin, session: 
 
 
 @router.post("/ecp-applications/{application_id}/reject", dependencies=[Depends(verify_csrf)])
-def reject(request: Request, application_id: uuid.UUID, admin: Admin, session: Db, store: Store,
+def reject(request: Request, application_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store,
            mailer: MailerDep, reason: Annotated[str, Form()] = ""):
     def mail(d: ecp_issuance.Decision) -> bool:
         card_only = not d.application.wants_wallet
@@ -103,7 +103,7 @@ def reject(request: Request, application_id: uuid.UUID, admin: Admin, session: D
 
 
 @router.post("/ecp-applications/{application_id}/recrop", dependencies=[Depends(verify_csrf)])
-async def recrop(request: Request, application_id: uuid.UUID, admin: Admin, session: Db, store: Store):
+async def recrop(request: Request, application_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store):
     crop = _crop(await request.form())
     return await run_in_threadpool(
         _decide, request, session, store, application_id,

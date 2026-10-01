@@ -1,0 +1,22 @@
+{# Positions of a member: SSS board by the superadmin, club chair by administrators too (R50). #}
+<h2>Funkcie</h2>
+<ul>{% for p in d.positions %}<li>{{ p.name }}{% if p.club_name %} ({{ p.club_name }}){% endif %}: {{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}
+  {% if not p.valid_to and (admin.is_system_admin or p.club_name) %}<form class="inline" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Ukončiť</button></form>{% endif %}</li>
+{% else %}<li class="muted">Žiadne funkcie.</li>{% endfor %}</ul>
+{% if d.sss_status.value == "member" and positions %}
+<details><summary>Priradiť funkciu</summary>
+<form method="post" action="{{ A }}/members/{{ d.member.id }}/positions" class="form">
+  {% include "admin/_csrf.html" %}
+  <div class="grid">
+    <label>Funkcia<select name="position_code" required>{% for p in positions %}<option value="{{ p.code }}">{{ p.name }}</option>{% endfor %}</select></label>
+    <label>Skupina (len pre predsedu skupiny)<select name="club_id"><option value="">—</option>
+      {% for v in d.open_memberships %}<option value="{{ v.membership.club_id }}">{{ v.club_name }}</option>{% endfor %}</select></label>
+    <label>Od<input type="date" name="valid_from"></label>
+  </div>
+  <button class="primary">Priradiť</button>
+  {% if not admin.is_system_admin %}<p class="muted">Funkcie vo Výbore SSS prideľuje superadmin; administrátor zadáva predsedu skupiny.</p>{% endif %}
+  <p class="muted">Pri funkciách, ktoré môže zastávať len jeden človek (predseda SSS, predseda skupiny…), sa predchádzajúcemu držiteľovi funkcia ukončí k tomuto dátumu.</p>
+</form></details>
+{% endif %}
+

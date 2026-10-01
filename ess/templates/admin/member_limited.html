@@ -1,0 +1,14 @@
+{% extends "admin/_layout.html" %}
+{% block page_title %}{{ d.data.full_name() }}{% endblock %}
+{% block body %}
+{# Superadmin (R50): the member as other members see them, plus positions of the SSS board. #}
+{% set back = A ~ "/members/" ~ d.member.id %}
+<h1>{{ d.data.full_name() }}</h1>
+<dl>
+  <dt>Skupiny</dt><dd>{% for v in d.open_memberships %}{{ v.club_name }} ({{ v.membership.status|label }}){% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</dd>
+  <dt>E-mail</dt><dd>{{ d.data.email or "—" }}</dd>
+  <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
+</dl>
+<p class="muted">Ďalšie údaje člena a ich zmeny spravuje administrátor.</p>
+{% include "admin/_positions.html" %}
+{% endblock %}

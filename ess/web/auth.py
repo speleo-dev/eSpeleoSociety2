@@ -57,6 +57,19 @@ class AdminContext:
     def is_system_admin(self) -> bool:
         return self.role == AdminRole.SYSTEM_ADMIN
 
+    @property
+    def is_admin(self) -> bool:
+        """Administrator of the register (members, clubs, fees, requests); not the superadmin (R50)."""
+        return self.role == AdminRole.ADMIN
+
+
+class NotAllowed(Exception):
+    """The signed-in administrator's role may not open the page (e.g. a superadmin and the fees, R50)."""
+
+    def __init__(self, admin: "AdminContext"):
+        super().__init__("not_allowed")
+        self.admin = admin
+
 
 def csrf_token(request: Request) -> str:
     token = request.session.get("csrf")
@@ -64,6 +77,14 @@ def csrf_token(request: Request) -> str:
         token = secrets.token_urlsafe(32)
         request.session["csrf"] = token
     return token
+
+
+def current_register_admin(request: Request, session: Session = Depends(get_session)) -> "AdminContext":
+    """Pages that change or show the register (members, clubs, fees, requests): the administrator only (R50)."""
+    admin = current_admin(request, session)
+    if not admin.is_admin:
+        raise NotAllowed(admin)
+    return admin
 
 
 def current_admin(request: Request, session: Session = Depends(get_session)) -> AdminContext:

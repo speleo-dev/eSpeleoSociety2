@@ -18,7 +18,7 @@ from ess.services import payments, sticker
 from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act, after_commit, error_text, render
+from ess.web.common import Admin, RegisterAdmin, Db, act, after_commit, error_text, render
 from ess.web.templates import FEE_METHOD_LABELS
 from ess.web.paths import A
 
@@ -40,7 +40,7 @@ def _create_and_show(request: Request, session: Db, back: str, create) -> Redire
 
 
 @router.get("/payments")
-def payments_page(request: Request, admin: Admin, session: Db, year: int | None = None, club: str = ""):
+def payments_page(request: Request, admin: RegisterAdmin, session: Db, year: int | None = None, club: str = ""):
     from ess.services import ecp_content
 
     years = _overview_years(session)
@@ -71,7 +71,7 @@ def _club_id(value: str) -> uuid.UUID | None:
 
 
 @router.get("/payments/export.csv")
-def payments_export(request: Request, admin: Admin, session: Db, year: int, club: str = ""):
+def payments_export(request: Request, admin: RegisterAdmin, session: Db, year: int, club: str = ""):
     """Fee overview of a year for a spreadsheet (personal data: administrators only, not logged)."""
     club_id = _club_id(club)
     rows = [r for r in payments.overview(session, admin.actor, year) if not club_id or r.club_id == club_id]
@@ -88,7 +88,7 @@ def payments_export(request: Request, admin: Admin, session: Db, year: int, club
 
 
 @router.get("/statements")
-def statements_page(request: Request, admin: Admin, session: Db):
+def statements_page(request: Request, admin: RegisterAdmin, session: Db):
     from ess.banking import FORMATS
     from ess.models import BankStatement
 
@@ -98,7 +98,7 @@ def statements_page(request: Request, admin: Admin, session: Db):
 
 
 @router.post("/statements", dependencies=[Depends(verify_csrf)])
-async def statement_upload(request: Request, admin: Admin, session: Db):
+async def statement_upload(request: Request, admin: RegisterAdmin, session: Db):
     from ess.banking import StatementError
     from ess.services import bank_statements
 
@@ -127,7 +127,7 @@ async def statement_upload(request: Request, admin: Admin, session: Db):
 
 
 @router.post("/tasks/{task_id}/assign-payment", dependencies=[Depends(verify_csrf)])
-def task_assign_payment(request: Request, task_id: uuid.UUID, admin: Admin, session: Db,
+def task_assign_payment(request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db,
                         code: Annotated[str, Form()] = ""):
     from ess.services import bank_statements
 
@@ -136,7 +136,7 @@ def task_assign_payment(request: Request, task_id: uuid.UUID, admin: Admin, sess
 
 
 @router.post("/tasks/{task_id}/resolve-payment", dependencies=[Depends(verify_csrf)])
-def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: Admin, session: Db,
+def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db,
                          note: Annotated[str, Form()] = ""):
     from ess.services import bank_statements
 
@@ -145,20 +145,20 @@ def task_resolve_payment(request: Request, task_id: uuid.UUID, admin: Admin, ses
 
 
 @router.post("/payments/push", dependencies=[Depends(verify_csrf)])
-def push_links(request: Request, admin: Admin, session: Db):
+def push_links(request: Request, admin: RegisterAdmin, session: Db):
     """Send the next batch (after_commit sends it; nothing else changes)."""
     return act(request, session, f"{A}/payments", lambda: None, "Ďalšia dávka eCP bola odoslaná.")
 
 
 @router.post("/members/{member_id}/payment-link", dependencies=[Depends(verify_csrf)])
-def member_payment_link(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
+def member_payment_link(request: Request, member_id: uuid.UUID, admin: RegisterAdmin, session: Db,
                         year: Annotated[int, Form()]):
     return _create_and_show(request, session, f"{A}/members/{member_id}",
                             lambda: payments.member_reference(session, admin.actor, member_id, year))
 
 
 @router.post("/members/{member_id}/fee-paid", dependencies=[Depends(verify_csrf)])
-def fee_paid(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
+def fee_paid(request: Request, member_id: uuid.UUID, admin: RegisterAdmin, session: Db,
              year: Annotated[int, Form()], note: Annotated[str, Form()] = ""):
     return act(request, session, f"{A}/members/{member_id}",
                lambda: payments.mark_paid(session, admin.actor, member_id, year, note),
@@ -166,7 +166,7 @@ def fee_paid(request: Request, member_id: uuid.UUID, admin: Admin, session: Db,
 
 
 @router.get("/payments/{reference_id}")
-def payment_page(request: Request, reference_id: uuid.UUID, admin: Admin, session: Db):
+def payment_page(request: Request, reference_id: uuid.UUID, admin: RegisterAdmin, session: Db):
     reference = session.get(PaymentReference, reference_id)
     if reference is None:
         return render(request, "admin/not_found.html", admin, session)
@@ -183,7 +183,7 @@ def payment_page(request: Request, reference_id: uuid.UUID, admin: Admin, sessio
 
 
 @router.post("/payments/{reference_id}/cancel", dependencies=[Depends(verify_csrf)])
-def payment_cancel(request: Request, reference_id: uuid.UUID, admin: Admin, session: Db):
+def payment_cancel(request: Request, reference_id: uuid.UUID, admin: RegisterAdmin, session: Db):
     return act(request, session, f"{A}/payments/{reference_id}",
                lambda: payments.cancel_reference(session, admin.actor, reference_id), "Platobný odkaz bol zrušený.")
 
@@ -198,12 +198,12 @@ def _sticker_page(request: Request, admin, session, status_code: int = 200, **ex
 
 
 @router.get("/sticker")
-def sticker_page(request: Request, admin: Admin, session: Db):
+def sticker_page(request: Request, admin: RegisterAdmin, session: Db):
     return _sticker_page(request, admin, session)
 
 
 @router.post("/sticker", dependencies=[Depends(verify_csrf)])
-async def sticker_action(request: Request, admin: Admin, session: Db, store: Store):
+async def sticker_action(request: Request, admin: RegisterAdmin, session: Db, store: Store):
     """Preview (new random colours) or publish the sticker shown in the preview."""
     form = await request.form()
     action = str(form.get("action", "preview"))
@@ -229,7 +229,7 @@ async def sticker_action(request: Request, admin: Admin, session: Db, store: Sto
 
 
 @router.post("/sticker/template", dependencies=[Depends(verify_csrf)])
-def sticker_template(request: Request, admin: Admin, session: Db, store: Store,
+def sticker_template(request: Request, admin: RegisterAdmin, session: Db, store: Store,
                      template: Annotated[UploadFile, File()]):
     data = template.file.read(MAX_UPLOAD_BYTES + 1)
     return act(request, session, f"{A}/sticker", lambda: sticker.upload_template(session, admin.actor, store, data),

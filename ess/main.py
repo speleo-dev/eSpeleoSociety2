@@ -57,6 +57,10 @@ def create_app() -> FastAPI:
     app.include_router(portal_chair.router)
     app.include_router(portal.router)
 
+    @app.exception_handler(auth.NotAllowed)
+    async def _not_allowed(request: Request, exc: auth.NotAllowed):
+        return templates.TemplateResponse(request, "admin/forbidden.html", {"admin": exc.admin}, status_code=403)
+
     @app.exception_handler(auth.LoginRequired)
     async def _login_required(request: Request, exc: auth.LoginRequired):
         return templates.TemplateResponse(request, "admin/login.html", {}, status_code=401)

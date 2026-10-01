@@ -7,21 +7,21 @@
     <a href="{{ A }}/members">Členovia</a>
     <a href="{{ A }}/clubs">Skupiny</a>
     <details><summary>Správa organizácie</summary><div>
-      <a href="{{ A }}/organization">Organizačná štruktúra</a>
+      <a href="{{ A }}/organization">Výbor</a>
+      {% if admin.is_admin %}{# R50: the register is kept by the administrator #}
       <a href="{{ A }}/payments">Členské</a>
       <a href="{{ A }}/sticker">Ročná známka</a>
       <a href="{{ A }}/statements">Bankové výpisy</a>
       <a href="{{ A }}/tasks">Požiadavky</a>
+      {% endif %}
       <a href="{{ A }}/documents">Dokumenty</a>
     </div></details>
     <a href="{{ A }}/notifications">Notifikácie</a>
-    {% if admin.is_system_admin %}
     <details><summary>Nastavenia</summary><div>
       <a href="{{ A }}/settings">Nastavenia aplikácie</a>
       <a href="{{ A }}/import">Import</a>
-      <a href="{{ A }}/access">Prístupy</a>
+      {% if admin.is_system_admin %}<a href="{{ A }}/access">Prístupy</a>{% endif %}
     </div></details>
-    {% else %}<a href="{{ A }}/settings">Nastavenia</a>{% endif %}
     {% if badges %}
     <a class="badge badge-tasks" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
     <a class="badge badge-unpaid" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>

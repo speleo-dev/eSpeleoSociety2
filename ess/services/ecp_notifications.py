@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ess import audit
 from ess.models import Consent, EcpNotification, EcpNotificationDelivery, EcpPass, EcpPassState
-from ess.services.access import Actor, DomainError, require_admin
+from ess.services.access import Actor, DomainError, require_staff
 from ess.wallet import WalletClient, WalletError
 
 log = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def sent_last_day(session: Session) -> int:
 
 
 def send(session: Session, actor: Actor, header: str, body: str) -> EcpNotification:
-    require_admin(actor)
+    require_staff(actor)
     header, body = " ".join(header.split()), body.strip()
     if not header or not body:
         raise DomainError("notification_required")

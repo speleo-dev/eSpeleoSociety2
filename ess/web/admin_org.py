@@ -16,7 +16,7 @@ from ess.services import admin_access, certificates, clubs, delegations, directo
 from ess.services.access import DomainError, PermissionDenied
 from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act, error_text, forbidden, parse_date, render
+from ess.web.common import Admin, RegisterAdmin, Db, act, error_text, forbidden, parse_date, render
 from ess.web.paths import A
 
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
@@ -33,7 +33,7 @@ SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_curr
 # --- clubs --------------------------------------------------------------------------------------------
 
 @router.get("/clubs/new")
-def club_new(request: Request, admin: Admin, session: Db):
+def club_new(request: Request, admin: RegisterAdmin, session: Db):
     return render(request, "admin/club_form.html", admin, session, club=None, raw={"uses_candidates": True})
 
 
@@ -48,7 +48,7 @@ def _club_form(form) -> tuple[dict, clubs.ClubContact]:
 
 
 @router.post("/clubs/new", dependencies=[Depends(verify_csrf)])
-async def club_create(request: Request, admin: Admin, session: Db):
+async def club_create(request: Request, admin: RegisterAdmin, session: Db):
     raw = {}
     try:
         raw, contact = _club_form(await request.form())
@@ -84,20 +84,20 @@ def club_page(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
 
 
 @router.post("/clubs/{club_id}/delegation", dependencies=[Depends(verify_csrf)])
-def club_delegate(request: Request, club_id: uuid.UUID, admin: Admin, session: Db,
+def club_delegate(request: Request, club_id: uuid.UUID, admin: RegisterAdmin, session: Db,
                   member_id: Annotated[uuid.UUID, Form()]):
     return act(request, session, f"{A}/clubs/{club_id}",
                lambda: delegations.delegate(session, admin.actor, club_id, member_id), "Zástupca predsedu bol určený.")
 
 
 @router.post("/clubs/{club_id}/delegation/end", dependencies=[Depends(verify_csrf)])
-def club_delegation_end(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
+def club_delegation_end(request: Request, club_id: uuid.UUID, admin: RegisterAdmin, session: Db):
     return act(request, session, f"{A}/clubs/{club_id}", lambda: delegations.take_back(session, admin.actor, club_id),
                "Zastupovanie bolo ukončené, skupinu spravuje predseda.")
 
 
 @router.post("/clubs/{club_id}", dependencies=[Depends(verify_csrf)])
-async def club_update(request: Request, club_id: uuid.UUID, admin: Admin, session: Db):
+async def club_update(request: Request, club_id: uuid.UUID, admin: RegisterAdmin, session: Db):
     form = await request.form()
 
     def update():
@@ -130,7 +130,7 @@ def _logo_action(request: Request, session: Db, store: MediaStore | None, club_i
 
 
 @router.post("/clubs/{club_id}/logo", dependencies=[Depends(verify_csrf)])
-def club_logo_upload(request: Request, club_id: uuid.UUID, admin: Admin, session: Db, store: Store,
+def club_logo_upload(request: Request, club_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store,
                            logo: Annotated[UploadFile, File()]):
     data = logo.file.read(MAX_UPLOAD_BYTES + 1)  # sync handler runs in a thread pool
     return _logo_action(request, session, store, club_id,
@@ -138,7 +138,7 @@ def club_logo_upload(request: Request, club_id: uuid.UUID, admin: Admin, session
 
 
 @router.post("/clubs/{club_id}/logo/remove", dependencies=[Depends(verify_csrf)])
-def club_logo_remove(request: Request, club_id: uuid.UUID, admin: Admin, session: Db, store: Store):
+def club_logo_remove(request: Request, club_id: uuid.UUID, admin: RegisterAdmin, session: Db, store: Store):
     return _logo_action(request, session, store, club_id,
                         lambda: clubs.remove_logo(session, admin.actor, club_id, store), "Logo bolo odstránené.")
 
@@ -157,7 +157,7 @@ def access_page(request: Request, admin: Admin, session: Db):
     if not admin.is_system_admin:
         return forbidden(request, admin, session)
     return render(request, "admin/access.html", admin, session, users=admin_access.list_users(session),
-                  roles=list(AdminRole))
+                  super_admins=sorted(admin_access.super_admin_emails()))
 
 
 @router.post("/access", dependencies=[Depends(verify_csrf)])
@@ -180,7 +180,7 @@ def access_revoke(request: Request, user_id: uuid.UUID, admin: Admin, session: D
 
 @router.get("/settings")
 def settings_page(request: Request, admin: Admin, session: Db):
-    """Administrators change the fee settings; eCP, portal and sticker settings are for superadmins (R44)."""
+    """R50: administrators change fees and eCP settings, superadmins eCP settings; both certificate types."""
     return _settings_page(request, admin, session)
 
 
@@ -196,8 +196,8 @@ async def settings_save(request: Request, admin: Admin, session: Db):
 
     def save():
         for key in SETTING_KEYS:
-            if key not in form or (key not in settings.ADMIN_KEYS and not admin.is_system_admin):
-                continue
+            if key not in form or (key in settings.ADMIN_KEYS and not admin.is_admin):
+                continue  # R50: the superadmin does not change fees (the service checks it too)
             new = str(form.get(key, "")).strip()
             if new != (settings.get_setting(session, key) or ""):
                 settings.set_setting(session, admin.actor, key, new)
@@ -212,6 +212,13 @@ def certificate_type_add(
     return act(request, session, f"{A}/settings",
                lambda: certificates.add_certificate_type(session, admin.actor, code, name),
                "Typ certifikátu bol pridaný.")
+
+
+@router.post("/settings/certificate-types/{type_id}/remove", dependencies=[Depends(verify_csrf)])
+def certificate_type_remove(request: Request, type_id: uuid.UUID, admin: Admin, session: Db):
+    return act(request, session, f"{A}/settings",
+               lambda: certificates.deactivate_certificate_type(session, admin.actor, type_id),
+               "Typ certifikátu bol odobratý.")
 
 
 @router.post("/settings/test-mail", dependencies=[Depends(verify_csrf)])
@@ -293,15 +300,11 @@ MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 @router.get("/import")
 def import_page(request: Request, admin: Admin, session: Db):
-    if not admin.is_system_admin:  # import only for superadmins (R43)
-        return forbidden(request, admin, session)
     return render(request, "admin/import.html", admin, session, result=None, kind=None)
 
 
 @router.post("/import/{kind}", dependencies=[Depends(verify_csrf)])
 async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
     if kind not in ("clubs", "members"):
         return render(request, "admin/not_found.html", admin, session)
     form = await request.form()
@@ -329,8 +332,6 @@ async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
 
 @router.get("/import/template/{kind}.csv")
 def import_template(request: Request, kind: str, admin: Admin, session: Db):
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
     if kind not in ("clubs", "members"):
         kind = "members"
     name = "vzor_skupiny.csv" if kind == "clubs" else "vzor_clenovia.csv"
@@ -341,8 +342,6 @@ def import_template(request: Request, kind: str, admin: Admin, session: Db):
 @router.get("/import/club-codes.csv")
 def club_codes(request: Request, admin: Admin, session: Db):
     """Current clubs with their codes - for the person preparing the member list."""
-    if not admin.is_system_admin:
-        return forbidden(request, admin, session)
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
     writer.writerow(["kod", "nazov"])

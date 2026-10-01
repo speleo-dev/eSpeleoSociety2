@@ -110,36 +110,51 @@ def test_club_create_edit_and_chair(client, google, migrated_db):
     assert "JS Premenovaná" in client.get("/admin/clubs").text
 
 
-def test_access_and_settings_only_for_system_admin(client, google, migrated_db):
-    from ess.models import AdminRole
-    from ess.services import admin_access
-
-    with migrated_db() as s:
-        admin_access.grant_access(s, SYSTEM, "office@example.org", "Kancelária", AdminRole.ADMIN)
-        s.commit()
-    login(client, google, email="office@example.org")
+def test_roles_in_settings_access_and_menu(client, google, migrated_db):
+    """R50: the administrator keeps the register, the superadmin runs the system."""
+    login(client, google)  # administrator
     assert client.get("/admin/access").status_code == 403
-    page = client.get("/admin/settings").text  # administrators change the fee settings only (R44)
-    assert 'id="settings-edit"' in page and "<fieldset disabled" in page and "ecp_qr_daily_limit" not in page
-    assert "Ročná známka eCP" not in page and 'href="/admin/sticker"' in page  # sticker is under Členské (R45)
-    client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99", "ecp_qr_daily_limit": "99"})
     page = client.get("/admin/settings").text
-    assert 'value="99"' in page
+    assert 'name="fee_amount"' in page and 'name="ecp_qr_daily_limit"' in page and "test-mail" not in page
+    assert 'href="/admin/sticker"' in page and 'href="/admin/payments"' in page and "Výbor" in page
+    assert 'href="/admin/access"' not in page and 'href="/admin/import"' in page
+    client.post("/admin/settings", data={"csrf_token": csrf(client), "fee_amount": "99", "ecp_qr_daily_limit": "12"})
     with migrated_db() as s:
         from ess.services import settings as settings_service
 
-        assert settings_service.get_setting(s, "ecp_qr_daily_limit") == "10"  # superadmin only: ignored
-    assert client.get("/admin/import").status_code == 403
+        assert settings_service.get_setting(s, "fee_amount") == "99"
+        assert settings_service.get_setting(s, "ecp_qr_daily_limit") == "12"
+    assert client.get("/admin/import").status_code == 200
 
-    login(client, google)  # super admin
+    login(client, google, email="super@example.org")
     token = csrf(client)
+    page = client.get("/admin/settings").text
+    assert 'name="fee_amount"' not in page and 'name="ecp_qr_daily_limit"' in page and "test-mail" in page
+    assert 'href="/admin/payments"' not in page and 'href="/admin/tasks"' not in page
+    assert 'href="/admin/sticker"' not in page and 'href="/admin/access"' in page
+    client.post("/admin/settings", data={"csrf_token": token, "fee_amount": "16.00", "ecp_qr_daily_limit": "11"})
+    with migrated_db() as s:
+        from ess.services import settings as settings_service
+
+        assert settings_service.get_setting(s, "fee_amount") == "99"  # fees: administrator only
+        assert settings_service.get_setting(s, "ecp_qr_daily_limit") == "11"
+    for path in ("/admin/payments", "/admin/tasks", "/admin/sticker", "/admin/statements", "/admin/members/new"):
+        assert client.get(path).status_code == 403, path
     client.post("/admin/access", data={"csrf_token": token, "email": "druhy@example.org", "name": "Druhý", "role": "admin"})
     page = client.get("/admin/access").text
-    assert "druhy@example.org" in page and "Kancelária" in page
-    client.post("/admin/settings", data={"csrf_token": token, "fee_amount": "16.00", "reduced_fee_amount": "7.00",
-                                         "reduced_fee_age": "62", "fee_currency": "EUR"})
+    assert "druhy@example.org" in page and "Kancelária" in page and "super@example.org" in page
+    assert client.get("/admin/import").status_code == 200
+
+
+def test_certificate_types_add_and_remove(client, google, migrated_db):
+    login(client, google, email="super@example.org")
+    token = csrf(client)
+    client.post("/admin/settings/certificate-types", data={"csrf_token": token, "code": "diver", "name": "Potápač"})
     page = client.get("/admin/settings").text
-    assert 'value="16.00"' in page and 'id="settings-edit"' in page
+    type_id = re.search(r'<span class="chip">Potápač\s*<form[^>]*certificate-types/([0-9a-f-]{36})/remove', page)
+    assert type_id
+    client.post(f"/admin/settings/certificate-types/{type_id.group(1)}/remove", data={"csrf_token": token})
+    assert "Potápač" not in client.get("/admin/settings").text
 
 
 def test_documents_page(client, google):

@@ -3,8 +3,10 @@
 {% block body %}
 <h1>{% if club and club.logo_url %}<img class="club-logo" src="{{ club.logo_url }}" alt=""> {% endif %}{{ club.name if club else "Nová skupina" }}</h1>
 {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
-<form method="post" class="form" action="{{ '{{ A }}/clubs/' ~ club.id if club else '{{ A }}/clubs/new' }}">
+{% set ro = not admin.is_admin %}{# superadmin: read only (R50) #}
+<form method="post" class="form" action="{{ A ~ '/clubs/' ~ club.id if club else A ~ '/clubs/new' }}">
   {% include "admin/_csrf.html" %}
+  <fieldset {% if ro %}disabled{% endif %}>
   <div class="grid">
     <label>Názov *<input name="name" required value="{{ raw.name or '' }}"></label>
     <label>Skratka (na preukaz)<input name="short_name" value="{{ raw.short_name or '' }}"></label>
@@ -29,10 +31,16 @@
     {% if club.is_unaffiliated %}<input type="hidden" name="active" value="on">
     {% else %}<label class="check"><input type="checkbox" name="active" {% if raw.active %}checked{% endif %}> Aktívna</label>{% endif %}
   {% endif %}
-  <p><button class="primary">Uložiť</button> <a href="{{ A }}/clubs">Späť</a></p>
+  </fieldset>
+  <p>{% if not ro %}<button class="primary">Uložiť</button> {% endif %}<a href="{{ A }}/clubs">Späť</a></p>
 </form>
 
-{% if club %}
+{% if club and ro %}
+  {% if not club.is_unaffiliated %}<h2>Predseda skupiny</h2>
+  {% for h in chairs %}<p>{{ h.full_name }} (od {{ h.valid_from|date }}) – <a href="{{ A }}/members/{{ h.member_id }}">detail</a></p>
+  {% else %}<p class="muted">Skupina nemá zadaného predsedu.</p>{% endfor %}{% endif %}
+  <p><a href="{{ A }}/members?club={{ club.id }}">Členovia skupiny →</a></p>
+{% elif club %}
   <h2>Logo</h2>
   {% if club.logo_url %}<p><img class="club-logo-large" src="{{ club.logo_url }}" alt="Logo skupiny"></p>{% endif %}
   <form class="inline" method="post" enctype="multipart/form-data" action="{{ A }}/clubs/{{ club.id }}/logo">

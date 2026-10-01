@@ -75,4 +75,4 @@ def test_ecp_settings_defaults_and_validation(session):
         with pytest.raises(DomainError):
             settings.set_setting(session, SYSTEM, "ecp_link_valid_hours", bad)
     with pytest.raises(PermissionDenied):
-        settings.set_setting(session, Actor(kind="admin", id="x"), "ecp_link_valid_hours", "12")
+        settings.set_setting(session, Actor(kind="member", id="x"), "ecp_link_valid_hours", "12")

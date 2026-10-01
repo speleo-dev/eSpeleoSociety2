@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ess import audit
 from ess.models import CertificateType, Member, MemberCertificate
-from ess.services.access import Actor, DomainError, require_admin, require_system_admin
+from ess.services.access import Actor, DomainError, require_admin, require_staff
 
 
 def add_certificate(
@@ -51,7 +51,7 @@ def remove_certificate(session: Session, actor: Actor, certificate_id: uuid.UUID
 
 
 def add_certificate_type(session: Session, actor: Actor, code: str, name: str) -> CertificateType:
-    require_admin(actor)  # R44: administrators maintain the certificate types
+    require_staff(actor)  # R50: administrators and superadmins maintain the certificate types
     code = code.strip().lower()
     if not code or not name.strip():
         raise DomainError("name_required")
@@ -63,6 +63,17 @@ def add_certificate_type(session: Session, actor: Actor, code: str, name: str) -
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="certificate_type.add",
                  entity_type="certificate_type", entity_id=str(cert_type.id))
     return cert_type
+
+
+def deactivate_certificate_type(session: Session, actor: Actor, type_id: uuid.UUID) -> None:
+    """Remove a type from the offer; certificates already recorded keep it (history)."""
+    require_staff(actor)
+    cert_type = session.get(CertificateType, type_id)
+    if cert_type is None or not cert_type.active:
+        raise DomainError("certificate_type_not_found")
+    cert_type.active = False
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="certificate_type.remove",
+                 entity_type="certificate_type", entity_id=str(cert_type.id))
 
 
 def active_types(session: Session) -> list[CertificateType]:

@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from ess.models import MembershipStatus, TaskType
 from ess.services import certificates, directory, members, memberships, portal_auth, sss_cards, tasks
 from ess.web.auth import verify_csrf
-from ess.web.common import Admin, Db, act as _act, render as _render, safe_back as _safe_back
+from ess.web.common import Admin, RegisterAdmin, Db, act as _act, render as _render, safe_back as _safe_back
 from ess.web.paths import A
 
 router = APIRouter()  # mounted under the admin path (R48)
@@ -42,19 +42,23 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
     detail = directory.member_detail(session, member_id)
     if detail is None:
         return _render(request, "admin/not_found.html", admin, session)
+    if not admin.is_admin:  # superadmin: limited view and positions of the SSS board (R50)
+        return _render(request, "admin/member_limited.html", admin, session, d=detail,
+                       positions=directory.positions_catalog(session))
     issuable = [y for y in sss_cards.allowed_years(session) if sss_cards.can_issue(session, member_id, y)]
     from ess.web.admin_payments import member_fee_rows
 
     return _render(request, "admin/member.html", admin, session, d=detail, S=MembershipStatus, issuable_years=issuable,
                    **member_fee_rows(session, detail.member),
                    portal_sessions=portal_auth.active_sessions(session, member_id),
-                   clubs=directory.active_clubs(session), positions=directory.positions_catalog(session),
+                   clubs=directory.active_clubs(session),
+                   positions=[p for p in directory.positions_catalog(session) if p.is_club_bound],  # R50
                    cert_types=certificates.active_types(session))
 
 
 @router.post("/memberships/{membership_id}/status", dependencies=[Depends(verify_csrf)])
 def membership_status(
-    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db,
+    request: Request, membership_id: uuid.UUID, admin: RegisterAdmin, session: Db,
     new_status: Annotated[str, Form()], back: Annotated[str, Form()] = "",
 ):
     target = MembershipStatus(new_status)
@@ -64,7 +68,7 @@ def membership_status(
 
 @router.post("/memberships/{membership_id}/terminate", dependencies=[Depends(verify_csrf)])
 def membership_terminate(
-    request: Request, membership_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
+    request: Request, membership_id: uuid.UUID, admin: RegisterAdmin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return _act(request, session, _safe_back(back),
                 lambda: memberships.terminate(session, admin.actor, membership_id),
@@ -72,7 +76,7 @@ def membership_terminate(
 
 
 @router.get("/tasks")
-def task_list(request: Request, admin: Admin, session: Db, show: str = "open", type: str = ""):
+def task_list(request: Request, admin: RegisterAdmin, session: Db, show: str = "open", type: str = ""):
     from ess.services import bank_statements
 
     open_only = show != "done"
@@ -87,34 +91,34 @@ def task_list(request: Request, admin: Admin, session: Db, show: str = "open", t
 
 @router.post("/tasks/{task_id}/activate", dependencies=[Depends(verify_csrf)])
 def task_activate(
-    request: Request, task_id: uuid.UUID, admin: Admin, session: Db, card_number: Annotated[str, Form()] = ""
+    request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db, card_number: Annotated[str, Form()] = ""
 ):
     return _act(request, session, f"{A}/tasks", lambda: tasks.activate(session, admin.actor, task_id, card_number),
                 "Člen bol aktivovaný.")
 
 
 @router.post("/tasks/{task_id}/reject", dependencies=[Depends(verify_csrf)])
-def task_reject(request: Request, task_id: uuid.UUID, admin: Admin, session: Db, reason: Annotated[str, Form()] = ""):
+def task_reject(request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db, reason: Annotated[str, Form()] = ""):
     return _act(request, session, f"{A}/tasks",
                 lambda: tasks.reject_activation(session, admin.actor, task_id, reason),
                 "Návrh bol zamietnutý.")
 
 
 @router.post("/tasks/{task_id}/keep-unaffiliated", dependencies=[Depends(verify_csrf)])
-def task_keep_unaffiliated(request: Request, task_id: uuid.UUID, admin: Admin, session: Db):
+def task_keep_unaffiliated(request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db):
     return _act(request, session, f"{A}/tasks", lambda: tasks.keep_as_unaffiliated(session, admin.actor, task_id),
                 "Člen bol zaradený do „SSS – nezaradení“.")
 
 
 @router.post("/tasks/{task_id}/end-sss", dependencies=[Depends(verify_csrf)])
-def task_end_sss(request: Request, task_id: uuid.UUID, admin: Admin, session: Db, note: Annotated[str, Form()] = ""):
+def task_end_sss(request: Request, task_id: uuid.UUID, admin: RegisterAdmin, session: Db, note: Annotated[str, Form()] = ""):
     return _act(request, session, f"{A}/tasks", lambda: tasks.end_sss(session, admin.actor, task_id, note),
                 "Členstvo v SSS bolo ukončené.")
 
 
 @router.post("/members/{member_id}/restore-unaffiliated", dependencies=[Depends(verify_csrf)])
 def member_restore(
-    request: Request, member_id: uuid.UUID, admin: Admin, session: Db, back: Annotated[str, Form()] = ""
+    request: Request, member_id: uuid.UUID, admin: RegisterAdmin, session: Db, back: Annotated[str, Form()] = ""
 ):
     return _act(request, session, _safe_back(back),
                 lambda: members.restore_to_unaffiliated(session, admin.actor, member_id),

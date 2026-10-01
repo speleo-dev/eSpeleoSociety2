@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 from ess.db import get_session
 from ess.services import tasks
 from ess.services.access import DomainError, PermissionDenied
-from ess.web.auth import AdminContext, current_admin
+from ess.web.auth import AdminContext, current_admin, current_register_admin
 from ess.web.templates import ERRORS, templates
 
-Admin = Annotated[AdminContext, Depends(current_admin)]
+Admin = Annotated[AdminContext, Depends(current_admin)]  # administrator or superadmin
+RegisterAdmin = Annotated[AdminContext, Depends(current_register_admin)]  # administrator only (R50)
 Db = Annotated[Session, Depends(get_session)]
 
 
@@ -23,7 +24,7 @@ def render(request: Request, name: str, admin: AdminContext, session: Session | 
 
     flash = request.session.pop("flash", None)
     badges = None
-    if session is not None:
+    if session is not None and admin is not None and admin.is_admin:  # superadmins do not handle these (R50)
         year = date.today().year
         badges = {"tasks": tasks.count_open(session), "unpaid": payments.unpaid_count(session, year), "year": year}
     return templates.TemplateResponse(
