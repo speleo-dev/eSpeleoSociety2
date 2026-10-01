@@ -86,3 +86,44 @@ def club_view(session: Session, member: Member, club_id: uuid.UUID) -> ClubView:
                     delegate_name=names.get(delegation.delegate_member_id) if delegation else None,
                     chair_name=names.get(chair_id) if chair_id else None, rows=rows,
                     delegate_options=[r for r in rows if r.member_id in eligible])
+
+
+# --- menu for members and chairs (R52) -----------------------------------------------------------------
+
+
+def own_club_ids(session: Session, member: Member) -> list[uuid.UUID]:
+    """Clubs the member belongs to now (not "SSS – nezaradení"), primary first."""
+    rows = session.execute(select(Club.id, Club.name, Membership.is_primary).join(Membership, Membership.club_id == Club.id)
+                           .where(Membership.member_id == member.id, Membership.valid_to.is_(None),
+                                  Club.is_unaffiliated.is_(False))).all()
+    return [r[0] for r in sorted(rows, key=lambda r: (not r[2], r[1]))]
+
+
+@dataclass
+class ClubInfo:
+    club: Club
+    chair_name: str | None
+    own: bool  # the member belongs to it
+    manages: bool  # the member manages it (chair without a delegate, or the delegate)
+
+
+def clubs_info(session: Session, member: Member) -> list[ClubInfo]:
+    """All active clubs with public contacts and the chair's name (R52)."""
+    from ess.models import PositionHolder
+
+    own = set(own_club_ids(session, member))
+    managed = managed_club_ids(session, member.id)
+    chairs = dict(session.execute(select(PositionHolder.club_id, Member).join(Member, Member.id == PositionHolder.member_id)
+                                  .where(PositionHolder.position_code == "club_chair",
+                                         PositionHolder.valid_to.is_(None))).all())
+    clubs = session.scalars(select(Club).where(Club.active, Club.is_unaffiliated.is_(False))).all()
+    rows = [ClubInfo(c, members.read_member(chairs[c.id]).full_name() if c.id in chairs else None, c.id in own,
+                     c.id in managed) for c in clubs]
+    return sorted(rows, key=lambda r: normalize_for_index(r.club.name))
+
+
+def club_info(session: Session, member: Member, club_id: uuid.UUID) -> ClubInfo:
+    for row in clubs_info(session, member):
+        if row.club.id == club_id:
+            return row
+    raise DomainError("club_not_found")

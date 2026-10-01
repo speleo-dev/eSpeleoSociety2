@@ -1,0 +1,7 @@
+{% extends "portal/_layout.html" %}
+{% block title %}{{ info.club.name }} – portál eSS{% endblock %}
+{% block portal %}
+<h1>{% if info.club.logo_url %}<img class="club-logo" src="{{ info.club.logo_url }}" alt=""> {% endif %}{{ info.club.name }}</h1>
+{% include "portal/_club_contacts.html" %}
+<p class="muted">Členov skupiny vidia len jej členovia.</p>
+{% endblock %}

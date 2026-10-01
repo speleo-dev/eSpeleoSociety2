@@ -95,6 +95,43 @@ def _run(request: Request, session: Session, back: str, action, success: str):
     return RedirectResponse(back, status_code=303)
 
 
+# --- club contacts (R52) --------------------------------------------------------------------------------
+
+
+@router.get("/edit")
+def club_edit(request: Request, club_id: uuid.UUID, session: Db):
+    from ess.services import clubs
+
+    try:
+        _, _, club = _context(request, session, club_id)
+    except NotManager:
+        return _denied(request)
+    return _page(request, "portal/club_form.html", club=club, raw=vars(clubs.contact_of(club)))
+
+
+@router.post("/edit", dependencies=[Depends(verify_public_csrf)])
+async def club_save(request: Request, club_id: uuid.UUID, session: Db):
+    from ess.services import clubs
+    from ess.web.common import parse_date
+
+    try:
+        _, actor, club = _context(request, session, club_id)
+    except NotManager:
+        return _denied(request)
+    form = await request.form()
+    raw = {f: str(form.get(f, "")).strip() for f in clubs.CONTACT_FIELDS}
+    try:
+        contact = clubs.ClubContact(**{**raw, "country": raw["country"] or "SK",
+                                       "founded_on": parse_date(raw["founded_on"])})
+        clubs.update_contact(session, actor, club_id, contact)
+        session.commit()
+    except (DomainError, PermissionDenied) as exc:
+        session.rollback()
+        return _page(request, "portal/club_form.html", status_code=400, club=club, raw=raw, error=_error(exc))
+    _flash(request, "ok", "Údaje skupiny boli uložené.")
+    return RedirectResponse(f"/portal/clubs/{club_id}", status_code=303)
+
+
 # --- members -------------------------------------------------------------------------------------------
 
 

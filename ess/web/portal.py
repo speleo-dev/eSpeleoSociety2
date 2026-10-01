@@ -27,20 +27,23 @@ Db = Annotated[Session, Depends(get_session)]
 
 
 def _page(request: Request, name: str, status_code: int = 200, **context):
-    return templates.TemplateResponse(request, name, {"csrf": csrf_token(request), "me": _me(request), **context},
+    return templates.TemplateResponse(request, name, {"csrf": csrf_token(request), **_nav(request), **context},
                                       status_code=status_code)
 
 
-def _me(request: Request) -> str | None:
-    """Full name of the signed-in member for the header (portal pages only)."""
+def _nav(request: Request) -> dict:
+    """Header of portal pages: the signed-in member's full name and whether they are an administrator (R51, R52)."""
     if not request.url.path.startswith("/portal") or not request.cookies.get(COOKIE):
-        return None
+        return {"me": None, "me_admin": False}
     from ess.db import get_sessionmaker
-    from ess.services import members
+    from ess.services import admin_access, members
 
     with get_sessionmaker()() as session:
         member = portal_auth.current_member(session, request.cookies.get(COOKIE))
-        return members.read_member(member).full_name() if member else None
+        if member is None:
+            return {"me": None, "me_admin": False}
+        return {"me": members.read_member(member).full_name(),
+                "me_admin": admin_access.resolve_member(session, member.id) is not None}
 
 
 def _browser(request: Request) -> str:
@@ -291,6 +294,59 @@ async def passkey_login(request: Request, session: Db):
 # --- club (R37) ----------------------------------------------------------------------------------------
 
 
+@router.get("/portal/members")
+def members_page(request: Request, session: Db):
+    """Menu „Členovia“: the members of the member's own clubs (R52)."""
+    from ess.services import portal
+
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    own = portal.own_club_ids(session, member)
+    if len(own) == 1:
+        return RedirectResponse(f"/portal/clubs/{own[0]}", status_code=303)
+    return _page(request, "portal/members.html", clubs=[portal.club_info(session, member, c) for c in own])
+
+
+@router.get("/portal/clubs")
+def clubs_page(request: Request, session: Db):
+    """Menu „Skupiny“: all clubs with contacts and chairs (R52)."""
+    from ess.services import portal
+
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    return _page(request, "portal/clubs.html", clubs=portal.clubs_info(session, member))
+
+
+@router.get("/portal/board")
+def board_page(request: Request, session: Db):
+    """Organizácia → Výbor (read only)."""
+    from ess.services import directory
+
+    if _member(request, session) is None:
+        return RedirectResponse("/portal", status_code=303)
+    return _page(request, "portal/board.html", holders=directory.current_positions(session))
+
+
+@router.get("/portal/documents")
+def documents_page(request: Request, session: Db):
+    from ess.services import documents
+
+    if _member(request, session) is None:
+        return RedirectResponse("/portal", status_code=303)
+    return _page(request, "portal/documents.html", documents=documents.valid_documents(session))
+
+
+@router.get("/portal/notifications")
+def notifications_page(request: Request, session: Db):
+    from ess.services import ecp_notifications
+
+    if _member(request, session) is None:
+        return RedirectResponse("/portal", status_code=303)
+    return _page(request, "portal/notifications.html", items=ecp_notifications.history(session))
+
+
 @router.get("/portal/clubs/{club_id}")
 def club_page(request: Request, club_id: uuid.UUID, session: Db):
     from ess.services import portal
@@ -299,10 +355,13 @@ def club_page(request: Request, club_id: uuid.UUID, session: Db):
     if member is None:
         return RedirectResponse("/portal", status_code=303)
     try:
-        view = portal.club_view(session, member, club_id)
+        info = portal.club_info(session, member, club_id)
     except DomainError:
         return _page(request, "portal/unavailable.html", status_code=404)
-    return _page(request, "portal/club.html", view=view, flash=request.session.pop("portal_flash", None))
+    if not info.own:  # another club: public contacts only (R52)
+        return _page(request, "portal/club_info.html", info=info)
+    view = portal.club_view(session, member, club_id)
+    return _page(request, "portal/club.html", view=view, info=info, flash=request.session.pop("portal_flash", None))
 
 
 def _club_action(request: Request, session: Session, club_id: uuid.UUID, action, success: str):

@@ -116,3 +116,42 @@ def test_bulk_payment_on_portal(migrated_db, client, club):
     assert "Hromadná platba" in r.text and "30,00 €" in r.text and "payme.sk" in r.text
     r = client.post(r.url.path + "/cancel", data={"csrf_token": token})
     assert "Platobný odkaz bol zrušený" in r.text
+
+
+# --- menu for members and chairs (R52) -----------------------------------------------------------------
+
+
+def test_member_menu_pages(migrated_db, client, club):
+    _as(client, club, "plain")
+    with migrated_db() as session:
+        other = _club(session, "JS Cudzia")
+        session.commit()
+    home = client.get("/portal").text
+    for link in ('href="/portal/members"', 'href="/portal/clubs"', 'href="/portal/board"',
+                 'href="/portal/documents"', 'href="/portal/notifications"'):
+        assert link in home
+    assert ">Domov<" not in home and "Administrácia" not in home and "menu-toggle" in home
+    r = client.get("/portal/members", follow_redirects=False)
+    assert r.headers["location"] == f"/portal/clubs/{club['id']}"  # one club: straight to it
+    page = client.get("/portal/clubs").text
+    assert "JS Cudzia" in page and "moja" in page
+    page = client.get(f"/portal/clubs/{other}").text
+    assert "Členov skupiny vidia len jej členovia" in page and "Pomocník" not in page
+    page = client.get(f"/portal/clubs/{club['id']}").text
+    assert "Pomocník" in page and "Upraviť údaje skupiny" not in page
+    assert client.get(f"/portal/clubs/{club['id']}/edit").status_code == 403
+    for path in ("/portal/board", "/portal/documents", "/portal/notifications"):
+        assert client.get(path).status_code == 200, path
+    assert "Predseda skupiny" in client.get("/portal/board").text
+
+
+def test_chair_edits_club_contacts(migrated_db, client, club):
+    token = _as(client, club, "chair")
+    base = f"/portal/clubs/{club['id']}"
+    assert "Upraviť údaje skupiny" in client.get(base).text
+    r = client.post(f"{base}/edit", data={"csrf_token": token, "city": "Liptovský Mikuláš", "email": "zly",
+                                          "country": "SK"})
+    assert r.status_code == 400
+    r = client.post(f"{base}/edit", data={"csrf_token": token, "city": "Liptovský Mikuláš",
+                                          "email": "js@example.org", "country": "SK", "web": "https://js.example.org"})
+    assert "Údaje skupiny boli uložené" in r.text and "Liptovský Mikuláš" in r.text and "js@example.org" in r.text

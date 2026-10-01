@@ -1,0 +1,9 @@
+{% extends "portal/_layout.html" %}
+{% block title %}Členovia – portál eSS{% endblock %}
+{% block portal %}
+<h1>Členovia</h1>
+{% if clubs %}
+<p>Vyberte skupinu:</p>
+<ul>{% for r in clubs %}<li><a href="/portal/clubs/{{ r.club.id }}">{{ r.club.name }}</a>{% if r.manages %} <span class="chip">spravujete</span>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="muted">Nie ste členom žiadnej skupiny.</p>{% endif %}
+{% endblock %}

@@ -285,6 +285,13 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   „Udeliť prístup administrátora“ (`admin_users.member_id`, migrácia 0026). Člen prihlásený na portáli cez eCP
   potom otvorí administráciu (tajná adresa) bez Google účtu; odhlásenie je odhlásenie z portálu. Prístup cez
   Google e-mail (Prístupy) ostáva; odobratie platí hneď.
+- **R52** – **Jedno menu pre člena a predsedu na portáli** (2026-10-01): Členovia (členovia vlastných skupín;
+  pri jednej skupine rovno jej stránka) · Skupiny (všetky skupiny s kontaktmi a predsedom; cudzia skupina bez
+  zoznamu členov) · Organizácia (Výbor, Dokumenty, Notifikácie – len čítanie) · štítok s menom (Môj profil,
+  Administrácia pre člena s rolou admin, Odhlásiť). Bez položky „Domov“ (logo vedie na profil).
+  - Predseda (alebo zástupca, R37) mení **kontaktné údaje** svojej skupiny (adresa, e-mail, telefón, web, dátum
+    založenia); názov, kód a logo mení administrátor. Člen vidí členov svojej skupiny s obmedzenými údajmi (R42).
+  - Na mobile je menu (portál aj administrácia) v **hamburger menu** (☰).
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.

@@ -24,6 +24,9 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 ## 2. Portál člena (`/p/<kľúč>` z eCP, `/portal`)
 
+Menu (R52, na mobile ☰): Členovia · Skupiny · Organizácia (Výbor, Dokumenty, Notifikácie) · štítok s menom
+(Môj profil, Administrácia – len člen s rolou admin, Odhlásiť). Logo vedie na profil.
+
 ### Prihlásenie
 | Obrazovka | Tlačidlá | Kedy |
 |---|---|---|
@@ -72,9 +75,11 @@ predsedu · **Pz** predseda, ktorého zastupuje zástupca (len číta) · **A** 
 
 ## 4. Administrácia (tajná adresa `/<ESS_ADMIN_PATH>`, vo vývoji `/admin`; Google prihlásenie – R48)
 
-Menu (R43): Členovia · Skupiny · Správa organizácie (Organizačná štruktúra, Členské, Ročná známka, Bankové výpisy,
-Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s „Upraviť“, R44; SA: všetky nastavenia, Import, Prístupy) · štítky:
-čakajúce požiadavky (červený), nezaplatené členské tohto roka (zlatý) · celé meno v štítku podľa úrovne → Odhlásiť.
+Menu (R50): Členovia · Skupiny · Správa organizácie (Výbor; A navyše Členské, Ročná známka, Bankové výpisy,
+Požiadavky; obaja Dokumenty) · Notifikácie · Nastavenia (Nastavenia aplikácie, Import; SA aj Prístupy) · štítky
+(len A): čakajúce požiadavky (červený), nezaplatené členské (zlatý) · štítok s menom → Odhlásiť (admin cez eCP:
+Môj portál, odhlásenie z portálu). SA vidí členov obmedzene (meno, skupiny, e-mail, telefón) s funkciami a
+prístupom administrátora; skupiny len číta. Na mobile ☰.
 
 | Obrazovka | Kto | Tlačidlá | Kedy |
 |---|---|---|---|
@@ -98,7 +103,8 @@ Požiadavky, Dokumenty) · Notifikácie · Nastavenia (A: časť nastavení s �
 | Bankové výpisy | A | Nahrať a spárovať (formát, súbor) | – |
 | Požiadavky | A | Aktivovať / Zamietnuť · Zaradiť do nezaradených / Ukončiť členstvo v SSS · Posúdiť žiadosť · Priradiť platbu / Vybavené | podľa typu požiadavky |
 | Žiadosť o eCP / kartičku | A | Orezať fotku znova (hneď pod fotkou) · Schváliť a vydať eCP (pri kartičke „Schváliť kartičku SSS“) · Zamietnuť (dôvod) | len podaná žiadosť |
-| Organizácia | A | – (funkcie) | – |
+| Výbor | A, SA | Ukončiť (SA každú funkciu, A len predsedu skupiny) | – |
+| Detail člena (SA) | SA | Priradiť funkciu (aj Výbor) · Udeliť / Odobrať prístup administrátora (R51) | – |
 | Dokumenty | A | Pridať · Odstrániť | – |
 | Notifikácie | A | Odoslať · Odoslať ďalšiu dávku | „Odoslať“ len ak dnes ešte zostáva z limitu 3 |
 | Import | SA | Skontrolovať / Vykonať import (skupiny, členovia) · vzory CSV · kódy skupín | – |

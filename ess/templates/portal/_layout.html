@@ -2,14 +2,25 @@
 {% block header %}
 <header>
   <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> Portál eSS</a>
-  <nav class="menu">
-    <a href="/portal">Domov</a>
-    <details class="user"><summary class="role role-member">{{ (me or "Môj účet")|two_lines }}</summary><div>
+  {% if me %}
+  <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
+  <nav class="menu">{# the same menu for members and chairs; rights differ on the pages (R52) #}
+    <a href="/portal/members">Členovia</a>
+    <a href="/portal/clubs">Skupiny</a>
+    <details><summary>Organizácia</summary><div>
+      <a href="/portal/board">Výbor</a>
+      <a href="/portal/documents">Dokumenty</a>
+      <a href="/portal/notifications">Notifikácie</a>
+    </div></details>
+    <details class="user"><summary class="role role-member">{{ me|two_lines }}</summary><div>
+      <a href="/portal">Môj profil</a>
+      {% if me_admin %}<a href="{{ A }}">Administrácia</a>{% endif %}
       <form method="post" action="/portal/logout">
         <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="link">Odhlásiť</button>
       </form>
     </div></details>
   </nav>
+  {% endif %}
 </header>
 <script>
   document.addEventListener("click", (e) => {

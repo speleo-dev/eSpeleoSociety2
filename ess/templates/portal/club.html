@@ -1,9 +1,10 @@
 {% extends "portal/_layout.html" %}
 {% block title %}{{ view.club.name }} – portál eSS{% endblock %}
 {% block portal %}
-<h1>{{ view.club.name }}</h1>
+<h1>{% if view.club.logo_url %}<img class="club-logo" src="{{ view.club.logo_url }}" alt=""> {% endif %}{{ view.club.name }}</h1>
 {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-{% if view.chair_name %}<p>Predseda: {{ view.chair_name }}{% if view.delegate_name %}; skupinu spravuje zástupca {{ view.delegate_name }}{% endif %}</p>{% endif %}
+{% include "portal/_club_contacts.html" %}
+{% if view.delegate_name %}<p>Skupinu spravuje zástupca predsedu {{ view.delegate_name }}.</p>{% endif %}
 
 {% if view.is_chair and view.delegate_name %}
 <section class="box">
@@ -33,7 +34,8 @@
 
 {% if view.can_manage %}
 <p><a href="/portal/clubs/{{ view.club.id }}/members/new"><button class="primary">Nový člen / čakateľ</button></a>
-   <a href="/portal/clubs/{{ view.club.id }}/payments"><button>Členské a hromadná platba</button></a></p>
+   <a href="/portal/clubs/{{ view.club.id }}/payments"><button>Členské a hromadná platba</button></a>
+   <a href="/portal/clubs/{{ view.club.id }}/edit"><button>Upraviť údaje skupiny</button></a></p>
 {% endif %}
 {% if view.full %}{% set pending = view.rows|selectattr("status.value", "equalto", "pending_activation")|list %}
 {% if pending %}

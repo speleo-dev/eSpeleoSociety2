@@ -1,0 +1,10 @@
+{% extends "portal/_layout.html" %}
+{% block title %}Notifikácie – portál eSS{% endblock %}
+{% block portal %}
+<h1>Notifikácie SSS</h1>
+<p class="muted">Oznámenia, ktoré SSS poslala do eCP.</p>
+{% for r in items %}{% set n = r.notification %}
+<section class="box"><strong>{{ n.header }}</strong> <span class="muted">· {{ n.created_at|local_time }}</span>
+  <p>{{ n.body }}</p></section>
+{% else %}<p class="muted">Zatiaľ žiadne notifikácie.</p>{% endfor %}
+{% endblock %}

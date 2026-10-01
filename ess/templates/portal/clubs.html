@@ -1,0 +1,16 @@
+{% extends "portal/_layout.html" %}
+{% block title %}Skupiny – portál eSS{% endblock %}
+{% block portal %}
+<h1>Skupiny SSS</h1>
+<div class="table-wrap"><table class="stack">
+  <thead><tr><th>Skupina</th><th>Predseda</th><th>Obec</th><th>Kontakt</th></tr></thead>
+  <tbody>
+  {% for r in clubs %}{% set c = r.club %}
+    <tr><td>{% if c.logo_url %}<img class="club-logo" src="{{ c.logo_url }}" alt="" loading="lazy"> {% endif %}<a href="/portal/clubs/{{ c.id }}">{{ c.name }}</a>{% if r.own %} <span class="chip">moja</span>{% endif %}</td>
+      <td data-label="Predseda">{{ r.chair_name or "—" }}</td>
+      <td data-label="Obec">{{ c.city or "" }}</td>
+      <td data-label="Kontakt">{% if c.email %}<a href="mailto:{{ c.email }}">{{ c.email }}</a>{% endif %}{% if c.email and c.phone %} · {% endif %}{% if c.phone %}<a href="tel:{{ c.phone|replace(' ', '') }}">{{ c.phone }}</a>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

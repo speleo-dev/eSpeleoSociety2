@@ -60,16 +60,16 @@ Inventúra nastavení a funkcií pôvodnej aplikácie: [docs/old-app-inventory.m
 | Rola | Prístup |
 |---|---|
 | Verejnosť | žiadosť o eCP, overovacia stránka eCP/kartičky |
-| Člen (s eCP) | len čítanie: vlastná identita, dokumenty, zaplatené členské, hlásenie vstupu do jaskyne, odkaz na národnú databázu jaskýň |
-| Predseda skupiny | + členovia vlastnej skupiny, pridanie čakateľa/člena, pozastavenie/ukončenie, hromadná platba |
+| Člen (s eCP) | len čítanie: vlastná identita, členovia vlastných skupín (obmedzene), skupiny, Výbor, dokumenty, notifikácie, zaplatené členské, hlásenie vstupu do jaskyne (R52) |
+| Predseda skupiny | + členovia vlastnej skupiny (všetky údaje), pridanie čakateľa/člena, pozastavenie/ukončenie, hromadná platba, kontakty skupiny |
 | Zástupca predsedu | práva predsedu namiesto neho, kým ho predseda neodvolá (R37); predseda vtedy len číta |
-| Administrátor (`admin`) | evidencia členov a skupín, aktivácia členov, žiadosti o eCP, bankové výpisy |
-| Systémový administrátor (`system_admin`) | všetko vrátane prístupov, vzhľadu eCP a kartičky a nastavení |
+| Administrátor (`admin`) | evidencia členov a skupín, predseda skupiny, členské, ročná známka, bankové výpisy, požiadavky, dokumenty, notifikácie, nastavenia členského a eCP, import; prihlásenie cez Google alebo eCP (R50, R51) |
+| Superadmin (`system_admin`) | systém: prístupy (rola admin), funkcie vo Výbore, nastavenia eCP, typy certifikátov, testovací e-mail, import, dokumenty, notifikácie; evidenciu nemení a členov vidí obmedzene; len z konfigurácie servera (R50) |
 
 Člen nemá na portál prístup, kým nemá schválený eCP. Člen a predseda sa prihlasujú cez eCP
-(+ overenie e-mailu, potom passkey). Administratívny prístup = Google účet: dvaja hlavní systémoví
-administrátori sú v konfigurácii servera, ďalších systémových administrátorov a administrátorov pridáva systémový
-administrátor v aplikácii.
+(+ overenie e-mailu, potom passkey). Superadmini sú len v konfigurácii servera a prihlasujú sa Google účtom na tajnej
+adrese administrácie (R48). Administrátorov pridáva superadmin v aplikácii – s Google účtom (Prístupy) alebo
+členovi s eCP (R51).
 
 ## Architektúra (cieľ)
 

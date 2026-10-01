@@ -1,0 +1,7 @@
+{% extends "portal/_layout.html" %}
+{% block title %}Dokumenty – portál eSS{% endblock %}
+{% block portal %}
+<h1>Dokumenty</h1>
+<ul>{% for d in documents %}<li><a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.title }}</a>{% if d.valid_until %} <span class="muted">(platí do {{ d.valid_until|date }})</span>{% endif %}</li>
+{% else %}<li class="muted">Žiadne dokumenty.</li>{% endfor %}</ul>
+{% endblock %}

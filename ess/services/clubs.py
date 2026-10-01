@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from ess import audit
 from ess.images import normalize_logo
 from ess.models import Club
-from ess.services.access import Actor, DomainError, require_admin
+from ess.services.access import Actor, DomainError, require_admin, require_club_manager
 from ess.storage import MediaStore, random_name
 
 
@@ -138,6 +138,20 @@ def update_club(
     names = ("name", "short_name", "uses_candidates", "active", "code", "logo_url")
     changed = [f for f, b, a in zip(names, before, after) if b != a]
     changed += [f for f in CONTACT_FIELDS if getattr(contact_before, f) != getattr(club, f)]
+    audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.update",
+                 entity_type="club", entity_id=str(club.id), details={"fields": changed})
+    return club
+
+
+def update_contact(session: Session, actor: Actor, club_id: uuid.UUID, contact: ClubContact) -> Club:
+    """The chair (or delegate) changes the club's contact details (R52); the name and code stay with administrators."""
+    club = session.get(Club, club_id)
+    if club is None:
+        raise DomainError("club_not_found")
+    require_club_manager(session, actor, club)
+    before = contact_of(club)
+    _apply_contact(club, contact)
+    changed = [f for f in CONTACT_FIELDS if getattr(before, f) != getattr(club, f)]
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="club.update",
                  entity_type="club", entity_id=str(club.id), details={"fields": changed})
     return club

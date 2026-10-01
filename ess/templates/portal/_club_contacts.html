@@ -1,0 +1,10 @@
+{# Public contact details of a club (R52). #}
+{% set c = info.club %}
+<dl>
+  <dt>Predseda</dt><dd>{{ info.chair_name or "—" }}</dd>
+  {% if c.street or c.city %}<dt>Adresa</dt><dd>{{ [c.street, ((c.postal_code or "") ~ " " ~ (c.city or ""))|trim]|select|join(", ") }}</dd>{% endif %}
+  {% if c.email %}<dt>E-mail</dt><dd><a href="mailto:{{ c.email }}">{{ c.email }}</a></dd>{% endif %}
+  {% if c.phone %}<dt>Telefón</dt><dd><a href="tel:{{ c.phone|replace(' ', '') }}">{{ c.phone }}</a></dd>{% endif %}
+  {% if c.web %}<dt>Web</dt><dd><a href="{{ c.web }}" target="_blank" rel="noopener">{{ c.web }}</a></dd>{% endif %}
+  {% if c.founded_on %}<dt>Založená</dt><dd>{{ c.founded_on|date }}</dd>{% endif %}
+</dl>
