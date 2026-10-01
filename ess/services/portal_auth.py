@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from ess import audit
 from ess.models import EcpPass, EcpPassState, Member, MemberLoginCode, MemberSession
 from ess.services import members, outbox
-from ess.services.access import Actor, DomainError, require_admin
+from ess.services.access import Actor, DomainError, require_staff
 
 CODE_VALID = timedelta(minutes=10)
 CODE_ATTEMPTS = 5
@@ -52,6 +52,22 @@ def may_log_in(session: Session, member_id: uuid.UUID) -> bool:
 
 
 # --- e-mail code --------------------------------------------------------------------------------------
+
+
+def send_login_link(session: Session, member_id: uuid.UUID) -> None:
+    """The signed-in member e-mails themselves the eCP portal link to sign in on a computer (R53).
+
+    The link alone is not a proof of identity (a code is sent on the new device), so this is safe."""
+    ecp_pass = session.scalar(select(EcpPass).where(EcpPass.member_id == member_id, EcpPass.portal_key.is_not(None),
+                                                    EcpPass.state == "active"))
+    data = members.read_member(session.get(Member, member_id))
+    if ecp_pass is None or not data.email:
+        raise DomainError("portal_needs_email")
+    audit.record(session, actor_type="member", actor_id=str(member_id), action="portal.link_sent",
+                 entity_type="member", entity_id=str(member_id))
+    outbox.queue(session, outbox.QueuedMail(to=data.email, subject="Prihlásenie do portálu eSS na inom zariadení",
+                                            template="portal_link", context={"first_name": data.first_name,
+                                                                             "link_path": f"/p/{ecp_pass.portal_key}"}))
 
 
 def send_code(session: Session, key: str, browser: str) -> None:
@@ -212,8 +228,9 @@ def log_out(session: Session, token: str | None) -> None:
 
 
 def log_out_everywhere(session: Session, actor: Actor, member_id: uuid.UUID) -> int:
-    """An administrator ends all sessions of the member and deletes the passkeys (e.g. lost phone)."""
-    require_admin(actor)
+    """An administrator or the superadmin ends all sessions of the member and deletes the passkeys (lost phone,
+    mixed-up devices). The superadmin can do it even when nothing else works (R53)."""
+    require_staff(actor)
     rows = session.scalars(select(MemberSession).where(MemberSession.member_id == member_id,
                                                        MemberSession.revoked_at.is_(None))).all()
     for row in rows:

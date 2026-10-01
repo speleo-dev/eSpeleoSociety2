@@ -17,7 +17,7 @@
     </div></details>
     <details class="user"><summary class="role role-member">{{ me|two_lines }}</summary><div>
       <a href="/portal">Môj profil</a>
-      {% if me_admin %}<a href="{{ A }}">Administrácia</a>{% endif %}
+      {% if me_admin %}<a href="{{ A }}/ecp">Administrácia</a>{% endif %}
       <form method="post" action="/portal/logout">
         <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="link">Odhlásiť</button>
       </form>

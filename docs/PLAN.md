@@ -296,6 +296,14 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   - Predseda (alebo zástupca, R37) mení **kontaktné údaje** svojej skupiny (adresa, e-mail, telefón, web, dátum
     založenia); názov, kód a logo mení administrátor. Člen vidí členov svojej skupiny s obmedzenými údajmi (R42).
   - Na mobile je menu (portál aj administrácia) v **hamburger menu** (☰).
+- **R53** – **Zariadenia a prepínanie rolí** (2026-10-01, z testovania):
+  - „Odhlásiť zo všetkých zariadení a zmazať passkey“ môže aj **superadmin** (detail člena) – prístup, ktorý
+    funguje, aj keď nič iné nejde.
+  - Člen si v portáli (Moje zariadenia) môže **poslať e-mailom odkaz na prihlásenie na počítači** (odkaz z eCP;
+    na novom zariadení sa aj tak overí kódom z e-mailu). Passkey funguje len na zariadení, kde bol nastavený.
+  - Odkaz „Administrácia“ z portálu vedie na `<admin>/ecp`: zruší prihlásenie Googlom v tomto prehliadači
+    a použije rolu administrátora z eCP. V administrácii: superadmin s dostupnou rolou admin z eCP má
+    „Prepnúť na administrátora (eCP)“; admin z eCP má „Prihlásiť sa Googlom (superadmin)“.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.

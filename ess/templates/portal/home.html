@@ -72,4 +72,9 @@
     {% endif %}</li>
 {% endfor %}
 </ul>
+<form method="post" action="/portal/send-link">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <button>Poslať si odkaz na prihlásenie na počítači</button>
+</form>
+<p class="muted">Na počítači nemáte eCP – pošleme vám e-mailom odkaz, ktorý tam otvoríte; prihlásite sa kódom z e-mailu.</p>
 {% endblock %}

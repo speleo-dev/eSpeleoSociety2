@@ -1,0 +1,11 @@
+Dobrý deň {{ first_name }},
+
+na prihlásenie do portálu eSS na počítači alebo inom zariadení otvorte tento odkaz:
+
+{{ link }}
+
+Na novom zariadení vám ešte pošleme kód na e-mail. Odkaz nikomu nepreposielajte.
+Ak ste o odkaz nežiadali, správu ignorujte.
+
+S pozdravom
+Slovenská speleologická spoločnosť

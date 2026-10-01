@@ -289,7 +289,7 @@ def card_replace(request: Request, card_id: uuid.UUID, admin: RegisterAdmin, ses
 
 
 @router.post("/members/{member_id}/portal-logout", dependencies=[Depends(verify_csrf)])
-def portal_logout_all(request: Request, member_id: uuid.UUID, admin: RegisterAdmin, session: Db):
+def portal_logout_all(request: Request, member_id: uuid.UUID, admin: Admin, session: Db):
     """Lost phone etc.: end all portal sessions of the member (R38)."""
     from ess.services import portal_auth
 

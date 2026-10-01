@@ -79,3 +79,45 @@ def test_admin_role_badge(client, google):  # noqa: F811
     assert 'role-badge role-admin">Administrátor<' in client.get("/admin").text
     login(client, google, email="super@example.org")
     assert 'role-badge role-system_admin">Superadmin<' in client.get("/admin").text
+
+
+# --- R53: devices, switching roles, link for a computer ---------------------------------------------------
+
+
+def test_superadmin_logs_member_out_and_switches_to_ecp_admin(migrated_db, google, client):  # noqa: F811
+    from ess.mail import MemoryMailer, get_mailer
+    from ess.models import EcpPass
+    from ess.services import admin_access, portal_auth
+    from ess.services.access import SYSTEM
+
+    mailer = MemoryMailer()
+    client.app.dependency_overrides[get_mailer] = lambda: mailer
+    with migrated_db() as s:
+        member_id = _member(s, _club(s))
+        s.add(EcpPass(member_id=member_id, wallet_object_id=f"i.{member_id}", state="active", portal_key="k" * 32))
+        token = portal_auth.open_session(s, member_id, "email_code").token
+        portal_auth.open_session(s, member_id, "email_code")  # another device
+        admin_access.grant_member_access(s, SYSTEM, member_id)
+        s.commit()
+
+    client.cookies.set("ess_member", token)
+    page = client.get("/portal").text
+    assert 'href="/admin/ecp"' in page and "Poslať si odkaz na prihlásenie na počítači" in page
+    csrf_portal = __import__("re").search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+    r = client.post("/portal/send-link", data={"csrf_token": csrf_portal})
+    assert "Odkaz na prihlásenie sme poslali" in r.text
+    assert mailer.sent[-1].subject.startswith("Prihlásenie do portálu") and "/p/" + "k" * 32 in mailer.sent[-1].text
+
+    login(client, google, email="super@example.org")  # Google session wins …
+    page = client.get("/admin").text
+    assert "Superadmin" in page and 'href="/admin/ecp"' in page
+    r = client.get("/admin/ecp")  # … until the member switches to the eCP administrator
+    assert 'role-badge role-admin">Administrátor<' in r.text
+
+    login(client, google, email="super@example.org")
+    page = client.get(f"/admin/members/{member_id}").text
+    assert "prihlásený na 2 zariadení" in page.lower() or "Prihlásený na 2 zariadení" in page
+    r = client.post(f"/admin/members/{member_id}/portal-logout", data={"csrf_token": csrf(client)})
+    assert r.status_code == 200
+    with migrated_db() as s:
+        assert portal_auth.active_sessions(s, member_id) == 0

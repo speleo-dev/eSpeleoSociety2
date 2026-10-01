@@ -212,6 +212,26 @@ def home(request: Request, session: Db):
                  trip=cave_trips.open_trip(session, member.id), flash=request.session.pop("portal_flash", None))
 
 
+@router.post("/portal/send-link", dependencies=[Depends(verify_public_csrf)])
+def send_link(request: Request, session: Db):
+    """E-mail the sign-in link for a computer or another device (R53)."""
+    member = _member(request, session)
+    if member is None:
+        return RedirectResponse("/portal", status_code=303)
+    try:
+        portal_auth.send_login_link(session, member.id)
+        session.commit()
+        request.session["portal_flash"] = {"kind": "ok", "text": "Odkaz na prihlásenie sme poslali na váš e-mail."}
+    except DomainError as exc:
+        session.rollback()
+        outbox.discard(session)
+        request.session["portal_flash"] = {"kind": "error", "text": ERRORS.get(exc.code, exc.code)}
+        return RedirectResponse("/portal", status_code=303)
+    if not after_commit(request, session):
+        request.session["portal_flash"] = {"kind": "error", "text": "E-mail sa nepodarilo odoslať."}
+    return RedirectResponse("/portal", status_code=303)
+
+
 @router.post("/portal/logout", dependencies=[Depends(verify_public_csrf)])
 def logout(request: Request, session: Db):
     portal_auth.log_out(session, request.cookies.get(COOKIE))

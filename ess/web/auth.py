@@ -53,6 +53,7 @@ class AdminContext:
     role: AdminRole
     csrf_token: str
     via_ecp: bool = False  # signed in with the eCP on the portal (R51), not with Google
+    ecp_admin_available: bool = False  # Google session, but the portal member is an administrator too
 
     @property
     def is_system_admin(self) -> bool:
@@ -121,6 +122,7 @@ def current_admin(request: Request, session: Session = Depends(get_session)) -> 
         display_name=request.session.get("admin_name", ""),
         role=role,
         csrf_token=csrf_token(request),
+        ecp_admin_available=_admin_from_ecp(request, session) is not None,
     )
 
 
@@ -185,6 +187,14 @@ async def admin_auth_callback(request: Request, session: Session = Depends(get_s
     csrf_token(request)
     audit.record(session, actor_type="admin", actor_id=actor_id, action="admin.login", details={"role": role.value})
     session.commit()
+    return RedirectResponse(str(A), status_code=303)
+
+
+@router.get("/ecp")
+def admin_via_ecp(request: Request):
+    """Use the administrator role of the portal member (eCP) instead of the Google sign-in (R53)."""
+    request.session.pop("admin_email", None)
+    request.session.pop("admin_name", None)
     return RedirectResponse(str(A), status_code=303)
 
 

@@ -10,6 +10,10 @@
   <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
 </dl>
 <p class="muted">Ďalšie údaje člena a ich zmeny spravuje administrátor.</p>
+<h2>Portál</h2>
+<p>{% if portal_sessions %}Prihlásený na {{ portal_sessions }} zariadení.{% else %}Neprihlásený.{% endif %}
+  <form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach a zmazať jeho passkey?')">
+    {% include "admin/_csrf.html" %}<button>Odhlásiť zo všetkých zariadení a zmazať passkey</button></form></p>
 {% include "admin/_positions.html" %}
 
 <h2>Prístup administrátora</h2>

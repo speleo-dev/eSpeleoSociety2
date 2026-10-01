@@ -32,7 +32,8 @@
     {% endif %}
     <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
       <span class="muted">{{ admin.role|label }}</span>
-      {% if admin.via_ecp %}<a href="/portal">Môj portál (eCP)</a>{% endif %}
+      {% if admin.via_ecp %}<a href="/portal">Môj portál (eCP)</a><a href="{{ A }}/login">Prihlásiť sa Googlom (superadmin)</a>{% endif %}
+      {% if admin.ecp_admin_available %}<a href="{{ A }}/ecp">Prepnúť na administrátora (eCP)</a>{% endif %}
       <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}">
         <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="link">Odhlásiť</button>
       </form>

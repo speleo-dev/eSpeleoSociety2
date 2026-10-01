@@ -47,7 +47,8 @@ def member_page(request: Request, member_id: uuid.UUID, admin: Admin, session: D
 
         return _render(request, "admin/member_limited.html", admin, session, d=detail,
                        positions=directory.positions_catalog(session),
-                       access=admin_access.member_access(session, member_id))
+                       access=admin_access.member_access(session, member_id),
+                       portal_sessions=portal_auth.active_sessions(session, member_id))
     issuable = [y for y in sss_cards.allowed_years(session) if sss_cards.can_issue(session, member_id, y)]
     from ess.web.admin_payments import member_fee_rows
 
