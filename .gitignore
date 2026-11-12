@@ -11,3 +11,6 @@ secrets*
 .idea/
 .vscode/
 *.egg-info/
+
+# Local Claude Code worktrees and state
+.claude/
