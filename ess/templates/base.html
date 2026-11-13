@@ -2,126 +2,301 @@
 <html lang="{{ page_lang|default('sk') }}"{% if page_lang %} data-lang="{{ page_lang }}"{% endif %}>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title>{% block title %}eSpeleoSociety{% endblock %}</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
+
+  <!-- Theme initialization to avoid theme flash -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem("tabler-theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.setAttribute("data-bs-theme", "dark");
+      } else {
+        document.documentElement.setAttribute("data-bs-theme", "light");
+      }
+    })();
+  </script>
+
+  <!-- Tabler Core & Icons CSS -->
+  <link rel="stylesheet" href="/static/vendor/tabler/css/tabler.min.css">
+  <link rel="stylesheet" href="/static/vendor/tabler/css/tabler-icons.min.css">
+
   <style>
-    :root { color-scheme: light dark; --fg:#1c1c1c; --bg:#fff; --muted:#666; --line:#ddd; --accent:#2b5d8a;
-            --ok:#e6f4ea; --err:#fdecea; --chip:#eef2f6; font-family: system-ui, sans-serif; }
-    @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#161616; --muted:#9a9a9a; --line:#333;
-            --accent:#7fb2e5; --ok:#1d3a25; --err:#4a1f1b; --chip:#23303c; } }
-    body { margin:0; background:var(--bg); color:var(--fg); line-height:1.45; }
-    header { display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; padding:.6rem 1rem; border-bottom:1px solid var(--line); }
-    header .brand { font-weight:600; margin-right:auto; }
-    header a { color:var(--fg); text-decoration:none; }
-    header nav { display:flex; flex-wrap:wrap; gap:.75rem; }
-    main { max-width:72rem; margin:0 auto; padding:1rem; }
-    a { color:var(--accent); }
-    table { width:100%; border-collapse:collapse; }
-    th, td { text-align:left; padding:.4rem .5rem; border-bottom:1px solid var(--line); vertical-align:top; }
-    th { font-weight:600; font-size:.9rem; color:var(--muted); }
-    .table-wrap { overflow-x:auto; }
-    .chip { display:inline-block; background:var(--chip); border-radius:1rem; padding:.05rem .55rem; font-size:.85rem; margin:0 .2rem .2rem 0; }
-    .muted { color:var(--muted); }
-    .flash { padding:.6rem .8rem; border-radius:.4rem; margin-bottom:1rem; }
-    .flash.ok { background:var(--ok); } .flash.error { background:var(--err); }
-    .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(12rem, 1fr)); gap:1rem; }
-    .card { border:1px solid var(--line); border-radius:.5rem; padding:1rem; }
-    .card .num { font-size:2rem; font-weight:600; }
-    form.inline { display:inline; }
-    button, input, select { font:inherit; }
-    button { cursor:pointer; padding:.25rem .7rem; border:1px solid var(--line); border-radius:.35rem; background:var(--chip); color:var(--fg); }
-    button.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-    .filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
-    dl { display:grid; grid-template-columns:max-content 1fr; gap:.3rem 1rem; }
-    dt { color:var(--muted); }
-    img.icon { width:20px; height:20px; vertical-align:-4px; }
-    td.icons { white-space:nowrap; width:1%; }
-    td.logo { width:1%; text-align:center; }
-    ul.club-list { list-style:none; padding:0; }
-    ul.club-list li { display:flex; align-items:center; gap:.75rem; padding:.25rem 0; }
-    .logo-box { flex:none; width:48px; height:48px; display:flex; align-items:center; justify-content:center; }
-    .logo-box img { max-width:48px; max-height:48px; object-fit:contain; }
-    header .brand { display:flex; align-items:center; gap:.5rem; }
-    header .brand img { border-radius:50%; }
-    header .brand-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .6rem; margin-right:auto; min-width:0; }
-    header .brand-wrap .badge { text-decoration:none; }
-    header .brand-wrap .brand { margin-right:0; }
-    .role-badge { font-weight:600; }  /* the signed-in role, always visible (also on phones) */
-    .role-chair, .role-delegate { background:#1e8449; }
-    .legend { display:flex; flex-wrap:wrap; gap:.3rem 1rem; font-size:.85rem; margin-top:1rem; }
-    img.club-logo { max-height:48px; max-width:96px; vertical-align:middle; }
-    img.club-logo-large { max-height:160px; max-width:240px; border:1px solid #ddd; padding:4px; background:#fff; }
-    .form .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr)); gap:.75rem 1rem; margin-bottom:.75rem; }
-    .form label { display:flex; flex-direction:column; gap:.2rem; font-size:.9rem; color:var(--muted); }
-    .form label.check { flex-direction:row; align-items:center; gap:.4rem; color:var(--fg); margin:.4rem 0; }
-    .form input, .form select { padding:.35rem .5rem; border:1px solid var(--line); border-radius:.35rem; background:var(--bg); color:var(--fg); }
-    section.box { border:1px solid var(--line); border-radius:.5rem; padding:.75rem 1rem; margin:1rem 0; }
-    details summary { cursor:pointer; color:var(--accent); margin:.5rem 0; }
-    dd { margin:0; min-width:0; overflow-wrap:anywhere; }
-    td form.inline button { margin:0 .2rem .2rem 0; white-space:nowrap; }
-    nav.menu { align-items:center; }
-    nav.menu details { position:relative; }
-    nav.menu summary { list-style:none; cursor:pointer; color:var(--fg); margin:0; }
-    nav.menu summary::-webkit-details-marker { display:none; }
-    nav.menu summary::after { content:" ▾"; font-size:.8em; color:var(--muted); }
-    nav.menu details > div { position:absolute; z-index:10; top:1.6rem; left:0; min-width:13rem; display:flex; flex-direction:column;
-      background:var(--bg); border:1px solid var(--line); border-radius:.4rem; padding:.3rem 0; box-shadow:0 4px 12px rgba(0,0,0,.15); }
-    nav.menu details > div a { padding:.35rem .8rem; }
-    nav.menu details > div a:hover { background:var(--chip); }
-    nav.menu details.user > div { left:auto; right:0; min-width:10rem; padding:.4rem .8rem; gap:.4rem; }
-    nav.menu details.user summary::after { content:""; }
-    nav.menu details.user summary { display:inline-block; padding:.2rem .7rem; color:#fff; }
-    nav.menu details > div { top:calc(100% + .3rem); }
-    button.link { background:none; border:0; padding:0; color:var(--accent); }
-    .badge { display:inline-block; min-width:1.6rem; text-align:center; border-radius:1rem; padding:.05rem .5rem; font-size:.85rem;
-      font-weight:600; color:#fff !important; }
-    .badge-tasks { background:#c0392b; } .badge-unpaid { background:#b7950b; }
-    .role { border-radius:.6rem; padding:.1rem .7rem; font-size:.78rem; line-height:1.15; color:#fff; white-space:nowrap; text-align:center; }
-    .role-admin, .role-member { background:#2b5d8a; } .role-system_admin { background:#7d3c98; }
-    p.back { margin:0 0 .5rem; font-size:.9rem; }
-    fieldset { border:0; padding:0; margin:0; min-width:0; }
-    fieldset:disabled input, fieldset:disabled select { background:var(--chip); color:var(--muted); }
-    .menu-toggle { display:none; background:none; border:1px solid var(--line); border-radius:.4rem; font-size:1.3rem;
-      line-height:1; padding:.25rem .55rem; color:var(--fg); }
-    @media (max-width: 760px) {  /* hamburger menu on phones (R52) */
-      .menu-toggle { display:block; }
-      header { padding:.5rem .75rem; }
-      header .brand-wrap { flex-wrap:nowrap; gap:.3rem; }
-      header .brand-wrap .brand { font-size:.95rem; gap:.35rem; white-space:nowrap; }
-      header .brand-wrap .brand img { width:28px; height:28px; }
-      header .brand-wrap .role-badge { font-size:.7rem; padding:.1rem .45rem; }
-      header .brand-wrap .badge { min-width:1.3rem; padding:0 .35rem; font-size:.75rem; }
-      header .brand-wrap { flex:1 1 0; }
-      .menu-toggle { flex:none; }
-      header nav.menu { display:none; width:100%; flex-direction:column; align-items:stretch; gap:.2rem; }
-      header.open nav.menu { display:flex; }
-      header nav.menu > a, header nav.menu > details > summary { padding:.45rem .2rem; border-top:1px solid var(--line); }
-      nav.menu details > div { position:static; min-width:0; border:0; box-shadow:none; padding:0 0 .3rem 1rem; }
-      nav.menu details.user > div { padding:.3rem 0 .3rem 1rem; }
-      nav.menu details.user summary { margin-top:.4rem; }
+    /* Member status icons preserving exact appearance & size in both themes */
+    img.icon {
+      width: 20px;
+      height: 20px;
+      vertical-align: -3px;
+      display: inline-block;
+      object-fit: contain;
     }
-    @media (max-width: 420px) {  /* narrow phones: logo, role and badges stay on one line with the menu button */
-      header .brand-text { display:none; }
+    td.icons {
+      white-space: nowrap;
+      width: 1%;
     }
-    @media (max-width: 640px) {
-      table.stack thead { display:none; }
-      table.stack tr { display:block; border-bottom:1px solid var(--line); padding:.4rem 0; }
-      table.stack td { display:block; border:0; padding:.15rem 0; }
-      table.stack td[data-label]::before { content:attr(data-label) ": "; color:var(--muted); }
+    td.logo {
+      width: 1%;
+      text-align: center;
+    }
+    img.club-logo {
+      max-height: 38px;
+      max-width: 80px;
+      vertical-align: middle;
+      object-fit: contain;
+    }
+    img.club-logo-large {
+      max-height: 160px;
+      max-width: 240px;
+      border: 1px solid var(--tblr-border-color, #ddd);
+      padding: 4px;
+      background: var(--tblr-card-bg, #fff);
+      border-radius: 4px;
+    }
+
+    /* Role badges styling */
+    .role-badge { font-weight: 600; }
+    .role-chair, .role-delegate { background: #1e8449 !important; color: #fff !important; }
+    .role-admin, .role-member { background: #2b5d8a !important; color: #fff !important; }
+    .role-system_admin { background: #7d3c98 !important; color: #fff !important; }
+
+    /* Badge indicators */
+    .badge-tasks { background-color: #c0392b !important; color: #fff !important; }
+    .badge-unpaid { background-color: #b7950b !important; color: #fff !important; }
+
+    /* Flash messages compatibility */
+    .flash {
+      position: relative;
+      padding: .75rem 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid transparent;
+      border-radius: 4px;
+    }
+    .flash.ok, .flash.success {
+      color: var(--tblr-success, #2fb344);
+      background-color: var(--tblr-success-subtle, rgba(47, 179, 68, 0.1));
+      border-color: var(--tblr-success-border-subtle, rgba(47, 179, 68, 0.2));
+    }
+    .flash.error, .flash.danger {
+      color: var(--tblr-danger, #d63939);
+      background-color: var(--tblr-danger-subtle, rgba(214, 57, 57, 0.1));
+      border-color: var(--tblr-danger-border-subtle, rgba(214, 57, 57, 0.2));
+    }
+
+    /* Compatibility layer for legacy unmigrated pages & portal */
+    form.inline { display: inline-block; }
+    button.link {
+      background: none;
+      border: 0;
+      padding: 0;
+      color: var(--tblr-link-color, #206bc4);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .chip {
+      display: inline-block;
+      background: var(--tblr-bg-surface-secondary, #eef2f6);
+      color: var(--tblr-body-color, #1e293b);
+      border-radius: 1rem;
+      padding: .1rem .6rem;
+      font-size: .85rem;
+      margin: 0 .2rem .2rem 0;
+      border: 1px solid var(--tblr-border-color-translucent, rgba(98, 105, 118, 0.16));
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem 1.2rem;
+      font-size: .85rem;
+      margin-top: 1rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    section.box {
+      border: 1px solid var(--tblr-border-color, #e6e7e9);
+      border-radius: 4px;
+      padding: 1rem;
+      margin: 1rem 0;
+      background-color: var(--tblr-card-bg, #fff);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    p.back {
+      margin-bottom: .75rem;
+    }
+
+    /* Legacy header and navigation rules for unmigrated portal/public layouts */
+    header:not(.navbar) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem 1rem;
+      align-items: center;
+      padding: .6rem 1rem;
+      border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+      background: var(--tblr-bg-surface, #fff);
+    }
+    header:not(.navbar) a {
+      color: var(--tblr-body-color, #1c1c1c);
+      text-decoration: none;
+    }
+    header:not(.navbar) .brand {
+      font-weight: 600;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    header:not(.navbar) .brand-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .4rem .6rem;
+      margin-right: auto;
+      min-width: 0;
+    }
+    header:not(.navbar) nav.menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      align-items: center;
+    }
+    header:not(.navbar) nav.menu details {
+      position: relative;
+    }
+    header:not(.navbar) nav.menu summary {
+      list-style: none;
+      cursor: pointer;
+      margin: 0;
+    }
+    header:not(.navbar) nav.menu summary::-webkit-details-marker {
+      display: none;
+    }
+    header:not(.navbar) nav.menu summary::after {
+      content: " ▾";
+      font-size: .8em;
+      color: var(--tblr-secondary, #666);
+    }
+    header:not(.navbar) nav.menu details > div {
+      position: absolute;
+      z-index: 1000;
+      top: calc(100% + .3rem);
+      left: 0;
+      min-width: 13rem;
+      display: flex;
+      flex-direction: column;
+      background: var(--tblr-bg-surface, #fff);
+      border: 1px solid var(--tblr-border-color, #ddd);
+      border-radius: .4rem;
+      padding: .3rem 0;
+      box-shadow: var(--tblr-box-shadow-dropdown, 0 4px 12px rgba(0,0,0,.15));
+    }
+    header:not(.navbar) nav.menu details > div a {
+      padding: .35rem .8rem;
+    }
+    header:not(.navbar) nav.menu details > div a:hover {
+      background: var(--tblr-bg-surface-secondary, #eef2f6);
+    }
+    header:not(.navbar) nav.menu details.user > div {
+      left: auto;
+      right: 0;
+      min-width: 10rem;
+      padding: .4rem .8rem;
+      gap: .4rem;
+    }
+    header:not(.navbar) nav.menu details.user summary::after {
+      content: "";
+    }
+    header:not(.navbar) nav.menu details.user summary {
+      display: inline-block;
+      padding: .2rem .7rem;
+      color: #fff;
+      border-radius: .6rem;
+    }
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--tblr-border-color, #ddd);
+      border-radius: .4rem;
+      font-size: 1.3rem;
+      line-height: 1;
+      padding: .25rem .55rem;
+      color: var(--tblr-body-color, #1c1c1c);
+      cursor: pointer;
+    }
+    @media (max-width: 760px) {
+      .menu-toggle { display: block; }
+      header:not(.navbar) { padding: .5rem .75rem; }
+      header:not(.navbar) .brand-wrap { flex-wrap: nowrap; gap: .3rem; flex: 1 1 0; }
+      header:not(.navbar) .brand-wrap .brand { font-size: .95rem; gap: .35rem; white-space: nowrap; }
+      header:not(.navbar) .brand-wrap .brand img { width: 28px; height: 28px; }
+      header:not(.navbar) nav.menu { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: .2rem; }
+      header:not(.navbar).open nav.menu { display: flex; }
+      header:not(.navbar) nav.menu > a, header:not(.navbar) nav.menu > details > summary { padding: .45rem .2rem; border-top: 1px solid var(--tblr-border-color, #ddd); }
+      header:not(.navbar) nav.menu details > div { position: static; min-width: 0; border: 0; box-shadow: none; padding: 0 0 .3rem 1rem; }
+      header:not(.navbar) nav.menu details.user > div { padding: .3rem 0 .3rem 1rem; }
+      header:not(.navbar) nav.menu details.user summary { margin-top: .4rem; }
     }
   </style>
+  {% block head %}{% endblock %}
 </head>
 <body>
-  {% block header %}{% endblock %}
+  {% block page_wrapper %}
+    {% block header %}{% endblock %}
+    <main class="page-body">
+      <div class="container-xl">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  {% endblock %}
+
+  <!-- Tabler Core JS -->
+  <script src="/static/vendor/tabler/js/tabler.min.js"></script>
+
+  <!-- Legacy hamburger toggle & Theme Toggle helper script -->
   <script>
-    // Hamburger menu on phones: the button shows / hides the header menu.
-    document.querySelectorAll(".menu-toggle").forEach((b) => b.addEventListener("click", () => {
-      const open = b.closest("header").classList.toggle("open");
-      b.setAttribute("aria-expanded", open ? "true" : "false");
-    }));
+    // Hamburger menu on phones for legacy unmigrated headers
+    document.querySelectorAll(".menu-toggle").forEach(function(b) {
+      b.addEventListener("click", function() {
+        var header = b.closest("header");
+        if (header) {
+          var open = header.classList.toggle("open");
+          b.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+      });
+    });
+
+    function toggleTheme() {
+      var current = document.documentElement.getAttribute("data-bs-theme") || "light";
+      var next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-bs-theme", next);
+      localStorage.setItem("tabler-theme", next);
+      updateThemeToggleIcons(next);
+    }
+    function updateThemeToggleIcons(theme) {
+      document.querySelectorAll(".theme-toggle-icon-dark").forEach(function(el) {
+        el.style.display = theme === "dark" ? "none" : "inline-block";
+      });
+      document.querySelectorAll(".theme-toggle-icon-light").forEach(function(el) {
+        el.style.display = theme === "dark" ? "inline-block" : "none";
+      });
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+      var current = document.documentElement.getAttribute("data-bs-theme") || "light";
+      updateThemeToggleIcons(current);
+      document.querySelectorAll(".js-theme-toggle").forEach(function(btn) {
+        btn.addEventListener("click", function(e) {
+          e.preventDefault();
+          toggleTheme();
+        });
+      });
+    });
   </script>
-  <main>{% block content %}{% endblock %}</main>
 </body>
 </html>

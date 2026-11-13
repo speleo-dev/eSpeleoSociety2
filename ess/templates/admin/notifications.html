@@ -1,32 +1,102 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Notifikácie do eCP{% endblock %}
 {% block body %}
-<h1>Notifikácie do eCP</h1>
-<p>Správa sa zobrazí v preukaze eCP v Peňaženke Google a telefón člena upozorní. Dostanú ju všetci členovia
-   s aktívnym eCP, ktorí súhlasili s oznámeniami – teraz <strong>{{ recipients }}</strong>.</p>
-<p class="muted">Google Wallet dovolí najviac 3 upozornenia na preukaz za 24 hodín – dnes ešte {{ left_today }}.
-   Nepíšte do notifikácií osobné údaje.</p>
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Notifikácie do eCP</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <p class="mb-1">
+      Správa sa zobrazí v preukaze eCP v Peňaženke Google a telefón člena upozorní. Dostanú ju všetci členovia
+      s aktívnym eCP, ktorí súhlasili s oznámeniami – teraz <strong>{{ recipients }}</strong>.
+    </p>
+    <div class="text-secondary small">
+      <i class="ti ti-info-circle me-1"></i>Google Wallet dovolí najviac 3 upozornenia na preukaz za 24 hodín – dnes ešte <strong>{{ left_today }}</strong>.
+      Nepíšte do notifikácií osobné údaje.
+    </div>
+  </div>
+</div>
+
 {% if left_today %}
-<form method="post" class="form" onsubmit="return confirm('Odoslať notifikáciu všetkým členom so súhlasom? Nedá sa vrátiť.')">
-  {% include "admin/_csrf.html" %}
-  <label>Nadpis * (najviac 100 znakov)<input name="header" required maxlength="100"></label>
-  <label>Text * (najviac 500 znakov)<textarea name="body" rows="4" required maxlength="500"></textarea></label>
-  <p><button class="primary">Odoslať</button></p>
-</form>
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-send me-2"></i>Nová notifikácia</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" onsubmit="return confirm('Odoslať notifikáciu všetkým členom so súhlasom? Nedá sa vrátiť.')">
+      {% include "admin/_csrf.html" %}
+      <div class="mb-3">
+        <label class="form-label">Nadpis * (najviac 100 znakov)</label>
+        <input type="text" class="form-control" name="header" required maxlength="100">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Text * (najviac 500 znakov)</label>
+        <textarea class="form-control" name="body" rows="4" required maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <i class="ti ti-bell-ringing me-1"></i>Odoslať
+      </button>
+    </form>
+  </div>
+</div>
 {% endif %}
+
 {% if pending %}
-<p>Na odoslanie čaká <strong>{{ pending }}</strong> notifikácií do eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.</p>
-<form method="post" action="{{ A }}/notifications/push">{% include "admin/_csrf.html" %}<button>Odoslať ďalšiu dávku</button></form>
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="alert alert-warning mb-2">
+      Na odoslanie čaká <strong>{{ pending }}</strong> notifikácií do eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.
+    </div>
+    <form method="post" action="{{ A }}/notifications/push" class="d-inline">
+      {% include "admin/_csrf.html" %}
+      <button type="submit" class="btn btn-primary">
+        <i class="ti ti-send me-1"></i>Odoslať ďalšiu dávku
+      </button>
+    </form>
+  </div>
+</div>
 {% endif %}
-<h2>Odoslané</h2>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Kedy</th><th>Nadpis</th><th>Doručené</th></tr></thead>
-  <tbody>
-  {% for r in rows %}
-    <tr><td>{{ r.notification.created_at|local_time }}</td>
-        <td><strong>{{ r.notification.header }}</strong><br><span class="muted">{{ r.notification.body }}</span></td>
-        <td data-label="Doručené">{{ r.sent }} z {{ r.notification.recipients }}{% if r.failed %} ({{ r.failed }} nedoručených){% endif %}</td></tr>
-  {% else %}<tr><td colspan="3" class="muted">Zatiaľ žiadne notifikácie.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-history me-2"></i>Odoslané</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th>Kedy</th>
+          <th>Nadpis</th>
+          <th>Doručené</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="text-secondary text-nowrap">{{ r.notification.created_at|local_time }}</td>
+          <td>
+            <div class="fw-bold">{{ r.notification.header }}</div>
+            <div class="text-secondary small">{{ r.notification.body }}</div>
+          </td>
+          <td data-label="Doručené">
+            <span class="badge bg-secondary-subtle text-secondary">
+              {{ r.sent }} z {{ r.notification.recipients }}
+            </span>
+            {% if r.failed %}
+              <span class="badge bg-danger-subtle text-danger ms-1">({{ r.failed }} nedoručených)</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" class="text-center py-4 text-secondary">Zatiaľ žiadne notifikácie.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

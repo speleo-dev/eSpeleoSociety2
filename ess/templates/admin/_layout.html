@@ -1,54 +1,270 @@
 {% extends "base.html" %}
 {% block title %}{% block page_title %}Prehľad{% endblock %} – eSS Admin{% endblock %}
-{% block header %}
-<header>
-  <div class="brand-wrap">
-    <a class="brand" href="{{ A }}"><img src="/static/logo-app.png" alt="" width="32" height="32"> <span class="brand-text">eSS Admin</span></a>
-    <span class="role role-badge role-{{ admin.role.value }}">{{ admin.role|label|capitalize }}</span>
-    {% if badges %}{# next to the role, visible also on phones #}
-    <a class="badge badge-tasks" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">{{ badges.tasks }}</a>
-    <a class="badge badge-unpaid" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">{{ badges.unpaid }}</a>
-    {% endif %}
+
+{% block page_wrapper %}
+<div class="page">
+  <!-- Vertical Left Sidebar -->
+  <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Brand -->
+      <h1 class="navbar-brand navbar-brand-autodark">
+        <a href="{{ A }}" class="d-flex align-items-center text-decoration-none">
+          <img src="/static/logo-app.png" alt="eSS" width="32" height="32" class="navbar-brand-image me-2 rounded-circle">
+          <span>eSS Admin</span>
+        </a>
+      </h1>
+
+      <!-- Mobile top row actions (badges, theme toggle, user avatar) -->
+      <div class="navbar-nav flex-row d-lg-none align-items-center gap-2">
+        {% if badges %}
+        <a class="badge badge-tasks text-decoration-none py-1 px-2" href="{{ A }}/tasks" title="Čakajúce požiadavky: {{ badges.tasks }}">
+          <i class="ti ti-clipboard-list me-1"></i>{{ badges.tasks }}
+        </a>
+        <a class="badge badge-unpaid text-decoration-none py-1 px-2" href="{{ A }}/payments?year={{ badges.year }}" title="Neplatiči: {{ badges.unpaid }}">
+          <i class="ti ti-coin me-1"></i>{{ badges.unpaid }}
+        </a>
+        {% endif %}
+
+        <div class="nav-item">
+          <a href="#" class="nav-link px-1 js-theme-toggle" title="Prepnúť režim (Svetlý/Tmavý)">
+            <i class="ti ti-moon theme-toggle-icon-dark fs-2"></i>
+            <i class="ti ti-sun theme-toggle-icon-light fs-2" style="display: none;"></i>
+          </a>
+        </div>
+
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <span class="avatar avatar-sm bg-primary text-white">
+              {{ admin.display_name[:2]|upper }}
+            </span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <div class="dropdown-header">{{ admin.display_name }} ({{ admin.role|label }})</div>
+            {% if admin.via_ecp %}
+            <a class="dropdown-item" href="/portal"><i class="ti ti-user me-2"></i>Môj portál (eCP)</a>
+            <a class="dropdown-item" href="{{ A }}/login"><i class="ti ti-brand-google me-2"></i>Prihlásiť sa Googlom (superadmin)</a>
+            {% endif %}
+            {% if admin.ecp_admin_available %}
+            <a class="dropdown-item" href="{{ A }}/ecp"><i class="ti ti-switch-horizontal me-2"></i>Prepnúť na administrátora (eCP)</a>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+              <button class="dropdown-item text-danger" type="submit">
+                <i class="ti ti-logout me-2"></i>Odhlásiť
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation links & sidebar content -->
+      <div class="collapse navbar-collapse" id="sidebar-menu">
+        <ul class="navbar-nav pt-lg-3">
+          {% set cur_path = request.url.path if request else '' %}
+
+          <li class="nav-item {% if cur_path == A %}active{% endif %}">
+            <a class="nav-link" href="{{ A }}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-dashboard fs-2"></i>
+              </span>
+              <span class="nav-link-title">Prehľad</span>
+            </a>
+          </li>
+
+          <li class="nav-item {% if cur_path.startswith(A ~ '/members') %}active{% endif %}">
+            <a class="nav-link" href="{{ A }}/members">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-users fs-2"></i>
+              </span>
+              <span class="nav-link-title">Členovia</span>
+            </a>
+          </li>
+
+          <li class="nav-item {% if cur_path.startswith(A ~ '/clubs') %}active{% endif %}">
+            <a class="nav-link" href="{{ A }}/clubs">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-sitemap fs-2"></i>
+              </span>
+              <span class="nav-link-title">Skupiny</span>
+            </a>
+          </li>
+
+          <!-- Správa organizácie dropdown -->
+          {% set org_active = cur_path.startswith(A ~ '/organization') or cur_path.startswith(A ~ '/payments') or cur_path.startswith(A ~ '/sticker') or cur_path.startswith(A ~ '/statements') or cur_path.startswith(A ~ '/tasks') or cur_path.startswith(A ~ '/documents') %}
+          <li class="nav-item dropdown {% if org_active %}active{% endif %}">
+            <a class="nav-link dropdown-toggle {% if org_active %}show{% endif %}" href="#navbar-org" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{{ 'true' if org_active else 'false' }}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-building fs-2"></i>
+              </span>
+              <span class="nav-link-title">Správa organizácie</span>
+            </a>
+            <div class="dropdown-menu {% if org_active %}show{% endif %}">
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/organization') %}active{% endif %}" href="{{ A }}/organization">Výbor</a>
+              {% if admin.is_admin %}
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/payments') %}active{% endif %}" href="{{ A }}/payments">Členské</a>
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/sticker') %}active{% endif %}" href="{{ A }}/sticker">Ročná známka</a>
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/statements') %}active{% endif %}" href="{{ A }}/statements">Bankové výpisy</a>
+              <a class="dropdown-item d-flex justify-content-between align-items-center {% if cur_path.startswith(A ~ '/tasks') %}active{% endif %}" href="{{ A }}/tasks">
+                <span>Požiadavky</span>
+                {% if badges and badges.tasks %}<span class="badge badge-sm badge-tasks">{{ badges.tasks }}</span>{% endif %}
+              </a>
+              {% endif %}
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/documents') %}active{% endif %}" href="{{ A }}/documents">Dokumenty</a>
+            </div>
+          </li>
+
+          <li class="nav-item {% if cur_path.startswith(A ~ '/notifications') %}active{% endif %}">
+            <a class="nav-link" href="{{ A }}/notifications">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-bell fs-2"></i>
+              </span>
+              <span class="nav-link-title">Notifikácie</span>
+            </a>
+          </li>
+
+          <!-- Nastavenia dropdown -->
+          {% set settings_active = cur_path.startswith(A ~ '/settings') or cur_path.startswith(A ~ '/import') or cur_path.startswith(A ~ '/access') %}
+          <li class="nav-item dropdown {% if settings_active %}active{% endif %}">
+            <a class="nav-link dropdown-toggle {% if settings_active %}show{% endif %}" href="#navbar-settings" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{{ 'true' if settings_active else 'false' }}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block">
+                <i class="ti ti-settings fs-2"></i>
+              </span>
+              <span class="nav-link-title">Nastavenia</span>
+            </a>
+            <div class="dropdown-menu {% if settings_active %}show{% endif %}">
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/settings') %}active{% endif %}" href="{{ A }}/settings">Nastavenia aplikácie</a>
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/import') %}active{% endif %}" href="{{ A }}/import">Import</a>
+              {% if admin.is_system_admin %}
+              <a class="dropdown-item {% if cur_path.startswith(A ~ '/access') %}active{% endif %}" href="{{ A }}/access">Prístupy</a>
+              {% endif %}
+            </div>
+          </li>
+        </ul>
+
+        <!-- Mobile-only user section at the bottom of the collapsed menu -->
+        <div class="d-lg-none mt-3 pt-3 border-top">
+          <div class="px-3 mb-2">
+            <div class="fw-bold">{{ admin.display_name }}</div>
+            <div class="small text-secondary">{{ admin.role|label }}</div>
+          </div>
+          {% if admin.via_ecp %}
+          <a class="dropdown-item px-3 py-2" href="/portal"><i class="ti ti-user me-2"></i>Môj portál (eCP)</a>
+          <a class="dropdown-item px-3 py-2" href="{{ A }}/login"><i class="ti ti-brand-google me-2"></i>Prihlásiť sa Googlom (superadmin)</a>
+          {% endif %}
+          {% if admin.ecp_admin_available %}
+          <a class="dropdown-item px-3 py-2" href="{{ A }}/ecp"><i class="ti ti-switch-horizontal me-2"></i>Prepnúť na administrátora (eCP)</a>
+          {% endif %}
+          <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}" class="m-0">
+            <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+            <button class="dropdown-item px-3 py-2 text-danger" type="submit">
+              <i class="ti ti-logout me-2"></i>Odhlásiť
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Top Header Bar (Desktop) -->
+  <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none border-bottom">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center gap-3">
+        <!-- Badges (Tasks & Unpaid) -->
+        {% if badges %}
+        <div class="d-flex align-items-center gap-2">
+          <a class="badge badge-tasks text-decoration-none py-1 px-2" href="{{ A }}/tasks" title="Čakajúce požiadavky na vybavenie administrátorom: {{ badges.tasks }}">
+            <i class="ti ti-clipboard-list me-1"></i>{{ badges.tasks }}
+          </a>
+          <a class="badge badge-unpaid text-decoration-none py-1 px-2" href="{{ A }}/payments?year={{ badges.year }}" title="Členovia SSS bez zaplateného členského na rok {{ badges.year }}: {{ badges.unpaid }}">
+            <i class="ti ti-coin me-1"></i>{{ badges.unpaid }}
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- Light / Dark Mode Toggle -->
+        <div class="nav-item">
+          <a href="#" class="nav-link px-0 js-theme-toggle" title="Prepnúť režim (Svetlý/Tmavý)" data-bs-toggle="tooltip" data-bs-placement="bottom">
+            <i class="ti ti-moon theme-toggle-icon-dark fs-2"></i>
+            <i class="ti ti-sun theme-toggle-icon-light fs-2" style="display: none;"></i>
+          </a>
+        </div>
+
+        <!-- User Dropdown Menu -->
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <span class="avatar avatar-sm bg-primary text-white">
+              {{ admin.display_name[:2]|upper }}
+            </span>
+            <div class="d-none d-xl-block ps-2">
+              <div class="fw-bold">{{ admin.display_name }}</div>
+              <div class="mt-1 small text-secondary">
+                <span class="badge role-badge role-{{ admin.role.value }}">{{ admin.role|label|capitalize }}</span>
+              </div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <div class="dropdown-header">{{ admin.role|label }}</div>
+            {% if admin.via_ecp %}
+            <a class="dropdown-item" href="/portal"><i class="ti ti-user me-2"></i>Môj portál (eCP)</a>
+            <a class="dropdown-item" href="{{ A }}/login"><i class="ti ti-brand-google me-2"></i>Prihlásiť sa Googlom (superadmin)</a>
+            {% endif %}
+            {% if admin.ecp_admin_available %}
+            <a class="dropdown-item" href="{{ A }}/ecp"><i class="ti ti-switch-horizontal me-2"></i>Prepnúť na administrátora (eCP)</a>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+              <button class="dropdown-item text-danger" type="submit">
+                <i class="ti ti-logout me-2"></i>Odhlásiť
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content Wrapper -->
+  <div class="page-wrapper">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        {% block back %}
+        <div class="mb-2">
+          <a href="{{ A }}" class="btn btn-outline-secondary btn-sm" onclick="if (history.length > 1) { history.back(); return false; }">
+            <i class="ti ti-arrow-left me-1"></i>Späť
+          </a>
+        </div>
+        {% endblock %}
+      </div>
+    </div>
+
+    <!-- Page Body -->
+    <main class="page-body">
+      <div class="container-xl">
+        {% if flash %}
+        <div class="alert alert-{{ 'success' if flash.kind == 'ok' else 'danger' }} alert-dismissible" role="alert">
+          <div class="d-flex">
+            <div>
+              <i class="ti {{ 'ti-check' if flash.kind == 'ok' else 'ti-alert-circle' }} me-2 fs-2"></i>
+            </div>
+            <div>{{ flash.text }}</div>
+          </div>
+          <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        </div>
+        {% endif %}
+
+        {% block body %}{% endblock %}
+      </div>
+    </main>
   </div>
-  <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
-  <nav class="menu">
-    <a href="{{ A }}/members">Členovia</a>
-    <a href="{{ A }}/clubs">Skupiny</a>
-    <details><summary>Správa organizácie</summary><div>
-      <a href="{{ A }}/organization">Výbor</a>
-      {% if admin.is_admin %}{# R50: the register is kept by the administrator #}
-      <a href="{{ A }}/payments">Členské</a>
-      <a href="{{ A }}/sticker">Ročná známka</a>
-      <a href="{{ A }}/statements">Bankové výpisy</a>
-      <a href="{{ A }}/tasks">Požiadavky</a>
-      {% endif %}
-      <a href="{{ A }}/documents">Dokumenty</a>
-    </div></details>
-    <a href="{{ A }}/notifications">Notifikácie</a>
-    <details><summary>Nastavenia</summary><div>
-      <a href="{{ A }}/settings">Nastavenia aplikácie</a>
-      <a href="{{ A }}/import">Import</a>
-      {% if admin.is_system_admin %}<a href="{{ A }}/access">Prístupy</a>{% endif %}
-    </div></details>
-    <details class="user"><summary class="role role-{{ admin.role.value }}" title="{{ admin.role|label }}">{{ admin.display_name|two_lines }}</summary><div>
-      <span class="muted">{{ admin.role|label }}</span>
-      {% if admin.via_ecp %}<a href="/portal">Môj portál (eCP)</a><a href="{{ A }}/login">Prihlásiť sa Googlom (superadmin)</a>{% endif %}
-      {% if admin.ecp_admin_available %}<a href="{{ A }}/ecp">Prepnúť na administrátora (eCP)</a>{% endif %}
-      <form method="post" action="{{ '/portal/logout' if admin.via_ecp else A ~ '/logout' }}">
-        <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><button class="link">Odhlásiť</button>
-      </form>
-    </div></details>
-  </nav>
-</header>
-<script>
-  // one open menu at a time; a click outside closes it
-  document.addEventListener("click", (e) => {
-    document.querySelectorAll("nav.menu details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
-  });
-</script>
-{% endblock %}
-{% block content %}
-  {% block back %}<p class="back"><a href="{{ A }}" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
-  {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-  {% block body %}{% endblock %}
+</div>
 {% endblock %}

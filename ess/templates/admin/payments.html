@@ -1,54 +1,155 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Členské{% endblock %}
 {% block body %}
-<h1>Členské</h1>
-<form class="filters" method="get">
-  <label>Rok<select name="year">{% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
-  <button>Zobraziť</button>
-  <a href="{{ A }}/payments/export.csv?year={{ year }}"><button type="button">Export CSV</button></a>
-</form>
-<p>Zaplatilo <strong>{{ paid_count }}</strong> z {{ total_count }} členov, spolu {{ paid_total|money }}.</p>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Skupina (primárna)</th><th>Členovia</th><th>Zaplatili</th><th>Nezaplatili</th><th>Suma</th></tr></thead>
-  <tbody>
-  {% for c in summary %}
-    <tr><td><a href="?year={{ year }}&club={{ c.club_id or '' }}#clenovia">{{ c.club_name }}</a></td>
-        <td data-label="Členovia">{{ c.members }}</td><td data-label="Zaplatili">{{ c.paid }}</td>
-        <td data-label="Nezaplatili">{{ c.unpaid }}</td><td data-label="Suma">{{ c.paid_amount|money }}</td></tr>
-  {% else %}<tr><td colspan="5" class="muted">Žiadni členovia.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
-<p class="muted">Počítajú sa členovia SSS so stavom „člen“ v niektorej skupine a každý, kto má na rok {{ year }} zaplatené.</p>
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Členské</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="filters row g-2 align-items-center" method="get">
+      <div class="col-12 col-sm-4 col-md-3">
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-label m-0 fw-semibold">Rok</label>
+          <select class="form-select" name="year">
+            {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4 col-md-2">
+        <button type="submit" class="btn btn-secondary w-100">
+          <i class="ti ti-filter me-1"></i>Zobraziť
+        </button>
+      </div>
+      <div class="col-12 col-sm-4 col-md-3 ms-auto">
+        <a href="{{ A }}/payments/export.csv?year={{ year }}" class="btn btn-outline-secondary w-100">
+          <i class="ti ti-download me-1"></i>Export CSV
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-status-top bg-primary"></div>
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="h3 mb-0">
+          Zaplatilo <span class="text-success fw-bold">{{ paid_count }}</span> z <span class="fw-bold">{{ total_count }}</span> členov, spolu <span class="text-primary fw-bold">{{ paid_total|money }}</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th>Skupina (primárna)</th>
+          <th>Členovia</th>
+          <th>Zaplatili</th>
+          <th>Nezaplatili</th>
+          <th>Suma</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in summary %}
+        <tr>
+          <td>
+            <a href="?year={{ year }}&club={{ c.club_id or '' }}#clenovia" class="fw-semibold text-reset text-decoration-none">
+              {{ c.club_name }}
+            </a>
+          </td>
+          <td data-label="Členovia">{{ c.members }}</td>
+          <td data-label="Zaplatili" class="text-success fw-semibold">{{ c.paid }}</td>
+          <td data-label="Nezaplatili" class="{% if c.unpaid > 0 %}text-warning fw-semibold{% else %}text-secondary{% endif %}">{{ c.unpaid }}</td>
+          <td data-label="Suma" class="fw-bold">{{ c.paid_amount|money }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="text-center py-4 text-secondary">Žiadni členovia.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer py-2 text-secondary small">
+    Počítajú sa členovia SSS so stavom „člen“ v niektorej skupine a každý, kto má na rok {{ year }} zaplatené.
+  </div>
+</div>
 
 {% if rows %}
-<h2 id="clenovia">{{ rows[0].club_name }} – členské {{ year }}</h2>
-<p><a href="{{ A }}/payments/export.csv?year={{ year }}&club={{ club }}">Export CSV tejto skupiny</a></p>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Meno</th><th>Suma</th><th>Stav</th></tr></thead>
-  <tbody>
-  {% for r in rows %}
-    <tr><td><a href="{{ A }}/members/{{ r.member_id }}">{{ r.last_name }} {{ r.first_name }}</a></td>
-        <td data-label="Suma">{{ r.amount|money }}{% if r.reduced %} (zľavnené){% endif %}</td>
-        <td data-label="Stav">{% if r.paid_at %}zaplatené {{ r.paid_at|date }} ({{ r.method|fee_method_label }}){% else %}nezaplatené{% endif %}</td></tr>
-  {% endfor %}
-  </tbody>
-</table></div>
+<div class="card mb-3" id="clenovia">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3 class="card-title">{{ rows[0].club_name }} – členské {{ year }}</h3>
+    <a href="{{ A }}/payments/export.csv?year={{ year }}&club={{ club }}" class="btn btn-sm btn-outline-secondary">
+      <i class="ti ti-download me-1"></i>Export CSV tejto skupiny
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th>Meno</th>
+          <th>Suma</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>
+            <a href="{{ A }}/members/{{ r.member_id }}" class="fw-semibold text-reset text-decoration-none">
+              {{ r.last_name }} {{ r.first_name }}
+            </a>
+          </td>
+          <td data-label="Suma">{{ r.amount|money }}{% if r.reduced %} <span class="badge bg-secondary-subtle text-secondary">zľavnené</span>{% endif %}</td>
+          <td data-label="Stav">
+            {% if r.paid_at %}
+              <span class="badge bg-success-subtle text-success me-1">zaplatené</span>
+              <span class="text-secondary small">{{ r.paid_at|date }} ({{ r.method|fee_method_label }})</span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning">nezaplatené</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
-<h2>Platba cez eCP</h2>
-{% if sticker_published %}
-<p>V eCP sa zobrazuje platobný odkaz na členské na rok <strong>{{ due_year }}</strong>, kým nie je zaplatené.</p>
-{% else %}
-<p>Platba členského na rok <strong>{{ due_year }}</strong> cez eCP je zatvorená – otvorí sa zverejnením
-  <a href="{{ A }}/sticker">ročnej známky</a>.</p>
-{% endif %}
-{% if pending %}
-<p>Na odoslanie do Google Wallet čaká <strong>{{ pending }}</strong> eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.</p>
-<form method="post" action="{{ A }}/payments/push">
-  {% include "admin/_csrf.html" %}
-  <button>Odoslať ďalšiu dávku</button>
-</form>
-{% else %}<p class="muted">Všetky eCP sú aktuálne.</p>{% endif %}
-<p class="muted">Obdobie platby na ďalší rok začína podľa nastavenia „Platba na ďalší rok od (dní pred koncom roka)“.
-  Hromadnú platbu robí predseda skupiny na portáli.</p>
-<p><a href="{{ A }}/statements">Bankové výpisy →</a></p>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-wallet me-2"></i>Platba cez eCP</h3>
+  </div>
+  <div class="card-body">
+    {% if sticker_published %}
+      <p class="mb-2">V eCP sa zobrazuje platobný odkaz na členské na rok <strong>{{ due_year }}</strong>, kým nie je zaplatené.</p>
+    {% else %}
+      <p class="mb-2 text-secondary">Platba členského na rok <strong>{{ due_year }}</strong> cez eCP je zatvorená – otvorí sa zverejnením
+        <a href="{{ A }}/sticker">ročnej známky</a>.</p>
+    {% endif %}
+
+    {% if pending %}
+      <div class="alert alert-warning mb-2">
+        Na odoslanie do Google Wallet čaká <strong>{{ pending }}</strong> eCP. Odosielajú sa po dávkach pri každej akcii v administrácii.
+      </div>
+      <form method="post" action="{{ A }}/payments/push" class="d-inline">
+        {% include "admin/_csrf.html" %}
+        <button type="submit" class="btn btn-primary">
+          <i class="ti ti-send me-1"></i>Odoslať ďalšiu dávku
+        </button>
+      </form>
+    {% else %}
+      <p class="text-secondary mb-0"><i class="ti ti-check text-success me-1"></i>Všetky eCP sú aktuálne.</p>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

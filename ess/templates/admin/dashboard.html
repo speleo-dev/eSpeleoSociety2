@@ -2,13 +2,65 @@
 {% block page_title %}Prehľad{% endblock %}
 {% block back %}{% endblock %}
 {% block body %}
-<h1>Prehľad</h1>
-<div class="cards">
+<div class="page-header d-print-none mb-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">Prehľad</h2>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cards">
   {% if admin.is_admin %}
-  <a class="card" href="{{ A }}/tasks"><div class="num">{{ counts.tasks_open }}</div>čakajúcich požiadaviek
-    {% for t, n in counts.tasks_by_type.items() %}<div class="muted">{{ t|task_label }}: {{ n }}</div>{% endfor %}</a>
+  <div class="col-sm-6 col-lg-4">
+    <a class="card card-link card-link-pop text-decoration-none" href="{{ A }}/tasks">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+          <div class="subheader">Požiadavky</div>
+          <div class="ms-auto lh-1">
+            <span class="badge bg-danger-subtle text-danger"><i class="ti ti-clipboard-list me-1"></i>Otvorené</span>
+          </div>
+        </div>
+        <div class="h1 mb-2 text-danger">{{ counts.tasks_open }}</div>
+        <div class="text-secondary small">
+          čakajúcich požiadaviek
+          {% for t, n in counts.tasks_by_type.items() %}
+          <div class="text-muted mt-1">{{ t|task_label }}: <strong class="text-reset">{{ n }}</strong></div>
+          {% endfor %}
+        </div>
+      </div>
+    </a>
+  </div>
   {% endif %}
-  <a class="card" href="{{ A }}/members"><div class="num">{{ counts.sss_members }}</div>členov SSS</a>
-  <a class="card" href="{{ A }}/clubs"><div class="num">{{ counts.clubs }}</div>skupín</a>
+
+  <div class="col-sm-6 col-lg-4">
+    <a class="card card-link card-link-pop text-decoration-none" href="{{ A }}/members">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+          <div class="subheader">Členovia</div>
+          <div class="ms-auto lh-1">
+            <span class="badge bg-primary-subtle text-primary"><i class="ti ti-users me-1"></i>Spoločnosť</span>
+          </div>
+        </div>
+        <div class="h1 mb-2 text-primary">{{ counts.sss_members }}</div>
+        <div class="text-secondary small">členov SSS</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-sm-6 col-lg-4">
+    <a class="card card-link card-link-pop text-decoration-none" href="{{ A }}/clubs">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+          <div class="subheader">Skupiny</div>
+          <div class="ms-auto lh-1">
+            <span class="badge bg-success-subtle text-success"><i class="ti ti-sitemap me-1"></i>Evidencia</span>
+          </div>
+        </div>
+        <div class="h1 mb-2 text-success">{{ counts.clubs }}</div>
+        <div class="text-secondary small">skupín</div>
+      </div>
+    </a>
+  </div>
 </div>
 {% endblock %}
