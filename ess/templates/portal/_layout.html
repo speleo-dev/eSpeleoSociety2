@@ -1,37 +1,61 @@
 {% extends "base.html" %}
 {% block header %}
-<header>
-  <div class="brand-wrap">
-    <a class="brand" href="/portal"><img src="/static/logo-sss.png" alt="" width="32" height="32"> <span class="brand-text">Portál eSS</span></a>
-    {% if me %}<span class="role role-badge role-{{ me_role }}">{{ {"member": "Člen", "chair": "Predseda", "delegate": "Zástupca predsedu"}[me_role] }}</span>{% endif %}
+<header class="navbar navbar-expand-md border-bottom d-print-none">
+  <div class="container-xl">
+    <a class="navbar-brand d-flex align-items-center gap-2 me-3" href="/portal">
+      <img src="/static/logo-sss.png" alt="" width="32" height="32">
+      <span>Portál eSS</span>
+    </a>
+    {% if me %}
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portal-menu"
+            aria-controls="portal-menu" aria-expanded="false" aria-label="Otvoriť navigáciu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="portal-menu">
+      <nav class="navbar-nav me-auto" aria-label="Hlavná navigácia">
+        <a class="nav-link" href="/portal/members">Členovia</a>
+        <a class="nav-link" href="/portal/clubs">Skupiny</a>
+        <div class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#portal-organization" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">Organizácia</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="/portal/board">Výbor</a>
+            <a class="dropdown-item" href="/portal/documents">Dokumenty</a>
+            <a class="dropdown-item" href="/portal/notifications">Notifikácie</a>
+          </div>
+        </div>
+      </nav>
+      <div class="navbar-nav">
+        <div class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#portal-account" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="badge role-badge role-{{ me_role }}">{{ {"member": "Člen", "chair": "Predseda", "delegate": "Zástupca predsedu"}[me_role] }}</span>
+            <span class="ms-1">{{ me|two_lines }}</span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="/portal">Môj profil</a>
+            {% if me_admin %}<a class="dropdown-item" href="{{ A }}/ecp">Administrácia</a>{% endif %}
+            <div class="dropdown-divider"></div>
+            <form method="post" action="/portal/logout">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <button class="dropdown-item text-danger" type="submit">Odhlásiť</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
-  {% if me %}
-  <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
-  <nav class="menu">{# the same menu for members and chairs; rights differ on the pages (R52) #}
-    <a href="/portal/members">Členovia</a>
-    <a href="/portal/clubs">Skupiny</a>
-    <details><summary>Organizácia</summary><div>
-      <a href="/portal/board">Výbor</a>
-      <a href="/portal/documents">Dokumenty</a>
-      <a href="/portal/notifications">Notifikácie</a>
-    </div></details>
-    <details class="user"><summary class="role role-member">{{ me|two_lines }}</summary><div>
-      <a href="/portal">Môj profil</a>
-      {% if me_admin %}<a href="{{ A }}/ecp">Administrácia</a>{% endif %}
-      <form method="post" action="/portal/logout">
-        <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="link">Odhlásiť</button>
-      </form>
-    </div></details>
-  </nav>
-  {% endif %}
 </header>
-<script>
-  document.addEventListener("click", (e) => {
-    document.querySelectorAll("nav.menu details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
-  });
-</script>
 {% endblock %}
 {% block content %}
-  {% block back %}<p class="back"><a href="/portal" onclick="if (history.length > 1) { history.back(); return false; }">← Späť</a></p>{% endblock %}
+  {% block back %}
+  <div class="mb-3">
+    <a class="btn btn-outline-secondary btn-sm" href="/portal"
+       onclick="if (history.length > 1) { history.back(); return false; }">
+      <i class="ti ti-arrow-left me-1"></i>Späť
+    </a>
+  </div>
+  {% endblock %}
   {% block portal %}{% endblock %}
 {% endblock %}

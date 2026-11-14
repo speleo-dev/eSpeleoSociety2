@@ -1,46 +1,66 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Ročná známka{% endblock %}
 {% block body %}
-<h1>Ročná známka eCP</h1>
-{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
-<p>{% if sticker.url %}Zverejnená známka na rok {{ sticker.year }}:<br>
-   <img src="{{ sticker.url }}" alt="Ročná známka" style="max-width:100%;background:#ccc">
-   {% else %}<span class="muted">Zatiaľ nie je zverejnená žiadna známka.</span>{% endif %}</p>
+<div class="page-header mb-3">
+  <div class="page-pretitle">Nastavenia</div>
+  <h2 class="page-title">Ročná známka eCP</h2>
+</div>
+{% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+<div class="card mb-3">
+  <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+    {% if sticker.url %}
+    <div>
+      <div class="text-secondary small mb-2">Zverejnená známka na rok {{ sticker.year }}</div>
+      <img src="{{ sticker.url }}" alt="Ročná známka" class="img-fluid rounded border" style="max-width: 16rem; background:#ccc">
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">Zatiaľ nie je zverejnená žiadna známka.</p>
+    {% endif %}
+  </div>
+</div>
 
 {% if edit_year %}
-<p>Pripravte známku na rok <strong>{{ edit_year }}</strong>. Keď ju zverejníte, zmeniť ju už nebude možné až do
-  ďalšieho roka, <strong>otvorí sa platba členského na rok {{ edit_year }} cez eCP</strong> a odkaz na platbu sa
-  pošle do všetkých eCP.</p>
-<form method="post" action="{{ A }}/sticker" class="form">
-  {% include "admin/_csrf.html" %}
-  <input type="hidden" name="year" value="{{ edit_year }}">
-  <div class="grid">
-    <label>Farba textu<input type="color" name="text_color" value="{{ sticker.text_color }}"></label>
-    <label>Farba pozadia<input type="color" name="bg_color" value="{{ '#0B4A46' if sticker.bg_color == 'transparent' else sticker.bg_color }}"></label>
+<div class="card mb-3">
+  <div class="card-body">
+    <p>Pripravte známku na rok <strong>{{ edit_year }}</strong>. Keď ju zverejníte, zmeniť ju už nebude možné až do
+      ďalšieho roka, <strong>otvorí sa platba členského na rok {{ edit_year }} cez eCP</strong> a odkaz na platbu sa
+      pošle do všetkých eCP.</p>
+    <form method="post" action="{{ A }}/sticker" class="form">
+      {% include "admin/_csrf.html" %}
+      <input type="hidden" name="year" value="{{ edit_year }}">
+      <div class="grid">
+        <label>Farba textu<input type="color" name="text_color" value="{{ sticker.text_color }}"></label>
+        <label>Farba pozadia<input type="color" name="bg_color" value="{{ '#0B4A46' if sticker.bg_color == 'transparent' else sticker.bg_color }}"></label>
+      </div>
+      <label class="check"><input type="checkbox" name="transparent" {% if sticker.bg_color == "transparent" %}checked{% endif %}> Priehľadné pozadie</label>
+      {% if preview %}
+        <p><img src="{{ preview }}" alt="Náhľad známky" class="img-fluid rounded border" style="max-width:16rem;background:#ccc"></p>
+        <input type="hidden" name="seed" value="{{ preview_seed }}">
+        <div class="d-flex flex-wrap gap-2">
+          <button type="submit" name="action" value="preview" class="btn btn-outline-secondary">Iné farby</button>
+          <button type="submit" name="action" value="publish" class="btn btn-primary"
+                  onclick="return confirm('Zverejniť známku na rok {{ edit_year }}? Zmeniť ju už nebude možné a otvorí sa platba členského cez eCP.')">Zverejniť túto známku</button>
+        </div>
+      {% else %}
+        <button type="submit" name="action" value="preview" class="btn btn-primary">Vygenerovať náhľad</button>
+      {% endif %}
+    </form>
   </div>
-  <label class="check"><input type="checkbox" name="transparent" {% if sticker.bg_color == "transparent" %}checked{% endif %}> Priehľadné pozadie</label>
-  {% if preview %}
-    <p><img src="{{ preview }}" alt="Náhľad známky" style="max-width:100%;background:#ccc"></p>
-    <input type="hidden" name="seed" value="{{ preview_seed }}">
-    <p><button name="action" value="preview">Iné farby</button>
-       <button name="action" value="publish" class="primary"
-               onclick="return confirm('Zverejniť známku na rok {{ edit_year }}? Zmeniť ju už nebude možné a otvorí sa platba členského cez eCP.')">Zverejniť túto známku</button></p>
-  {% else %}
-    <p><button name="action" value="preview">Vygenerovať náhľad</button></p>
-  {% endif %}
-</form>
-<details>
-  <summary>Vlastná šablóna ({{ "nahratá" if sticker.template else "predvolená" }})</summary>
-  <form method="post" action="{{ A }}/sticker/template" enctype="multipart/form-data" class="form">
+</div>
+<details class="card mb-3">
+  <summary class="card-header cursor-pointer">Vlastná šablóna ({{ "nahratá" if sticker.template else "predvolená" }})</summary>
+  <div class="card-body">
+    <form method="post" action="{{ A }}/sticker/template" enctype="multipart/form-data" class="form">
     {% include "admin/_csrf.html" %}
     <label>PNG 256 × 256 px, priehľadné pozadie; farby #000000 (okraj), #606060 a #404040 (výplň)
       <input type="file" name="template" accept="image/png" required></label>
-    <p><button>Nahrať šablónu</button></p>
-  </form>
+      <p class="mb-0"><button type="submit" class="btn btn-primary">Nahrať šablónu</button></p>
+    </form>
+  </div>
 </details>
 {% else %}
-<p class="muted">Známka na rok {{ due_year }} je zverejnená. Známku na ďalší rok možno pripraviť, keď sa začne
-  obdobie platby členského na ďalší rok.</p>
+<div class="alert alert-info" role="status">Známka na rok {{ due_year }} je zverejnená. Známku na ďalší rok možno pripraviť, keď sa začne
+  obdobie platby členského na ďalší rok.</div>
 {% endif %}
-<p><a href="{{ A }}/payments">← Členské</a></p>
+<a class="btn btn-outline-secondary" href="{{ A }}/payments"><i class="ti ti-arrow-left me-1"></i>Členské</a>
 {% endblock %}

@@ -7,9 +7,7 @@
 <div class="page-header d-print-none mb-3">
   <div class="row g-2 align-items-center">
     <div class="col">
-      <h2 class="page-title">
-        Členovia <span class="text-secondary fs-3 fw-normal ms-2">({{ total }})</span>
-      </h2>
+      <h2 class="page-title">Členovia</h2>
     </div>
     {% if admin.is_admin %}
     <div class="col-auto ms-auto d-print-none">
@@ -32,13 +30,17 @@
 <!-- Filters Card -->
 <div class="card mb-3">
   <div class="card-body">
-    <form class="filters row g-2 align-items-center" method="get">
+    <form class="filters row g-2 align-items-center" method="get"
+          hx-get="{{ A }}/members"
+          hx-trigger="submit, input changed delay:300ms from:#member-search, change delay:300ms"
+          hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML"
+          hx-push-url="true" hx-indicator="#members-loading">
       <div class="col-12 col-md-4">
         <div class="input-icon">
           <span class="input-icon-addon">
             <i class="ti ti-search"></i>
           </span>
-          <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Meno, e-mail, číslo preukazu" aria-label="Hľadať">
+          <input type="search" class="form-control" id="member-search" name="q" value="{{ q }}" placeholder="Meno, e-mail, číslo preukazu" aria-label="Hľadať" autocomplete="off">
         </div>
       </div>
       <div class="col-12 col-sm-6 col-md-3">
@@ -58,14 +60,20 @@
           <i class="ti ti-filter me-1"></i>Filtrovať
         </button>
       </div>
+      <div class="col-12">
+        <span id="members-loading" class="htmx-indicator small text-secondary" role="status">Hľadám…</span>
+      </div>
     </form>
   </div>
 </div>
 
+<div id="members-results" aria-live="polite">
+  <p class="small text-secondary mb-2">Nájdených členov: <strong>{{ total }}</strong></p>
+
 <!-- Members Table Card -->
 <div class="card mb-3">
   <div class="table-responsive">
-    <table class="table table-vcenter table-hover card-table">
+    <table class="table table-vcenter table-hover card-table table-card-stack">
       <thead>
         <tr>
           <th>Meno</th>
@@ -78,7 +86,7 @@
       <tbody>
       {% for r in rows %}
         <tr>
-          <td>
+          <td data-label="Meno">
             <div class="d-flex align-items-center">
               <span class="me-2 flex-shrink-0">
                 {% if r.is_chair %}
@@ -95,7 +103,7 @@
             </div>
           </td>
           {% if admin.is_admin %}
-          <td class="icons text-nowrap">
+          <td class="icons text-nowrap" data-label="Ikony">
             {% if r.data.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}
             {% if r.has_ecp %}{{ icon("ecp", "vydaný eCP (Google Wallet)") }}{% endif %}
           </td>
@@ -138,7 +146,8 @@
     <ul class="pagination m-0 ms-auto">
       <li class="page-item {% if page <= 1 %}disabled{% endif %}">
         {% if page > 1 %}
-        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}" tabindex="-1" aria-disabled="true">
+        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}" tabindex="-1" aria-disabled="true"
+           hx-get="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}" hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML" hx-push-url="true">
           <i class="ti ti-chevron-left me-1"></i>predchádzajúca
         </a>
         {% else %}
@@ -147,7 +156,8 @@
       </li>
       <li class="page-item {% if page >= pages %}disabled{% endif %}">
         {% if page < pages %}
-        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}">
+        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}"
+           hx-get="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}" hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML" hx-push-url="true">
           ďalšia<i class="ti ti-chevron-right ms-1"></i>
         </a>
         {% else %}
@@ -167,5 +177,6 @@
       {{ legend(admin.is_admin, skip=("guest",)) }}
     </div>
   </div>
+</div>
 </div>
 {% endblock %}

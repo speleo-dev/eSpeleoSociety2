@@ -35,7 +35,7 @@
 
 <div class="card">
   <div class="table-responsive">
-    <table class="table table-vcenter table-hover card-table">
+    <table class="table table-vcenter table-hover card-table table-card-stack">
       <thead>
         <tr>
           <th>Požiadavka</th>
@@ -48,7 +48,7 @@
       <tbody>
       {% for r in rows %}{% set t = r.task %}
         <tr>
-          <td>
+          <td data-label="Požiadavka">
             <strong>{{ t.task_type|task_label }}</strong>
             <div class="text-secondary small">{{ t|task_description }}</div>
             {% set b = bank.get(t.id) %}
@@ -69,44 +69,44 @@
           <td data-label="{% if show == 'open' %}Od{% else %}Vybavené{% endif %}" class="text-secondary">
             {{ (t.created_at if show == "open" else t.resolved_at)|date }}
           </td>
-          <td>
+          <td data-label="{% if show == 'open' %}Akcia{% else %}Výsledok{% endif %}" class="task-actions">
           {% if show == "open" %}
             {% if t.task_type == T.MEMBER_ACTIVATION.value %}
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/activate">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/activate">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <input class="form-control form-control-sm w-auto" name="card_number" placeholder="Č. papierového preukazu" aria-label="Číslo papierového preukazu">
-                <button type="submit" class="btn btn-sm btn-primary">Aktivovať</button>
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="card_number" placeholder="Č. papierového preukazu" aria-label="Číslo papierového preukazu">
+                <button type="submit" class="btn btn-sm btn-primary w-100 w-sm-auto">Aktivovať</button>
               </form>
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/reject">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/reject">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <input class="form-control form-control-sm w-auto" name="reason" required placeholder="Dôvod zamietnutia" aria-label="Dôvod zamietnutia">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Zamietnuť</button>
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="reason" required placeholder="Dôvod zamietnutia" aria-label="Dôvod zamietnutia">
+                <button type="submit" class="btn btn-sm btn-outline-danger w-100 w-sm-auto">Zamietnuť</button>
               </form>
             {% elif t.task_type == T.SSS_DECISION.value %}
               <form class="d-inline me-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/keep-unaffiliated">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <button type="submit" class="btn btn-sm btn-primary">Zaradiť do „SSS – nezaradení“</button>
+                <button type="submit" class="btn btn-sm btn-primary w-100 w-sm-auto">Zaradiť do „SSS – nezaradení“</button>
               </form>
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/end-sss" onsubmit="return confirm('Ukončiť členstvo v SSS?')">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/end-sss" onsubmit="return confirm('Ukončiť členstvo v SSS?')">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <input class="form-control form-control-sm w-auto" name="note" placeholder="Poznámka (uznesenie)" aria-label="Poznámka">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Ukončiť členstvo v SSS</button>
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="note" placeholder="Poznámka (uznesenie)" aria-label="Poznámka">
+                <button type="submit" class="btn btn-sm btn-outline-danger w-100 w-sm-auto">Ukončiť členstvo v SSS</button>
               </form>
             {% elif t.task_type in (T.PAYMENT_UNMATCHED.value, T.PAYMENT_OVERPAID.value) %}
               {% if t.task_type == T.PAYMENT_UNMATCHED.value %}
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/assign-payment">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/assign-payment">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <input class="form-control form-control-sm w-auto" name="code" required placeholder="Referencia (12 znakov)" aria-label="Referencia" autocomplete="off">
-                <button type="submit" class="btn btn-sm btn-primary">Priradiť</button>
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="code" required placeholder="Referencia (12 znakov)" aria-label="Referencia" autocomplete="off">
+                <button type="submit" class="btn btn-sm btn-primary w-100 w-sm-auto">Priradiť</button>
               </form>
               {% endif %}
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/resolve-payment">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/resolve-payment">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-                <input class="form-control form-control-sm w-auto" name="note" required placeholder="Ako bolo vybavené" aria-label="Poznámka">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Vybavené</button>
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="note" required placeholder="Ako bolo vybavené" aria-label="Poznámka">
+                <button type="submit" class="btn btn-sm btn-outline-secondary w-100 w-sm-auto">Vybavené</button>
               </form>
             {% elif t.task_type == T.ECP_ISSUE.value %}
-              <a href="{{ A }}/ecp-applications/{{ t.context.application_id }}" class="btn btn-sm btn-primary">Posúdiť žiadosť</a>
+              <a href="{{ A }}/ecp-applications/{{ t.context.application_id }}" class="btn btn-sm btn-primary w-100 w-sm-auto">Posúdiť žiadosť</a>
             {% endif %}
           {% else %}
             <span class="badge bg-secondary-subtle text-secondary">{{ t.resolution|resolution_label }}</span>

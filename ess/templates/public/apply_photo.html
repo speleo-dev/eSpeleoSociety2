@@ -7,12 +7,13 @@
   #crop-frame { position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; }
   #crop-stage { overflow:hidden; }
   #camera-video { width:100%; max-width:28rem; transform:scaleX(-1); background:#000; }
-  fieldset.choice { border:1px solid var(--line); border-radius:.5rem; padding:.8rem; margin:1rem 0; }
+  fieldset.choice { border:1px solid var(--tblr-border-color); border-radius:.5rem; padding:1rem; margin:1rem 0; }
   fieldset.choice legend { font-weight:600; padding:0 .3rem; }
 </style>
-<h1>{% if offer_card_only %}Druh dokladu, fotka a súhlasy{% else %}Fotka a súhlasy{% endif %}</h1>
-<p>E-mail je overený.</p>
-{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<div class="page-pretitle text-primary">Žiadosť o doklad</div>
+<h1 class="h2">{% if offer_card_only %}Druh dokladu, fotka a súhlasy{% else %}Fotka a súhlasy{% endif %}</h1>
+<p class="text-success"><i class="ti ti-circle-check me-1"></i>E-mail je overený.</p>
+{% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
 <form method="post" enctype="multipart/form-data" class="form">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
 
@@ -32,13 +33,13 @@
        jednoduché pozadie. Rámček posuňte a zmenšite tak, aby bola tvár v strede.</p>
     <label>Fotka (JPEG alebo PNG, najviac 5 MB) *
       <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" {% if not offer_card_only %}required{% endif %}></label>
-    <p><button type="button" id="camera-open" hidden>Odfotiť kamerou</button></p>
-    <p id="camera-message" class="flash error" hidden></p>
+    <p><button type="button" id="camera-open" class="btn btn-outline-primary" hidden>Odfotiť kamerou</button></p>
+    <p id="camera-message" class="alert alert-danger" role="alert" hidden></p>
     <div id="camera-box" hidden>
       <video id="camera-video" autoplay playsinline muted></video>
-      <p class="muted">Pozerajte priamo do kamery, tvár dobre osvetlená spredu, jednoduché pozadie.</p>
-      <p><button type="button" class="primary" id="camera-shoot">Odfotiť</button>
-         <button type="button" id="camera-cancel">Zrušiť</button></p>
+      <p class="text-secondary">Pozerajte priamo do kamery, tvár dobre osvetlená spredu, jednoduché pozadie.</p>
+      <p><button type="button" class="btn btn-primary" id="camera-shoot">Odfotiť</button>
+         <button type="button" class="btn btn-outline-secondary" id="camera-cancel">Zrušiť</button></p>
     </div>
     <div id="crop-stage" hidden>
       <img id="crop-img" alt="Náhľad fotky">
@@ -57,7 +58,7 @@
     <label class="check"><input type="radio" name="card_format" value="pdf" {% if card_format == "pdf" %}checked{% endif %}><span>Áno, ako <strong>PDF</strong> – na vytlačenie a vystrihnutie</span></label>
     <label class="check"><input type="radio" name="card_format" value="png" {% if card_format == "png" %}checked{% endif %}><span>Áno, ako <strong>obrázok (PNG)</strong> –
       súbor s obrázkom kartičky na vytlačenie alebo uloženie do mobilu</span></label>
-    <p class="muted"><img src="/static/preview-card.png" width="120" alt="Ukážka kartičky SSS" style="display:block;margin-bottom:.3rem">
+    <p class="text-secondary"><img src="/static/preview-card.png" width="120" alt="Ukážka kartičky SSS" class="d-block mb-2">
       Kartička len potvrdzuje členstvo a zaplatené členské na jeden rok; nie je to plastová karta.
       Pošleme ju po schválení, ak máte zaplatené členské, inak po zaplatení.</p>
   </fieldset>
@@ -68,7 +69,7 @@
     a overovania elektronického jaskyniarskeho preukazu alebo kartičky SSS. Beriem na vedomie, že po naskenovaní
     QR kódu z eCP sa kontrolórovi zobrazí moje meno, fotka, adresa bydliska, skupina, dátum členstva a stav členského;
     pri kartičke len informácia o členstve a zaplatenom členskom. *</label>
-  <p><button class="primary">Odoslať žiadosť</button></p>
+  <p><button type="submit" class="btn btn-primary">Odoslať žiadosť</button></p>
 </form>
 {% if offer_card_only %}
 <script>

@@ -3,10 +3,10 @@
 {% block body %}
 {% set back = A ~ "/members/" ~ d.member.id %}
 {% macro status_button(membership_id, target, text, primary=False) %}
-<form class="d-inline" method="post" action="{{ A }}/memberships/{{ membership_id }}/status">
+<form class="d-inline member-inline-action" method="post" action="{{ A }}/memberships/{{ membership_id }}/status">
   <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="back" value="{{ back }}">
   <input type="hidden" name="new_status" value="{{ target.value }}">
-  <button type="submit" class="btn btn-sm {% if primary %}btn-primary{% else %}btn-outline-secondary{% endif %} me-1 mb-1">{{ text }}</button>
+  <button type="submit" class="btn btn-sm w-100 w-sm-auto {% if primary %}btn-primary{% else %}btn-outline-secondary{% endif %} me-1 mb-1">{{ text }}</button>
 </form>
 {% endmacro %}
 {% from "admin/_icons.html" import icon %}
@@ -32,7 +32,7 @@
     </div>
     <div class="col-auto ms-auto d-print-none">
       <div class="btn-list">
-        <a href="{{ A }}/members/{{ d.member.id }}/edit" class="btn btn-primary d-inline-flex align-items-center">
+        <a href="{{ A }}/members/{{ d.member.id }}/edit" class="btn btn-primary d-inline-flex align-items-center w-100 w-sm-auto">
           <i class="ti ti-edit me-1"></i>Upraviť údaje
         </a>
       </div>
@@ -40,8 +40,16 @@
   </div>
 </div>
 
+<nav class="member-section-nav" aria-label="Sekcie členského záznamu">
+  <a href="#member-info">Údaje</a>
+  <a href="#member-fees">Členské</a>
+  <a href="#member-card">Kartička</a>
+  <a href="#member-memberships">Členstvá</a>
+  <a href="#member-history">História</a>
+</nav>
+
 <!-- Basic Info Card (Datagrid) -->
-<div class="card mb-3">
+<div class="card mb-3 member-section" id="member-info">
   <div class="card-header">
     <h3 class="card-title"><i class="ti ti-id me-2"></i>Základné údaje</h3>
   </div>
@@ -102,7 +110,7 @@
         <div class="datagrid-content">
           {% if portal_sessions %}
             <span class="badge bg-info-subtle text-info me-2">prihlásený na {{ portal_sessions }} zariadeniach</span>
-            <form class="d-inline" method="post" action="{{ A }}/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach?')">
+            <form class="d-inline member-inline-action" method="post" action="{{ A }}/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach?')">
               {% include "admin/_csrf.html" %}
               <button type="submit" class="btn btn-sm btn-outline-danger">
                 <i class="ti ti-logout me-1"></i>Odhlásiť zo všetkých zariadení
@@ -130,7 +138,7 @@
 </div>
 
 <!-- Členské Card -->
-<div class="card mb-3">
+<div class="card mb-3 member-section" id="member-fees">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h3 class="card-title"><i class="ti ti-coin me-2"></i>Členské</h3>
   </div>
@@ -173,7 +181,7 @@
 
   {% if payable_years %}
   <div class="card-footer bg-surface-secondary">
-    <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-2 member-actions">
       <form class="d-inline-flex align-items-center gap-2" method="post" action="{{ A }}/members/{{ d.member.id }}/payment-link">
         {% include "admin/_csrf.html" %}
         <label class="form-label m-0 fw-semibold">Rok</label>
@@ -216,7 +224,7 @@
 </div>
 
 <!-- Kartička SSS Card -->
-<div class="card mb-3">
+<div class="card mb-3 member-section" id="member-card">
   <div class="card-header">
     <h3 class="card-title"><i class="ti ti-credit-card me-2"></i>Kartička SSS</h3>
   </div>
@@ -236,7 +244,7 @@
         <tr>
           <td class="fw-bold">{{ c.year }}</td>
           <td>{{ c.issued_at|date }}</td>
-          <td>
+          <td class="member-actions">
             {% if c.revoked_at %}
               <span class="badge bg-danger-subtle text-danger">{{ c.revoke_reason|card_reason_label }} ({{ c.revoked_at|date }})</span>
             {% else %}
@@ -246,7 +254,7 @@
           <td>
             {% if not c.revoked_at and not d.member.expelled_at and not d.member.sss_ended_at %}
               {% if c.code_enc %}
-              <form class="d-inline-flex align-items-center gap-1 me-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/again">
+              <form class="d-inline-flex align-items-center gap-2 me-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/again">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
                 <input type="hidden" name="member_id" value="{{ d.member.id }}">
                 <select class="form-select form-select-sm w-auto" name="card_format" aria-label="Formát">
@@ -263,7 +271,7 @@
               </form>
               {% endif %}
 
-              <form class="d-inline-flex flex-wrap align-items-center gap-1 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/replace" onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/replace" onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
                 <input type="hidden" name="member_id" value="{{ d.member.id }}">
                 <select class="form-select form-select-sm w-auto" name="reason" required aria-label="Dôvod">
@@ -317,7 +325,7 @@
             Kartička na rok sa vydáva raz (pri pridaní člena alebo keď sa stane členom SSS). Ďalšie roky ju člen
             dostane e-mailom automaticky po zaplatení členského. Novú na ten istý rok možno vydať len ako náhradu.
           </p>
-          <div class="btn-list">
+          <div class="btn-list member-actions">
             <button type="submit" name="delivery" value="download" class="btn btn-primary btn-sm">
               <i class="ti ti-download me-1"></i>Vydať a stiahnuť
             </button>
@@ -335,7 +343,7 @@
 </div>
 
 <!-- Platné členstvá Card -->
-<div class="card mb-3">
+<div class="card mb-3 member-section" id="member-memberships">
   <div class="card-header">
     <h3 class="card-title"><i class="ti ti-users-group me-2"></i>Platné členstvá</h3>
   </div>
@@ -364,7 +372,7 @@
           </td>
           <td class="text-secondary">{{ m.valid_from|date }}</td>
           <td>
-            <div class="d-inline-flex flex-wrap align-items-center">
+            <div class="d-inline-flex flex-wrap align-items-center member-actions">
               {% if m.status in (S.CANDIDATE, S.PENDING_ACTIVATION) %}{{ status_button(m.id, S.MEMBER, "Aktivovať", True) }}{% endif %}
               {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
               {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
@@ -460,7 +468,7 @@
           <span class="text-secondary ms-1">{{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}</span>
         </div>
         {% if not p.valid_to and (admin.is_system_admin or p.club_name) %}
-        <form class="d-inline" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+        <form class="d-inline member-inline-action" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
           {% include "admin/_csrf.html" %}
           <input type="hidden" name="back" value="{{ back }}">
           <button type="submit" class="btn btn-sm btn-outline-danger">Ukončiť</button>
@@ -521,7 +529,7 @@
     {% if d.certificates %}
     <ul class="list-group list-group-flush mb-3">
       {% for c in d.certificates %}
-      <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+      <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center px-0">
         <div>
           <span class="badge bg-secondary-subtle text-secondary me-2"><i class="ti ti-check me-1"></i>{{ c.name }}</span>
           {% if c.valid_from or c.valid_to %}
@@ -529,7 +537,7 @@
           {% endif %}
           {% if c.note %}<span class="text-secondary ms-1">– {{ c.note }}</span>{% endif %}
         </div>
-        <form class="d-inline" method="post" action="{{ A }}/certificates/{{ c.id }}/delete" onsubmit="return confirm('Odstrániť certifikát?')">
+        <form class="d-inline member-inline-action" method="post" action="{{ A }}/certificates/{{ c.id }}/delete" onsubmit="return confirm('Odstrániť certifikát?')">
           {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
           <button type="submit" class="btn btn-sm btn-outline-danger"><i class="ti ti-trash me-1"></i>Odstrániť</button>
         </form>
@@ -573,7 +581,7 @@
 </div>
 
 <!-- História členstiev Card -->
-<div class="card mb-3">
+<div class="card mb-3 member-section" id="member-history">
   <div class="card-header">
     <h3 class="card-title"><i class="ti ti-history me-2"></i>História členstiev</h3>
   </div>
