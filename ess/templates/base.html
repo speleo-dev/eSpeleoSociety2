@@ -21,9 +21,97 @@
 
   <!-- Tabler Core & Icons CSS -->
   <link rel="stylesheet" href="/static/vendor/tabler/css/tabler.min.css">
-  <link rel="stylesheet" href="/static/vendor/tabler/css/tabler-icons.min.css">
+  <link rel="stylesheet" href="/static/vendor/tabler/tabler-icons.min.css">
 
   <style>
+    /* Light mode contrast & surface hierarchy */
+    [data-bs-theme="light"] {
+      --tblr-body-bg: #eef2f7;
+      --tblr-bg-surface: #ffffff;
+      --tblr-bg-surface-secondary: #f8fafc;
+      --tblr-border-color: #cbd5e1;
+      --tblr-border-color-translucent: rgba(15, 23, 42, 0.14);
+    }
+    [data-bs-theme="light"] .card {
+      background-color: #ffffff;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    [data-bs-theme="light"] .card-header,
+    [data-bs-theme="light"] .card-footer {
+      border-color: #e2e8f0;
+    }
+    [data-bs-theme="light"] .card-footer.bg-surface-secondary,
+    [data-bs-theme="light"] .card.bg-surface-secondary {
+      background-color: #f8fafc !important;
+    }
+    [data-bs-theme="light"] header.navbar {
+      background-color: #ffffff;
+      border-bottom: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    [data-bs-theme="light"] .table thead th {
+      background-color: #f1f5f9;
+      color: #334155;
+      border-bottom-color: #cbd5e1;
+    }
+    [data-bs-theme="light"] .table-hover tbody tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    /* Crisp form controls & unmistakable active/focus states */
+    [data-bs-theme="light"] .form-control,
+    [data-bs-theme="light"] .form-select {
+      background-color: #ffffff;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+    [data-bs-theme="light"] .form-control:hover:not(:disabled),
+    [data-bs-theme="light"] .form-select:hover:not(:disabled) {
+      border-color: #64748b;
+    }
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #206bc4 !important;
+      box-shadow: 0 0 0 0.22rem rgba(32, 107, 196, 0.24) !important;
+    }
+    [data-bs-theme="light"] .form-control:focus,
+    [data-bs-theme="light"] .form-select:focus {
+      background-color: #f8fbff;
+    }
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus {
+      background-color: rgba(32, 107, 196, 0.10);
+    }
+    [data-bs-theme="light"] fieldset:disabled .form-control,
+    [data-bs-theme="light"] fieldset:disabled .form-select,
+    [data-bs-theme="light"] .form-control:disabled,
+    [data-bs-theme="light"] .form-select:disabled {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    /* Active sidebar navigation highlight */
+    .navbar-vertical .navbar-nav .nav-item.active > .nav-link,
+    .navbar-vertical .navbar-nav .dropdown-item.active {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-left: 3px solid #4299e1;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .js-theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 6px;
+      border: 1px solid var(--tblr-border-color, #cbd5e1);
+    }
+    .js-theme-toggle:hover {
+      background-color: var(--tblr-bg-surface-secondary, #f1f5f9);
+    }
     /* Member status icons preserving exact appearance & size in both themes */
     img.icon {
       width: 20px;
