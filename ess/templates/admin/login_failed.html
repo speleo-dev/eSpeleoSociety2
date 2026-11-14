@@ -1,18 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Prihlásenie zlyhalo – eSS{% endblock %}
 {% block content %}
-<h1>Prihlásenie zlyhalo</h1>
-{% if reason == "no_access" %}
-<p>Google účet <strong>{{ email }}</strong> nemá prístup do administrácie. O prístup požiadajte
-superadmina.</p>
-{% elif reason == "config" %}
-<p>Prihlásenie cez Google nie je správne nastavené: premenná <code>ESS_GOOGLE_CLIENT_ID</code> musí končiť
-na <code>.apps.googleusercontent.com</code> a musí byť nastavený aj <code>ESS_GOOGLE_CLIENT_SECRET</code>.
-Pozri krok 13 v <code>docs/gcp-setup.md</code>.</p>
-{% elif reason == "unverified" %}
-<p>E-mailová adresa Google účtu nie je overená.</p>
-{% else %}
-<p>Prihlásenie cez Google sa nepodarilo. Skúste to znova.</p>
-{% endif %}
-<p><a href="{{ A }}/login">Skúsiť znova</a></p>
+<div class="container-tight py-5">
+  <div class="card">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <i class="ti ti-alert-circle text-danger fs-1" aria-hidden="true"></i>
+        <h1 class="h2 mb-0">Prihlásenie zlyhalo</h1>
+      </div>
+      {% if reason == "no_access" %}
+      <p>Google účet <strong>{{ email }}</strong> nemá prístup do administrácie. O prístup požiadajte
+      superadmina.</p>
+      {% elif reason == "config" %}
+      <p>Prihlásenie cez Google nie je správne nastavené: premenná <code>ESS_GOOGLE_CLIENT_ID</code> musí končiť
+      na <code>.apps.googleusercontent.com</code> a musí byť nastavený aj <code>ESS_GOOGLE_CLIENT_SECRET</code>.
+      Pozri krok 13 v <code>docs/gcp-setup.md</code>.</p>
+      {% elif reason == "unverified" %}
+      <p>E-mailová adresa Google účtu nie je overená.</p>
+      {% else %}
+      <p>Prihlásenie cez Google sa nepodarilo. Skúste to znova.</p>
+      {% endif %}
+      <a class="btn btn-primary" href="{{ A }}/login">Skúsiť znova</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

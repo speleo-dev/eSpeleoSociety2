@@ -3,213 +3,654 @@
 {% block body %}
 {% set back = A ~ "/members/" ~ d.member.id %}
 {% macro status_button(membership_id, target, text, primary=False) %}
-<form class="inline" method="post" action="{{ A }}/memberships/{{ membership_id }}/status">
+<form class="d-inline member-inline-action" method="post" action="{{ A }}/memberships/{{ membership_id }}/status">
   <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="back" value="{{ back }}">
   <input type="hidden" name="new_status" value="{{ target.value }}">
-  <button {% if primary %}class="primary"{% endif %}>{{ text }}</button>
+  <button type="submit" class="btn btn-sm w-100 w-sm-auto {% if primary %}btn-primary{% else %}btn-outline-secondary{% endif %} me-1 mb-1">{{ text }}</button>
 </form>
 {% endmacro %}
 {% from "admin/_icons.html" import icon %}
-<h1>{{ d.data.full_name() }}</h1>
-<p><a href="{{ A }}/members/{{ d.member.id }}/edit"><button>Upraviť údaje</button></a></p>
-<p><span class="chip">{{ icon(d.sss_status|sss_icon, d.sss_status|label) }} {{ d.sss_status|label }}</span>{% if d.data.reduced_fee %}<span class="chip">{{ icon("reduced_fee", "zľavnené členské") }} zľavnené členské</span>{% endif %}</p>
-<dl>
-  <dt>Dátum narodenia</dt><dd>{{ d.data.birth_date|date or "—" }}</dd>
-  <dt>E-mail</dt><dd>{{ d.data.email or "—" }}{% if d.shared_email_with %}<br><span class="muted">E-mail zdieľa aj:
-    {% for id, name in d.shared_email_with %}<a href="{{ A }}/members/{{ id }}">{{ name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</dd>
-  <dt>Telefón</dt><dd>{{ d.data.phone or "—" }}</dd>
-  <dt>Bydlisko</dt><dd>{{ d.data.full_address() or "—" }}</dd>
-  <dt>Číslo preukazu</dt><dd>{{ d.data.card_number or "—" }}</dd>
-  <dt>Člen SSS od</dt><dd>{{ d.data.member_since|date or "—" }}</dd>
-  <dt>eCP</dt><dd>{% if d.ecp_pass %}{{ d.ecp_pass.state|ecp_state_label }} (vydaný {{ d.ecp_pass.issued_at|date }}){% if d.ecp_pass.wallet_state != d.ecp_pass.state %} <span class="muted">– zmena ešte nebola odoslaná do Google Wallet</span>{% endif %}{% else %}nemá{% endif %}</dd>
-  <dt>Portál</dt><dd>{% if portal_sessions %}prihlásený na {{ portal_sessions }} zariadení
-    <form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach?')">
-      {% include "admin/_csrf.html" %}<button>Odhlásiť zo všetkých zariadení</button></form>{% else %}neprihlásený{% endif %}</dd>
-  {% if d.member.expelled_at %}<dt>Vylúčený</dt><dd>{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</dd>{% endif %}
-  {% if d.member.sss_ended_at %}<dt>Členstvo v SSS ukončené</dt><dd>{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</dd>{% endif %}
-</dl>
 
-<h2>Členské</h2>
-{% if fees %}
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Rok</th><th>Suma</th><th>Stav</th></tr></thead>
-  <tbody>
-  {% for f in fees %}
-    <tr><td>{{ f.year }}</td>
-        <td data-label="Suma">{{ f.amount|money }}{% if f.reduced %} (zľavnené){% endif %}</td>
-        <td data-label="Stav">{% if f.paid_at %}zaplatené {{ f.paid_at|local_time }}{% if f.paid_manually_by %} – ručne: {{ f.note }}{% elif f.payment_reference_id %} – <a href="{{ A }}/payments/{{ f.payment_reference_id }}">platba</a>{% endif %}{% else %}nezaplatené{% endif %}</td></tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-{% else %}<p class="muted">Zatiaľ bez záznamu o členskom.</p>{% endif %}
-{% if payable_years %}
-<form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/payment-link">
-  {% include "admin/_csrf.html" %}
-  <label>Rok<select name="year">{% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
-  <button>Platobný odkaz člena</button>
-</form>
-{% if not admin.is_system_admin %}{# cash payments: administrators only (R46) #}
-<details><summary>Označiť členské ako zaplatené</summary>
-<form method="post" action="{{ A }}/members/{{ d.member.id }}/fee-paid" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Rok<select name="year">{% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
-    <label>Poznámka * (napr. zaplatené v hotovosti)<input name="note" required></label>
-  </div>
-  <button class="primary">Označiť ako zaplatené</button>
-</form></details>
-{% endif %}
-{% endif %}
-
-<h2>Kartička SSS</h2>
-{% if d.cards %}
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Rok</th><th>Vydaná</th><th>Stav</th><th>Akcie</th></tr></thead>
-  <tbody>
-  {% for c in d.cards %}
-    <tr>
-      <td>{{ c.year }}</td>
-      <td data-label="Vydaná">{{ c.issued_at|date }}</td>
-      <td data-label="Stav">{% if c.revoked_at %}{{ c.revoke_reason|card_reason_label }} ({{ c.revoked_at|date }}){% else %}platná{% endif %}</td>
-      <td>{% if not c.revoked_at and not d.member.expelled_at and not d.member.sss_ended_at %}
-        {% if c.code_enc %}
-        <form class="inline" method="post" action="{{ A }}/cards/{{ c.id }}/again">
-          <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="member_id" value="{{ d.member.id }}">
-          <select name="card_format" aria-label="Formát">{% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}</select>
-          <button name="delivery" value="download">Stiahnuť znova</button>
-          {% if d.data.email %}<button name="delivery" value="email">Poslať znova</button>{% endif %}
-        </form>
+<!-- Member Header & Quick Actions -->
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Detail člena</div>
+      <h2 class="page-title d-flex align-items-center flex-wrap gap-2">
+        <span>{{ d.data.full_name() }}</span>
+        <span class="badge bg-secondary-subtle text-secondary fs-4 fw-normal d-inline-flex align-items-center">
+          <span class="me-1">{{ icon(d.sss_status|sss_icon, d.sss_status|label) }}</span>
+          {{ d.sss_status|label }}
+        </span>
+        {% if d.data.reduced_fee %}
+        <span class="badge bg-warning-subtle text-warning fs-4 fw-normal d-inline-flex align-items-center">
+          <span class="me-1">{{ icon("reduced_fee", "zľavnené členské") }}</span>
+          zľavnené členské
+        </span>
         {% endif %}
-        <form class="inline" method="post" action="{{ A }}/cards/{{ c.id }}/replace" onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
-          <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}"><input type="hidden" name="member_id" value="{{ d.member.id }}">
-          <select name="reason" required aria-label="Dôvod">
-            <option value="">— dôvod náhrady —</option>
-            <option value="lost">stratená</option><option value="stolen">ukradnutá</option><option value="damaged">poškodená</option>
-          </select>
-          <select name="card_format" aria-label="Formát">{% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}</select>
-          <button name="delivery" value="download">Vydať náhradnú a stiahnuť</button>
-          {% if d.data.email %}<button name="delivery" value="email">Vydať náhradnú a poslať</button>{% endif %}
-        </form>
-      {% endif %}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-{% endif %}
-{% if issuable_years and not d.member.expelled_at and not d.member.sss_ended_at %}
-<details>
-  <summary>Vydať kartičku SSS</summary>
-  <form method="post" action="{{ A }}/members/{{ d.member.id }}/card" class="form">
-    <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
-    <div class="grid">
-      <label>Rok<select name="year">{% for y in issuable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
-      <label>Formát<select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+      </h2>
     </div>
-    <p class="muted">Kartička na rok sa vydáva raz (pri pridaní člena alebo keď sa stane členom SSS). Ďalšie roky ju člen
-       dostane e-mailom automaticky po zaplatení členského. Novú na ten istý rok možno vydať len ako náhradu.</p>
-    <p><button name="delivery" value="download" class="primary">Vydať a stiahnuť</button>
-       {% if d.data.email %}<button name="delivery" value="email">Vydať a poslať e-mailom</button>{% endif %}</p>
-  </form>
-</details>
-{% endif %}
-
-<h2>Platné členstvá</h2>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Skupina</th><th>Stav</th><th>Od</th><th>Akcie</th></tr></thead>
-  <tbody>
-  {% for v in d.open_memberships %}{% set m = v.membership %}
-    <tr>
-      <td>{{ v.club_name }}{% if m.is_primary %} <span class="chip">primárna</span>{% endif %}</td>
-      <td data-label="Stav">{{ icon(m.status|membership_icon(m.is_primary), m.status|label) }} {{ m.status|label }}</td>
-      <td data-label="Od">{{ m.valid_from|date }}</td>
-      <td>
-        {% if m.status in (S.CANDIDATE, S.PENDING_ACTIVATION) %}{{ status_button(m.id, S.MEMBER, "Aktivovať", True) }}{% endif %}
-        {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
-        {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
-        {% if m.status == S.SUSPENDED %}{{ status_button(m.id, S.MEMBER, "Obnoviť") }}{% endif %}
-        <details><summary>Ďalšie akcie</summary>
-        {% if not m.is_primary %}<form class="inline" method="post" action="{{ A }}/memberships/{{ m.id }}/primary">
-          {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Nastaviť ako primárnu</button></form>{% endif %}
-        <form class="inline" method="post" action="{{ A }}/memberships/{{ m.id }}/terminate"
-              onsubmit="return confirm('Ukončiť členstvo v tejto skupine?')">
-          {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
-          <button>Ukončiť v skupine</button>
-        </form>
-        </details>
-      </td>
-    </tr>
-  {% else %}
-    <tr><td colspan="4" class="muted">Žiadne platné členstvo.</td></tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-
-{% if not d.member.expelled_at %}
-<details><summary>Pridať do skupiny</summary>
-<form method="post" action="{{ A }}/members/{{ d.member.id }}/memberships" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Skupina<select name="club_id" required><option value="">— vyberte —</option>
-      {% for c in clubs %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
-    <label>Stav<select name="status"><option value="member">člen</option><option value="candidate">čakateľ</option></select></label>
+    <div class="col-auto ms-auto d-print-none">
+      <div class="btn-list">
+        <a href="{{ A }}/members/{{ d.member.id }}/edit" class="btn btn-primary d-inline-flex align-items-center w-100 w-sm-auto">
+          <i class="ti ti-edit me-1"></i>Upraviť údaje
+        </a>
+      </div>
+    </div>
   </div>
-  <button class="primary">Pridať</button>
-</form></details>
-{% endif %}
+</div>
+
+<nav class="member-section-nav" aria-label="Sekcie členského záznamu">
+  <a href="#member-info">Údaje</a>
+  <a href="#member-fees">Členské</a>
+  <a href="#member-card">Kartička</a>
+  <a href="#member-memberships">Členstvá</a>
+  <a href="#member-history">História</a>
+</nav>
+
+<!-- Basic Info Card (Datagrid) -->
+<div class="card mb-3 member-section" id="member-info">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-id me-2"></i>Základné údaje</h3>
+  </div>
+  <div class="card-body">
+    <div class="datagrid">
+      <div class="datagrid-item">
+        <div class="datagrid-title">Dátum narodenia</div>
+        <div class="datagrid-content">{{ d.data.birth_date|date or "—" }}</div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">E-mail</div>
+        <div class="datagrid-content">
+          {% if d.data.email %}<a href="mailto:{{ d.data.email }}">{{ d.data.email }}</a>{% else %}—{% endif %}
+          {% if d.shared_email_with %}
+          <div class="small text-secondary mt-1">
+            <i class="ti ti-info-circle me-1"></i>E-mail zdieľa aj:
+            {% for id, name in d.shared_email_with %}
+              <a href="{{ A }}/members/{{ id }}">{{ name }}</a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">Telefón</div>
+        <div class="datagrid-content">
+          {% if d.data.phone %}<a href="tel:{{ d.data.phone|replace(' ', '') }}">{{ d.data.phone }}</a>{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">Bydlisko</div>
+        <div class="datagrid-content">{{ d.data.full_address() or "—" }}</div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">Číslo preukazu</div>
+        <div class="datagrid-content">{{ d.data.card_number or "—" }}</div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">Člen SSS od</div>
+        <div class="datagrid-content">{{ d.data.member_since|date or "—" }}</div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">eCP</div>
+        <div class="datagrid-content">
+          {% if d.ecp_pass %}
+            <span class="badge bg-success-subtle text-success me-1">{{ d.ecp_pass.state|ecp_state_label }}</span>
+            <span class="small text-secondary">(vydaný {{ d.ecp_pass.issued_at|date }})</span>
+            {% if d.ecp_pass.wallet_state != d.ecp_pass.state %}
+              <div class="small text-warning mt-1"><i class="ti ti-alert-triangle me-1"></i>zmena ešte nebola odoslaná do Google Wallet</div>
+            {% endif %}
+          {% else %}
+            <span class="text-secondary">nemá</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="datagrid-item">
+        <div class="datagrid-title">Portál</div>
+        <div class="datagrid-content">
+          {% if portal_sessions %}
+            <span class="badge bg-info-subtle text-info me-2">prihlásený na {{ portal_sessions }} zariadeniach</span>
+            <form class="d-inline member-inline-action" method="post" action="{{ A }}/members/{{ d.member.id }}/portal-logout" onsubmit="return confirm('Odhlásiť člena z portálu na všetkých zariadeniach?')">
+              {% include "admin/_csrf.html" %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="ti ti-logout me-1"></i>Odhlásiť zo všetkých zariadení
+              </button>
+            </form>
+          {% else %}
+            <span class="text-secondary">neprihlásený</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if d.member.expelled_at %}
+      <div class="datagrid-item">
+        <div class="datagrid-title text-danger">Vylúčený</div>
+        <div class="datagrid-content text-danger fw-bold">{{ d.member.expelled_at|date }} – {{ d.member.expelled_reason }}</div>
+      </div>
+      {% endif %}
+      {% if d.member.sss_ended_at %}
+      <div class="datagrid-item">
+        <div class="datagrid-title text-danger">Členstvo v SSS ukončené</div>
+        <div class="datagrid-content text-danger">{{ d.member.sss_ended_at|date }}{% if d.member.sss_ended_note %} – {{ d.member.sss_ended_note }}{% endif %}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Členské Card -->
+<div class="card mb-3 member-section" id="member-fees">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3 class="card-title"><i class="ti ti-coin me-2"></i>Členské</h3>
+  </div>
+  {% if fees %}
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Rok</th>
+          <th>Suma</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for f in fees %}
+        <tr>
+          <td class="fw-bold">{{ f.year }}</td>
+          <td>{{ f.amount|money }}{% if f.reduced %} <span class="badge bg-secondary-subtle text-secondary">zľavnené</span>{% endif %}</td>
+          <td>
+            {% if f.paid_at %}
+              <span class="badge bg-success-subtle text-success me-1"><i class="ti ti-check me-1"></i>zaplatené</span>
+              <span class="small text-secondary">{{ f.paid_at|local_time }}</span>
+              {% if f.paid_manually_by %}
+                <span class="text-secondary"> – ručne: {{ f.note }}</span>
+              {% elif f.payment_reference_id %}
+                <span class="text-secondary"> – </span><a href="{{ A }}/payments/{{ f.payment_reference_id }}">platba</a>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning"><i class="ti ti-clock me-1"></i>nezaplatené</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-secondary">Zatiaľ bez záznamu o členskom.</div>
+  {% endif %}
+
+  {% if payable_years %}
+  <div class="card-footer bg-surface-secondary">
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-2 member-actions">
+      <form class="d-inline-flex align-items-center gap-2" method="post" action="{{ A }}/members/{{ d.member.id }}/payment-link">
+        {% include "admin/_csrf.html" %}
+        <label class="form-label m-0 fw-semibold">Rok</label>
+        <select class="form-select form-select-sm w-auto" name="year">
+          {% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+          <i class="ti ti-link me-1"></i>Platobný odkaz člena
+        </button>
+      </form>
+    </div>
+
+    {% if not admin.is_system_admin %}
+    <details class="mt-2">
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-cash me-1"></i>Označiť členské ako zaplatené (v hotovosti)</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/fee-paid" class="row g-2 align-items-end">
+          {% include "admin/_csrf.html" %}
+          <div class="col-12 col-sm-3 col-md-2">
+            <label class="form-label">Rok</label>
+            <select class="form-select" name="year">
+              {% for y in payable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-sm-6 col-md-6">
+            <label class="form-label">Poznámka * (napr. zaplatené v hotovosti)</label>
+            <input type="text" class="form-control" name="note" required placeholder="zaplatené v hotovosti">
+          </div>
+          <div class="col-12 col-sm-3 col-md-4">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="ti ti-check me-1"></i>Označiť ako zaplatené
+            </button>
+          </div>
+        </form>
+      </div>
+    </details>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Kartička SSS Card -->
+<div class="card mb-3 member-section" id="member-card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-credit-card me-2"></i>Kartička SSS</h3>
+  </div>
+  {% if d.cards %}
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Rok</th>
+          <th>Vydaná</th>
+          <th>Stav</th>
+          <th>Akcie</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in d.cards %}
+        <tr>
+          <td class="fw-bold">{{ c.year }}</td>
+          <td>{{ c.issued_at|date }}</td>
+          <td class="member-actions">
+            {% if c.revoked_at %}
+              <span class="badge bg-danger-subtle text-danger">{{ c.revoke_reason|card_reason_label }} ({{ c.revoked_at|date }})</span>
+            {% else %}
+              <span class="badge bg-success-subtle text-success">platná</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not c.revoked_at and not d.member.expelled_at and not d.member.sss_ended_at %}
+              {% if c.code_enc %}
+              <form class="d-inline-flex align-items-center gap-2 me-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/again">
+                <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+                <input type="hidden" name="member_id" value="{{ d.member.id }}">
+                <select class="form-select form-select-sm w-auto" name="card_format" aria-label="Formát">
+                  {% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-secondary" name="delivery" value="download">
+                  <i class="ti ti-download me-1"></i>Stiahnuť znova
+                </button>
+                {% if d.data.email %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary" name="delivery" value="email">
+                  <i class="ti ti-mail me-1"></i>Poslať znova
+                </button>
+                {% endif %}
+              </form>
+              {% endif %}
+
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/replace" onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
+                <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+                <input type="hidden" name="member_id" value="{{ d.member.id }}">
+                <select class="form-select form-select-sm w-auto" name="reason" required aria-label="Dôvod">
+                  <option value="">— dôvod náhrady —</option>
+                  <option value="lost">stratená</option><option value="stolen">ukradnutá</option><option value="damaged">poškodená</option>
+                </select>
+                <select class="form-select form-select-sm w-auto" name="card_format" aria-label="Formát">
+                  {% for f in ("pdf", "png") %}<option value="{{ f }}" {% if (d.member.card_format or "pdf") == f %}selected{% endif %}>{{ f|upper }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-warning" name="delivery" value="download">
+                  Vydať náhradnú a stiahnuť
+                </button>
+                {% if d.data.email %}
+                <button type="submit" class="btn btn-sm btn-outline-warning" name="delivery" value="email">
+                  Vydať náhradnú a poslať
+                </button>
+                {% endif %}
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if issuable_years and not d.member.expelled_at and not d.member.sss_ended_at %}
+  <div class="card-footer bg-surface-secondary">
+    <details>
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Vydať kartičku SSS</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/card">
+          <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">Rok</label>
+              <select class="form-select" name="year">
+                {% for y in issuable_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label">Formát</label>
+              <select class="form-select" name="card_format">
+                <option value="pdf">PDF na tlač</option>
+                <option value="png">PNG (obrázok)</option>
+              </select>
+            </div>
+          </div>
+          <p class="small text-secondary mb-2">
+            Kartička na rok sa vydáva raz (pri pridaní člena alebo keď sa stane členom SSS). Ďalšie roky ju člen
+            dostane e-mailom automaticky po zaplatení členského. Novú na ten istý rok možno vydať len ako náhradu.
+          </p>
+          <div class="btn-list member-actions">
+            <button type="submit" name="delivery" value="download" class="btn btn-primary btn-sm">
+              <i class="ti ti-download me-1"></i>Vydať a stiahnuť
+            </button>
+            {% if d.data.email %}
+            <button type="submit" name="delivery" value="email" class="btn btn-outline-primary btn-sm">
+              <i class="ti ti-mail me-1"></i>Vydať a poslať e-mailom
+            </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Platné členstvá Card -->
+<div class="card mb-3 member-section" id="member-memberships">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-users-group me-2"></i>Platné členstvá</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Skupina</th>
+          <th>Stav</th>
+          <th>Od</th>
+          <th>Akcie</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for v in d.open_memberships %}{% set m = v.membership %}
+        <tr>
+          <td>
+            <strong>{{ v.club_name }}</strong>
+            {% if m.is_primary %}
+              <span class="badge bg-primary-subtle text-primary ms-1">primárna</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="me-1">{{ icon(m.status|membership_icon(m.is_primary), m.status|label) }}</span>
+            {{ m.status|label }}
+          </td>
+          <td class="text-secondary">{{ m.valid_from|date }}</td>
+          <td>
+            <div class="d-inline-flex flex-wrap align-items-center member-actions">
+              {% if m.status in (S.CANDIDATE, S.PENDING_ACTIVATION) %}{{ status_button(m.id, S.MEMBER, "Aktivovať", True) }}{% endif %}
+              {% if m.status == S.CANDIDATE %}{{ status_button(m.id, S.PENDING_ACTIVATION, "Navrhnúť za člena") }}{% endif %}
+              {% if m.status == S.MEMBER %}{{ status_button(m.id, S.SUSPENDED, "Pozastaviť") }}{% endif %}
+              {% if m.status == S.SUSPENDED %}{{ status_button(m.id, S.MEMBER, "Obnoviť") }}{% endif %}
+
+              <div class="dropdown d-inline-block">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Ďalšie akcie
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                  {% if not m.is_primary %}
+                  <form method="post" action="{{ A }}/memberships/{{ m.id }}/primary">
+                    {% include "admin/_csrf.html" %}
+                    <input type="hidden" name="back" value="{{ back }}">
+                    <button type="submit" class="dropdown-item">Nastaviť ako primárnu</button>
+                  </form>
+                  {% endif %}
+                  <form method="post" action="{{ A }}/memberships/{{ m.id }}/terminate" onsubmit="return confirm('Ukončiť členstvo v tejto skupine?')">
+                    {% include "admin/_csrf.html" %}
+                    <input type="hidden" name="back" value="{{ back }}">
+                    <button type="submit" class="dropdown-item text-danger">Ukončiť v skupine</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="4" class="text-secondary py-3">Žiadne platné členstvo.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if not d.member.expelled_at %}
+  <div class="card-footer bg-surface-secondary">
+    <details>
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Pridať do skupiny</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/memberships" class="row g-2 align-items-end">
+          {% include "admin/_csrf.html" %}
+          <div class="col-12 col-sm-6 col-md-5">
+            <label class="form-label">Skupina</label>
+            <select class="form-select" name="club_id" required>
+              <option value="">— vyberte —</option>
+              {% for c in clubs %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-sm-4 col-md-4">
+            <label class="form-label">Stav</label>
+            <select class="form-select" name="status">
+              <option value="member">člen</option>
+              <option value="candidate">čakateľ</option>
+            </select>
+          </div>
+          <div class="col-12 col-sm-2 col-md-3">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="ti ti-plus me-1"></i>Pridať
+            </button>
+          </div>
+        </form>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+</div>
 
 {% if d.sss_status.value in ("awaiting_decision", "ended") %}
-<p>
-  <form class="inline" method="post" action="{{ A }}/members/{{ d.member.id }}/restore-unaffiliated">
+<div class="mb-3">
+  <form class="d-inline" method="post" action="{{ A }}/members/{{ d.member.id }}/restore-unaffiliated">
     {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
-    <button class="primary">Zaradiť do „SSS – nezaradení“</button>
+    <button type="submit" class="btn btn-primary">
+      <i class="ti ti-arrow-back-up me-1"></i>Zaradiť do „SSS – nezaradení“
+    </button>
   </form>
-</p>
+</div>
 {% endif %}
 
-{% include "admin/_positions.html" %}
-
-<h2>Certifikáty</h2>
-<ul>{% for c in d.certificates %}<li>{{ c.name }}{% if c.valid_from or c.valid_to %} ({{ c.valid_from|date or "?" }} – {{ c.valid_to|date or "bez obmedzenia" }}){% endif %}{% if c.note %} – {{ c.note }}{% endif %}
-  <form class="inline" method="post" action="{{ A }}/certificates/{{ c.id }}/delete" onsubmit="return confirm('Odstrániť certifikát?')">
-    {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}"><button>Odstrániť</button></form></li>
-{% else %}<li class="muted">Žiadne certifikáty.</li>{% endfor %}</ul>
-<details><summary>Pridať certifikát</summary>
-<form method="post" action="{{ A }}/members/{{ d.member.id }}/certificates" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Typ<select name="certificate_type_id" required>{% for t in cert_types %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></label>
-    <label>Platný od<input type="date" name="valid_from"></label>
-    <label>Platný do<input type="date" name="valid_to"></label>
-    <label>Poznámka<input name="note"></label>
+<!-- Funkcie Include Card -->
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-award me-2"></i>Funkcie</h3>
   </div>
-  <button class="primary">Pridať</button>
-</form></details>
+  <div class="card-body">
+    {% if d.positions %}
+    <ul class="list-group list-group-flush mb-3">
+      {% for p in d.positions %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <div>
+          <strong>{{ p.name }}</strong>{% if p.club_name %} <span class="text-secondary">({{ p.club_name }})</span>{% endif %}:
+          <span class="text-secondary ms-1">{{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}</span>
+        </div>
+        {% if not p.valid_to and (admin.is_system_admin or p.club_name) %}
+        <form class="d-inline member-inline-action" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
+          {% include "admin/_csrf.html" %}
+          <input type="hidden" name="back" value="{{ back }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger">Ukončiť</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-secondary mb-3">Žiadne funkcie.</p>
+    {% endif %}
 
-<h2>História členstiev</h2>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Skupina</th><th>Stav</th><th>Od</th><th>Do</th><th>Dôvod ukončenia</th></tr></thead>
-  <tbody>
-  {% for v in d.history %}{% set m = v.membership %}
-    <tr><td>{{ v.club_name }}</td><td data-label="Stav">{{ m.status|label }}</td><td data-label="Od">{{ m.valid_from|date }}</td>
-        <td data-label="Do">{{ m.valid_to|date or "—" }}</td><td>{{ m.end_reason|label }}</td></tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-<p class="muted">„Do“ je prvý deň, keď záznam už neplatí.</p>
+    {% if d.sss_status.value == "member" and positions %}
+    <details>
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Priradiť funkciu</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/positions" class="row g-2 align-items-end">
+          {% include "admin/_csrf.html" %}
+          <div class="col-12 col-md-4">
+            <label class="form-label">Funkcia</label>
+            <select class="form-select" name="position_code" required>
+              {% for p in positions %}<option value="{{ p.code }}">{{ p.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Skupina (len pre predsedu skupiny)</label>
+            <select class="form-select" name="club_id">
+              <option value="">—</option>
+              {% for v in d.open_memberships %}<option value="{{ v.membership.club_id }}">{{ v.club_name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-2">
+            <label class="form-label">Od</label>
+            <input type="date" class="form-control" name="valid_from">
+          </div>
+          <div class="col-12 col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Priradiť</button>
+          </div>
+          <div class="col-12">
+            {% if not admin.is_system_admin %}
+            <div class="small text-secondary">Funkcie vo Výbore SSS prideľuje superadmin; administrátor zadáva predsedu skupiny.</div>
+            {% endif %}
+            <div class="small text-secondary">Pri funkciách, ktoré môže zastávať len jeden človek (predseda SSS, predseda skupiny…), sa predchádzajúcemu držiteľovi funkcia ukončí k tomuto dátumu.</div>
+          </div>
+        </form>
+      </div>
+    </details>
+    {% endif %}
+  </div>
+</div>
 
+<!-- Certifikáty Card -->
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-certificate me-2"></i>Certifikáty</h3>
+  </div>
+  <div class="card-body">
+    {% if d.certificates %}
+    <ul class="list-group list-group-flush mb-3">
+      {% for c in d.certificates %}
+      <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center px-0">
+        <div>
+          <span class="badge bg-secondary-subtle text-secondary me-2"><i class="ti ti-check me-1"></i>{{ c.name }}</span>
+          {% if c.valid_from or c.valid_to %}
+            <span class="small text-secondary">({{ c.valid_from|date or "?" }} – {{ c.valid_to|date or "bez obmedzenia" }})</span>
+          {% endif %}
+          {% if c.note %}<span class="text-secondary ms-1">– {{ c.note }}</span>{% endif %}
+        </div>
+        <form class="d-inline member-inline-action" method="post" action="{{ A }}/certificates/{{ c.id }}/delete" onsubmit="return confirm('Odstrániť certifikát?')">
+          {% include "admin/_csrf.html" %}<input type="hidden" name="back" value="{{ back }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger"><i class="ti ti-trash me-1"></i>Odstrániť</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-secondary mb-3">Žiadne certifikáty.</p>
+    {% endif %}
+
+    <details>
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Pridať certifikát</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/certificates" class="row g-2 align-items-end">
+          {% include "admin/_csrf.html" %}
+          <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label">Typ</label>
+            <select class="form-select" name="certificate_type_id" required>
+              {% for t in cert_types %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-sm-3 col-md-2">
+            <label class="form-label">Platný od</label>
+            <input type="date" class="form-control" name="valid_from">
+          </div>
+          <div class="col-12 col-sm-3 col-md-2">
+            <label class="form-label">Platný do</label>
+            <input type="date" class="form-control" name="valid_to">
+          </div>
+          <div class="col-12 col-sm-8 col-md-3">
+            <label class="form-label">Poznámka</label>
+            <input type="text" class="form-control" name="note">
+          </div>
+          <div class="col-12 col-sm-4 col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Pridať</button>
+          </div>
+        </form>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- História členstiev Card -->
+<div class="card mb-3 member-section" id="member-history">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-history me-2"></i>História členstiev</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Skupina</th>
+          <th>Stav</th>
+          <th>Od</th>
+          <th>Do</th>
+          <th>Dôvod ukončenia</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for v in d.history %}{% set m = v.membership %}
+        <tr>
+          <td>{{ v.club_name }}</td>
+          <td><span class="badge bg-secondary-subtle text-secondary">{{ m.status|label }}</span></td>
+          <td class="text-secondary">{{ m.valid_from|date }}</td>
+          <td class="text-secondary">{{ m.valid_to|date or "—" }}</td>
+          <td class="text-secondary">{{ m.end_reason|label }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" class="text-secondary py-3">Žiadna história.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer py-2 text-secondary small">
+    „Do“ je prvý deň, keď záznam už neplatí.
+  </div>
+</div>
+
+<!-- Vylúčiť zo SSS Card -->
 {% if not d.member.expelled_at %}
-<section class="box">
-<details><summary>Vylúčiť zo SSS</summary>
-<p>Len na základe rozhodnutia valného zhromaždenia. <strong>Vylúčenie je nevratné</strong> – ukončí všetky členstvá
-a funkcie a člen sa už nebude môcť stať členom SSS.</p>
-<form method="post" action="{{ A }}/members/{{ d.member.id }}/expel" class="form" onsubmit="return confirm('Naozaj vylúčiť zo SSS? Toto sa nedá vrátiť.')">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Dôvod / číslo uznesenia VZ *<input name="reason" required></label>
-    <label>Dátum<input type="date" name="on"></label>
+<div class="card border-danger mb-3">
+  <div class="card-status-top bg-danger"></div>
+  <div class="card-body">
+    <details>
+      <summary class="cursor-pointer text-danger fw-bold fs-3">
+        <i class="ti ti-alert-triangle me-1"></i>Vylúčiť zo SSS
+      </summary>
+      <div class="pt-3">
+        <p class="text-secondary">
+          Len na základe rozhodnutia valného zhromaždenia. <strong class="text-danger">Vylúčenie je nevratné</strong> – ukončí všetky členstvá
+          a funkcie a člen sa už nebude môcť stať členom SSS.
+        </p>
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/expel" onsubmit="return confirm('Naozaj vylúčiť zo SSS? Toto sa nedá vrátiť.')">
+          {% include "admin/_csrf.html" %}
+          <div class="row g-2 align-items-end mb-2">
+            <div class="col-12 col-md-8">
+              <label class="form-label">Dôvod / číslo uznesenia VZ *</label>
+              <input type="text" class="form-control" name="reason" required>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">Dátum</label>
+              <input type="date" class="form-control" name="on">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-danger">
+            <i class="ti ti-ban me-1"></i>Vylúčiť zo SSS
+          </button>
+        </form>
+      </div>
+    </details>
   </div>
-  <button>Vylúčiť zo SSS</button>
-</form></details>
-</section>
+</div>
 {% endif %}
 {% endblock %}

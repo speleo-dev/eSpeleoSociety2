@@ -1,2 +1,12 @@
 {% extends "admin/_layout.html" %}
-{% block body %}<h1>Nenájdené</h1><p><a href="{{ A }}/members">Späť na zoznam členov</a></p>{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <i class="ti ti-file-off text-secondary fs-1" aria-hidden="true"></i>
+      <h2 class="card-title mb-0">Stránka sa nenašla</h2>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ A }}/members">Späť na zoznam členov</a>
+  </div>
+</div>
+{% endblock %}
