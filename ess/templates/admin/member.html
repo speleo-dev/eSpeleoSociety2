@@ -254,7 +254,7 @@
           <td>
             {% if not c.revoked_at and not d.member.expelled_at and not d.member.sss_ended_at %}
               {% if c.code_enc %}
-              <form class="d-inline-flex align-items-center gap-2 me-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/again">
+              <form class="d-inline-flex align-items-center gap-2 me-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/again" data-download>
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
                 <input type="hidden" name="member_id" value="{{ d.member.id }}">
                 <select class="form-select form-select-sm w-auto" name="card_format" aria-label="Formát">
@@ -271,7 +271,7 @@
               </form>
               {% endif %}
 
-              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/replace" onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/cards/{{ c.id }}/replace" data-download onsubmit="return confirm('Pôvodná kartička prestane platiť. Pokračovať?')">
                 <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
                 <input type="hidden" name="member_id" value="{{ d.member.id }}">
                 <select class="form-select form-select-sm w-auto" name="reason" required aria-label="Dôvod">
@@ -304,7 +304,7 @@
     <details>
       <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Vydať kartičku SSS</summary>
       <div class="pt-2">
-        <form method="post" action="{{ A }}/members/{{ d.member.id }}/card">
+        <form method="post" action="{{ A }}/members/{{ d.member.id }}/card" data-download>
           <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
           <div class="row g-2 mb-2">
             <div class="col-12 col-sm-6 col-md-4">

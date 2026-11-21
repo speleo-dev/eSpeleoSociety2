@@ -70,6 +70,10 @@ def test_publish_locks_sticker_and_opens_payment(session):
 @pytest.mark.db
 def test_published_sticker_is_hero_of_new_passes(session):
     store = MemoryMediaStore()
+    from ess.services import settings
+
+    # outside the payment period: the due year is this year, whose sticker an unpaid new member shows
+    settings.set_setting(session, SYSTEM, "renewal_window_days", "0")
     url = sticker.publish(session, SYSTEM, store, sticker.due_year(session), "#ffffff", "transparent", 5)
 
     from ess.models import EcpPass

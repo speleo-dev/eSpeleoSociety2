@@ -7,6 +7,8 @@
       <span>Portál eSS</span>
     </a>
     {% if me %}
+    {# role badge also on phones, next to the menu button #}
+    <span class="badge role-badge role-{{ me_role }} d-md-none ms-auto me-2">{{ {"member": "Člen", "chair": "Predseda", "delegate": "Zástupca predsedu"}[me_role] }}</span>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portal-menu"
             aria-controls="portal-menu" aria-expanded="false" aria-label="Otvoriť navigáciu">
       <span class="navbar-toggler-icon"></span>

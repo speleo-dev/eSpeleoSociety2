@@ -388,7 +388,7 @@ def test_overview_page_and_csv(migrated_db, google, client):
         session.commit()
     login(client, google)
     page = client.get(f"/admin/payments?year={this_year}&club={club_id}").text
-    assert "Zaplatilo <strong>1</strong> z 1" in page and "Žiadateľ Anna" in page and "ručne" in page
+    assert re.search(r"Zaplatilo <span[^>]*>1</span> z <span[^>]*>1</span>", page) and "Žiadateľ Anna" in page and "ručne" in page
     r = client.get(f"/admin/payments/export.csv?year={this_year}")
     assert r.headers["content-type"].startswith("text/csv") and "no-store" in r.headers["cache-control"]
     assert f"JS Žiadosť;Žiadateľ;Anna;2;15,00;;" in r.text and "ručne" in r.text

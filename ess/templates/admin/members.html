@@ -58,10 +58,8 @@
       <div class="col-12 col-md-2">
         <button type="submit" class="btn btn-secondary w-100">
           <i class="ti ti-filter me-1"></i>Filtrovať
+          <span id="members-loading" class="htmx-indicator spinner-border spinner-border-sm ms-2" role="status" aria-label="Hľadám…"></span>
         </button>
-      </div>
-      <div class="col-12">
-        <span id="members-loading" class="htmx-indicator small text-secondary" role="status">Hľadám…</span>
       </div>
     </form>
   </div>
@@ -103,12 +101,12 @@
             </div>
           </td>
           {% if admin.is_admin %}
-          <td class="icons text-nowrap" data-label="Ikony">
+          <td class="icons text-nowrap{% if not (r.data.reduced_fee or r.has_ecp) %} is-empty{% endif %}" data-label="Ikony">
             {% if r.data.reduced_fee %}{{ icon("reduced_fee", "zľavnené členské") }}{% endif %}
             {% if r.has_ecp %}{{ icon("ecp", "vydaný eCP (Google Wallet)") }}{% endif %}
           </td>
           {% endif %}
-          <td data-label="Skupiny">
+          <td data-label="Skupiny"{% if not r.clubs %} class="is-empty"{% endif %}>
             {% for name, st, primary in r.clubs %}
               <span class="badge bg-secondary-subtle text-secondary me-1 mb-1">
                 {{ name }}{% if not primary %} · ďalšia{% endif %}{% if st.value != "member" %} · {{ st|label }}{% endif %}
@@ -116,7 +114,7 @@
             {% endfor %}
           </td>
           {% if admin.is_admin %}
-          <td data-label="Obec" class="text-secondary">{{ r.data.city or "" }}</td>
+          <td data-label="Obec" class="text-secondary{% if not r.data.city %} is-empty{% endif %}">{{ r.data.city or "" }}</td>
           {% endif %}
           <td data-label="E-mail">
             {% if r.data.email %}

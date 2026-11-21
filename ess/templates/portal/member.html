@@ -31,7 +31,7 @@
 
 {% if card_years and m.status.value == "member" %}
 <h2>Kartička SSS</h2>
-<form method="post" action="/portal/clubs/{{ club.id }}/members/{{ target.id }}/card" class="form">
+<form method="post" action="/portal/clubs/{{ club.id }}/members/{{ target.id }}/card" data-download class="form">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <div class="grid">
     <label>Rok<select name="year">{% for y in card_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>

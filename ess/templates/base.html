@@ -97,6 +97,15 @@
       color: #475569;
     }
 
+    /* Less space between the back button and the page title */
+    .page-wrapper > .page-header { margin-top: 1rem; min-height: 0; }
+    .page-wrapper > .page-header + .page-body { margin-top: .5rem; }
+    /* Dark sidebar in both themes (the light-theme surface variables would make it white) */
+    .navbar-vertical[data-bs-theme="dark"] {
+      --tblr-navbar-bg: #1b2434;
+      --tblr-bg-surface: #1b2434;
+      background-color: #1b2434;
+    }
     /* Active sidebar navigation highlight */
     .navbar-vertical .navbar-nav .nav-item.active > .nav-link,
     .navbar-vertical .navbar-nav .dropdown-item.active {
@@ -352,6 +361,7 @@
         margin-bottom: .25rem;
       }
       .table-card-stack tbody td[colspan] { display: block; }
+      .table-card-stack tbody td.is-empty { display: none; }  /* no empty label rows on phones */
       .task-actions { display: flex; flex-direction: column; gap: .5rem; }
       .member-actions {
         display: flex !important;

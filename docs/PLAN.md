@@ -317,6 +317,13 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
 - **R48** – **Administrácia na tajnej adrese** (2026-10-01): cesta z `ESS_ADMIN_PATH` (Secret Manager,
   napr. `sprava-<24 hex>`), `/admin` vráti 404. Úvodná stránka odkaz na administráciu nemá – len žiadosť o eCP.
   Ochranou ostáva prihlásenie cez Google; tajná adresa len odfiltruje roboty. Nastavenie: `docs/gcp-setup.md` krok 20.
+- **R56** – **Vzhľad na dizajnovom systéme Tabler** (2026-11-21, PR #1 od dankez, dokončené): Tabler 1.7.5,
+  Tabler Icons a HTMX 2 sú uložené lokálne v `ess/static/vendor/` (žiadne CDN, žiadny Node.js ani build).
+  Stránky ostávajú generované serverom (Jinja2); bezpečnosť a oprávnenia sa nemenia. Administrácia má tmavý bočný
+  panel (na mobile rozbaľovacie menu), hornú lištu s rolou, odznakmi a prepínačom svetlý/tmavý režim (voľba
+  v prehliadači). Zoznam členov sa filtruje pri písaní (HTMX). `static/ui.js` pri odoslaní formulára zablokuje
+  tlačidlá („Ukladám…“), nie pri zrušenom potvrdení a pri formulároch so sťahovaním súboru (`data-download`).
+  Portál a verejné stránky majú zatiaľ nový len rámec stránky; obsah ich obrazoviek sa doladí neskôr.
 - V eCP bol odkaz na web SSS dvakrát (z triedy preukazu aj z objektu) – objekt ho už nepridáva.
 
 ## 4. Architektúra
