@@ -26,3 +26,13 @@ def test_ui_script_respects_cancelled_submit_and_downloads():
 
     js = (Path(__file__).resolve().parent.parent / "ess" / "static" / "ui.js").read_text()
     assert "event.defaultPrevented" in js and "data-download" in js
+
+
+def test_status_icons_are_not_shrunk_by_tabler():
+    """Tabler sets img {max-width: 100%}; in the narrow icons column that made the icons invisible."""
+    import re
+    from pathlib import Path
+
+    css = (Path(__file__).resolve().parent.parent / "ess" / "templates" / "base.html").read_text()
+    rule = re.search(r"img\.icon \{(.*?)\}", css, re.S).group(1)
+    assert "max-width: none" in rule

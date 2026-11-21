@@ -132,6 +132,8 @@
     img.icon {
       width: 20px;
       height: 20px;
+      max-width: none;  /* Tabler's img max-width:100% shrank icons to nothing in the narrow icons column */
+      flex-shrink: 0;
       vertical-align: -3px;
       display: inline-block;
       object-fit: contain;
@@ -139,6 +141,7 @@
     td.icons {
       white-space: nowrap;
       width: 1%;
+      min-width: calc(2 * 20px + 0.5rem + 2 * 0.75rem);  /* two icons and the cell padding */
     }
     td.logo {
       width: 1%;
