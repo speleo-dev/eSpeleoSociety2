@@ -1,44 +1,51 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}{% if member_id %}Úprava člena{% else %}Nový člen{% endif %}{% endblock %}
 {% block body %}
-<h1>{% if member_id %}Úprava údajov člena{% else %}Nový člen / čakateľ{% if fixed_club %} – {{ fixed_club.name }}{% endif %}{% endif %}</h1>
-{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
-<form method="post" class="form">
+<div class="page-header mb-3">
+  <div class="page-pretitle">Členovia</div>
+  <h2 class="page-title">{% if member_id %}Úprava údajov člena{% else %}Nový člen / čakateľ{% if fixed_club %} – {{ fixed_club.name }}{% endif %}{% endif %}</h2>
+</div>
+{% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+<form method="post" class="form card">
   {% include "admin/_csrf.html" %}
-  {% include "_member_fields.html" %}
-  <label class="check"><input type="checkbox" name="reduced_fee" {% if raw.reduced_fee %}checked{% endif %}> Zľavnené členské (napr. ZTP; podľa veku sa nastaví automaticky)</label>
-  {% if not member_id %}
-  <div class="grid">
-    {% if fixed_club %}
-    <label>Skupina<input value="{{ fixed_club.name }}" readonly></label>
-    <input type="hidden" name="club_id" value="{{ fixed_club.id }}"><input type="hidden" name="club_fixed" value="1">
-    {% else %}
-    <label>Skupina *
-      <select name="club_id" required>
-        <option value="">— vyberte —</option>
-        {% for c in clubs %}<option value="{{ c.id }}" {% if club_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-      </select></label>
+  <div class="card-body">
+    {% include "_member_fields.html" %}
+    <label class="check"><input type="checkbox" name="reduced_fee" {% if raw.reduced_fee %}checked{% endif %}> Zľavnené členské (napr. ZTP; podľa veku sa nastaví automaticky)</label>
+    {% if not member_id %}
+    <div class="grid">
+      {% if fixed_club %}
+      <label>Skupina<input value="{{ fixed_club.name }}" readonly></label>
+      <input type="hidden" name="club_id" value="{{ fixed_club.id }}"><input type="hidden" name="club_fixed" value="1">
+      {% else %}
+      <label>Skupina *
+        <select name="club_id" required>
+          <option value="">— vyberte —</option>
+          {% for c in clubs %}<option value="{{ c.id }}" {% if club_id == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select></label>
+      {% endif %}
+      <label>Stav
+        <select name="status">
+          <option value="member" {% if status == "member" %}selected{% endif %}>člen</option>
+          <option value="candidate" {% if status == "candidate" %}selected{% endif %}>čakateľ</option>
+        </select></label>
+    </div>
+    <label class="check"><input type="checkbox" name="issue_ecp" {% if issue_ecp %}checked{% endif %}>
+      Vydať eCP – na papierovej prihláške je súhlas so spracovaním údajov. Členovi príde e-mail na nahratie fotky
+      (pri návrhu nového člena až po aktivácii). Vyžaduje e-mail; čakateľ eCP nedostane.</label>
+    <label class="check"><input type="checkbox" name="issue_card" {% if issue_card %}checked{% endif %}>
+      Vydať kartičku SSS (člen bez smartfónu) – vydáva sa raz; pri e-maile ju pošleme, inak ju stiahnete v detaile člena.</label>
+    <div class="grid">
+      <label>Kartička na rok
+        <select name="card_year">{% for y in card_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
+      <label>Formát kartičky
+        <select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+    </div>
     {% endif %}
-    <label>Stav
-      <select name="status">
-        <option value="member" {% if status == "member" %}selected{% endif %}>člen</option>
-        <option value="candidate" {% if status == "candidate" %}selected{% endif %}>čakateľ</option>
-      </select></label>
+    <p class="text-secondary mb-0">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
   </div>
-  <label class="check"><input type="checkbox" name="issue_ecp" {% if issue_ecp %}checked{% endif %}>
-    Vydať eCP – na papierovej prihláške je súhlas so spracovaním údajov. Členovi príde e-mail na nahratie fotky
-    (pri návrhu nového člena až po aktivácii). Vyžaduje e-mail; čakateľ eCP nedostane.</label>
-  <label class="check"><input type="checkbox" name="issue_card" {% if issue_card %}checked{% endif %}>
-    Vydať kartičku SSS (člen bez smartfónu) – vydáva sa raz; pri e-maile ju pošleme, inak ju stiahnete v detaile člena.</label>
-  <div class="grid">
-    <label>Kartička na rok
-      <select name="card_year">{% for y in card_years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}</select></label>
-    <label>Formát kartičky
-      <select name="card_format"><option value="pdf">PDF na tlač</option><option value="png">PNG (obrázok)</option></select></label>
+  <div class="card-footer d-flex flex-wrap gap-2">
+    <button type="submit" class="btn btn-primary">Uložiť</button>
+    <a class="btn btn-outline-secondary" href="{% if member_id %}{{ A }}/members/{{ member_id }}{% elif fixed_club %}{{ A }}/members?club={{ fixed_club.id }}{% else %}{{ A }}/members{% endif %}">Zrušiť</a>
   </div>
-  {% endif %}
-  <p class="muted">Bez dátumu narodenia a e-mailu nebude môcť člen požiadať o eCP.</p>
-  <p><button class="primary">Uložiť</button>
-     <a href="{% if member_id %}{{ A }}/members/{{ member_id }}{% elif fixed_club %}{{ A }}/members?club={{ fixed_club.id }}{% else %}{{ A }}/members{% endif %}">Zrušiť</a></p>
 </form>
 {% endblock %}

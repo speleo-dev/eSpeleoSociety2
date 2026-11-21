@@ -1,37 +1,102 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Nastavenia aplikácie{% endblock %}
 {% block body %}
-<h1>Nastavenia aplikácie</h1>
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Nastavenia aplikácie</h2>
+    </div>
+  </div>
+</div>
+
 {% set can_edit = True %}{% set sa = admin.is_system_admin %}{# R50: fees – admin; eCP – both; test mail – superadmin #}
-<form method="post" class="form" id="settings-form">
+<form method="post" id="settings-form">
   {% include "admin/_csrf.html" %}
   <fieldset disabled id="settings-fields">
-  {% if admin.is_admin %}
-  <h2>Členské</h2>
-  <div class="grid">
-    <label>Členské<input name="fee_amount" inputmode="decimal" value="{{ values.fee_amount }}"></label>
-    <label>Zľavnené členské<input name="reduced_fee_amount" inputmode="decimal" value="{{ values.reduced_fee_amount }}"></label>
-    <label>Vek pre zľavu (rokov)<input name="reduced_fee_age" inputmode="numeric" value="{{ values.reduced_fee_age }}"></label>
-    <label>Mena<input name="fee_currency" value="{{ values.fee_currency }}"></label>
-    <label>Platba na ďalší rok od (dní pred koncom roka)<input name="renewal_window_days" inputmode="numeric" value="{{ values.renewal_window_days }}"></label>
-    <label>IBAN pre členské<input name="payment_iban" value="{{ values.payment_iban }}" autocomplete="off"></label>
-    <label>Názov príjemcu<input name="payment_account_name" value="{{ values.payment_account_name }}"></label>
-  </div>
-  <p class="muted">IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.</p>
-  {% endif %}
-  <h2>eCP</h2>
-  <div class="grid">
-    <label>Platnosť odkazu v e-maile (hodín)<input name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}"></label>
-    <label>Nedokončená žiadosť prepadne po (dňoch)<input name="ecp_application_expiry_days" inputmode="numeric" value="{{ values.ecp_application_expiry_days }}"></label>
-    <label>Použitý QR platí ešte (minút)<input name="ecp_qr_grace_minutes" inputmode="numeric" value="{{ values.ecp_qr_grace_minutes }}"></label>
-    <label>Nových QR na eCP za deň (najviac)<input name="ecp_qr_daily_limit" inputmode="numeric" value="{{ values.ecp_qr_daily_limit }}"></label>
-    <label>Portál: prihlásených zariadení na člena (najviac)<input name="portal_max_devices" inputmode="numeric" value="{{ values.portal_max_devices }}"></label>
-  </div>
+    {% if admin.is_admin %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-coin me-2"></i>Členské</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label">Členské</label>
+            <input class="form-control" name="fee_amount" inputmode="decimal" value="{{ values.fee_amount }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label">Zľavnené členské</label>
+            <input class="form-control" name="reduced_fee_amount" inputmode="decimal" value="{{ values.reduced_fee_amount }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label">Vek pre zľavu (rokov)</label>
+            <input class="form-control" name="reduced_fee_age" inputmode="numeric" value="{{ values.reduced_fee_age }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label">Mena</label>
+            <input class="form-control" name="fee_currency" value="{{ values.fee_currency }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Platba na ďalší rok od (dní pred koncom roka)</label>
+            <input class="form-control" name="renewal_window_days" inputmode="numeric" value="{{ values.renewal_window_days }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">IBAN pre členské</label>
+            <input class="form-control" name="payment_iban" value="{{ values.payment_iban }}" autocomplete="off">
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Názov príjemcu</label>
+            <input class="form-control" name="payment_account_name" value="{{ values.payment_account_name }}">
+          </div>
+        </div>
+      </div>
+      <div class="card-footer py-2 text-secondary small">
+        IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-wallet me-2"></i>eCP</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Platnosť odkazu v e-maile (hodín)</label>
+            <input class="form-control" name="ecp_link_valid_hours" inputmode="numeric" value="{{ values.ecp_link_valid_hours }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Nedokončená žiadosť prepadne po (dňoch)</label>
+            <input class="form-control" name="ecp_application_expiry_days" inputmode="numeric" value="{{ values.ecp_application_expiry_days }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Použitý QR platí ešte (minút)</label>
+            <input class="form-control" name="ecp_qr_grace_minutes" inputmode="numeric" value="{{ values.ecp_qr_grace_minutes }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-6">
+            <label class="form-label">Nových QR na eCP za deň (najviac)</label>
+            <input class="form-control" name="ecp_qr_daily_limit" inputmode="numeric" value="{{ values.ecp_qr_daily_limit }}">
+          </div>
+          <div class="col-12 col-sm-6 col-md-6">
+            <label class="form-label">Portál: prihlásených zariadení na člena (najviac)</label>
+            <input class="form-control" name="portal_max_devices" inputmode="numeric" value="{{ values.portal_max_devices }}">
+          </div>
+        </div>
+      </div>
+    </div>
   </fieldset>
+
   {% if can_edit %}
-  <p><button type="button" id="settings-edit">Upraviť</button>
-     <button type="button" id="settings-cancel" hidden>Zrušiť zmeny</button>
-     <button class="primary" id="settings-save" hidden>Uložiť zmeny</button></p>
+  <div class="mb-4">
+    <button type="button" class="btn btn-primary" id="settings-edit">
+      <i class="ti ti-edit me-1"></i>Upraviť
+    </button>
+    <button type="button" class="btn btn-outline-secondary" id="settings-cancel" hidden>Zrušiť zmeny</button>
+    <button type="submit" class="btn btn-success" id="settings-save" hidden>
+      <i class="ti ti-check me-1"></i>Uložiť zmeny
+    </button>
+  </div>
   <script>
     (function () {
       const form = document.getElementById("settings-form"), fields = document.getElementById("settings-fields");
@@ -44,26 +109,69 @@
   </script>
   {% endif %}
 </form>
-<h2>Typy certifikátov</h2>
-<p>{% for t in cert_types %}<span class="chip">{{ t.name }}
-  <form class="inline" method="post" action="{{ A }}/settings/certificate-types/{{ t.id }}/remove" onsubmit="return confirm('Odobrať typ certifikátu? Už zapísané certifikáty ostanú.')">
-    {% include "admin/_csrf.html" %}<button class="link" title="Odobrať typ" aria-label="Odobrať {{ t.name }}">×</button></form></span>{% endfor %}</p>
-{% if can_edit %}
-<form method="post" action="{{ A }}/settings/certificate-types" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Kód (bez medzier)<input name="code" required pattern="[a-z0-9_-]+"></label>
-    <label>Názov<input name="name" required></label>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-certificate me-2"></i>Typy certifikátov</h3>
   </div>
-  <p><button>Pridať typ</button></p>
-</form>
-{% endif %}
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% for t in cert_types %}
+      <span class="badge bg-secondary-subtle text-secondary fs-4 py-2 px-3 d-inline-flex align-items-center">
+        <span>{{ t.name }}</span>
+        <form class="d-inline ms-2" method="post" action="{{ A }}/settings/certificate-types/{{ t.id }}/remove" onsubmit="return confirm('Odobrať typ certifikátu? Už zapísané certifikáty ostanú.')">
+          {% include "admin/_csrf.html" %}
+          <button type="submit" class="btn-close fs-6" title="Odobrať typ" aria-label="Odobrať {{ t.name }}"></button>
+        </form>
+      </span>
+      {% else %}
+      <span class="text-secondary">Žiadne typy certifikátov.</span>
+      {% endfor %}
+    </div>
+
+    {% if can_edit %}
+    <details>
+      <summary class="cursor-pointer text-primary fw-semibold"><i class="ti ti-plus me-1"></i>Pridať typ</summary>
+      <div class="pt-2">
+        <form method="post" action="{{ A }}/settings/certificate-types" class="row g-2 align-items-end">
+          {% include "admin/_csrf.html" %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">Kód (bez medzier)</label>
+            <input class="form-control" name="code" required pattern="[a-z0-9_-]+">
+          </div>
+          <div class="col-12 col-sm-6 col-md-5">
+            <label class="form-label">Názov</label>
+            <input class="form-control" name="name" required>
+          </div>
+          <div class="col-12 col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Pridať typ</button>
+          </div>
+        </form>
+      </div>
+    </details>
+    {% endif %}
+  </div>
+</div>
+
 {% if sa %}
-<h2>E-mail</h2>
-<form method="post" action="{{ A }}/settings/test-mail" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid"><label>Poslať testovací e-mail na adresu<input type="email" name="to" required></label></div>
-  <p><button>Odoslať</button></p>
-</form>
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-mail me-2"></i>E-mail</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ A }}/settings/test-mail" class="row g-2 align-items-end">
+      {% include "admin/_csrf.html" %}
+      <div class="col-12 col-sm-8 col-md-6">
+        <label class="form-label">Poslať testovací e-mail na adresu</label>
+        <input type="email" class="form-control" name="to" required placeholder="name@domain.sk">
+      </div>
+      <div class="col-12 col-sm-4 col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">
+          <i class="ti ti-send me-1"></i>Odoslať
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

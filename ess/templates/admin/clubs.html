@@ -1,21 +1,79 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Skupiny{% endblock %}
 {% block body %}
-<h1>Skupiny</h1>
-{% if admin.is_admin %}<p><a href="{{ A }}/clubs/new"><button class="primary">Nová skupina</button></a></p>{% endif %}
-<div class="table-wrap"><table>
-  <thead><tr><th></th><th>Skupina</th><th>Kód</th><th>Predseda</th><th>Členovia</th><th>Čakatelia</th><th>Na aktiváciu</th><th>Pozastavení</th></tr></thead>
-  <tbody>
-  {% for r in rows %}
-    <tr>
-      <td class="logo">{% if r.club.logo_url %}<img class="club-logo" src="{{ r.club.logo_url }}" alt="" loading="lazy">{% endif %}</td>
-      <td><a href="{{ A }}/clubs/{{ r.club.id }}">{{ r.club.name }}</a></td>
-      <td data-label="Kód">{% if r.club.code %}<span class="chip">{{ r.club.code }}</span>{% endif %}{% if not r.club.active %} <span class="chip">neaktívna</span>{% endif %}</td>
-      <td data-label="Predseda">{{ r.chair_name or ("spravuje administrátor" if r.club.is_unaffiliated else "—") }}</td>
-      <td>{{ r.counts.get(S.MEMBER, 0) }}</td><td>{{ r.counts.get(S.CANDIDATE, 0) }}</td>
-      <td>{{ r.counts.get(S.PENDING_ACTIVATION, 0) }}</td><td>{{ r.counts.get(S.SUSPENDED, 0) }}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table></div>
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Skupiny</h2>
+    </div>
+    {% if admin.is_admin %}
+    <div class="col-auto ms-auto d-print-none">
+      <div class="btn-list">
+        <a href="{{ A }}/clubs/new" class="btn btn-primary d-inline-flex align-items-center">
+          <i class="ti ti-plus me-1"></i>Nová skupina
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th class="w-1"></th>
+          <th>Skupina</th>
+          <th>Kód</th>
+          <th>Predseda</th>
+          <th class="text-center">Členovia</th>
+          <th class="text-center">Čakatelia</th>
+          <th class="text-center">Na aktiváciu</th>
+          <th class="text-center">Pozastavení</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="logo text-center">
+            {% if r.club.logo_url %}
+              <img class="club-logo" src="{{ r.club.logo_url }}" alt="" loading="lazy">
+            {% else %}
+              <span class="avatar avatar-xs bg-secondary-subtle text-secondary"><i class="ti ti-sitemap"></i></span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ A }}/clubs/{{ r.club.id }}" class="text-reset fw-semibold text-decoration-none">
+              {{ r.club.name }}
+            </a>
+          </td>
+          <td data-label="Kód">
+            {% if r.club.code %}
+              <span class="badge bg-secondary-subtle text-secondary me-1">{{ r.club.code }}</span>
+            {% endif %}
+            {% if not r.club.active %}
+              <span class="badge bg-danger-subtle text-danger">neaktívna</span>
+            {% endif %}
+          </td>
+          <td data-label="Predseda" class="text-secondary">
+            {{ r.chair_name or ("spravuje administrátor" if r.club.is_unaffiliated else "—") }}
+          </td>
+          <td class="text-center fw-bold">{{ r.counts.get(S.MEMBER, 0) }}</td>
+          <td class="text-center text-secondary">{{ r.counts.get(S.CANDIDATE, 0) }}</td>
+          <td class="text-center">
+            {% set pending = r.counts.get(S.PENDING_ACTIVATION, 0) %}
+            {% if pending > 0 %}
+              <span class="badge bg-warning-subtle text-warning">{{ pending }}</span>
+            {% else %}
+              <span class="text-muted">0</span>
+            {% endif %}
+          </td>
+          <td class="text-center text-secondary">{{ r.counts.get(S.SUSPENDED, 0) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

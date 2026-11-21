@@ -170,5 +170,6 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
   žiadosť o eCP; vlastná CSRF kontrola), `portal.py` (portál člena – prihlásenie z eCP, cookie `ess_member`), `portal_chair.py` (správa skupiny na portáli – predseda / zástupca), `templates.py` (Jinja2, slovenské
   popisy a chybové hlášky). Každý POST formulár musí mať `csrf_token`. Konkrétne cesty (`/members/new`)
   registruj pred parametrizovanými (`/members/{id}`).
-- `ess/templates/` – Jinja2 šablóny; `migrations/` – Alembic migrácie
+- `ess/templates/` – Jinja2 šablóny (vzhľad Tabler, R56; `ess/static/vendor/` – Tabler, ikony, HTMX, nemeniť ručne;
+  `ess/static/ui.js` – stav „Ukladám…“, formuláre so sťahovaním súboru označ `data-download`); `migrations/` – Alembic migrácie
 - `spikes/` – jednorazové technické testy (nie súčasť aplikácie)

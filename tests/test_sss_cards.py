@@ -123,6 +123,7 @@ def test_web_download_email_and_public_page(migrated_db, monkeypatch):
     client = TestClient(app)
     with migrated_db() as s:
         member_id = _member(s, _club(s))
+        settings.set_setting(s, SYSTEM, "renewal_window_days", "0")  # no next-year card offered (stable in Nov/Dec)
         s.commit()
     from tests.test_web_admin import login as _login
 

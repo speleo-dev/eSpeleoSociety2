@@ -8,7 +8,7 @@
   .verdict.warn { background:#b26a00; color:#fff; }
   .verdict small { display:block; font-size:.9rem; font-weight:400; margin-top:.3rem; }
   .person { display:flex; flex-wrap:wrap; gap:1rem 1.5rem; align-items:flex-start; }
-  .person img.portrait { width:176px; height:240px; object-fit:cover; border-radius:.4rem; border:1px solid var(--line); }
+  .person img.portrait { width:176px; height:240px; object-fit:cover; border-radius:.4rem; border:1px solid var(--tblr-border-color); }
   .club-line { display:flex; align-items:center; gap:.5rem; }
   .club-line img { max-height:48px; max-width:96px; }
 </style>
@@ -29,13 +29,13 @@
 {% if r.outcome in (O.VALID, O.SUSPENDED) %}
 <div class="person">
   {% if photo_url %}<img class="portrait" src="{{ photo_url }}" alt="">{% endif %}
-  <dl>
-    <dt>{{ t("name") }}</dt><dd><strong>{{ r.full_name }}</strong></dd>
-    <dt>{{ t("address") }}</dt><dd>{{ r.address or "—" }}</dd>
-    <dt>{{ t("club") }}</dt><dd class="club-line">{% if r.club_logo_url %}<img src="{{ r.club_logo_url }}" alt="Logo skupiny">{% endif %}{{ r.club_name or "—" }}</dd>
-    <dt>{{ t("member_since") }}</dt><dd>{{ r.member_since.year if r.member_since else "—" }}</dd>
-    <dt>{{ t("fee") }}</dt><dd>{% if r.paid_until %}{{ t("paid_until") }} {{ r.paid_until|date }}{% else %}<span class="muted">{{ t("unpaid") }}</span>{% endif %}</dd>
-  </dl>
+  <div class="datagrid flex-grow-1">
+    <div class="datagrid-item"><div class="datagrid-title">{{ t("name") }}</div><div class="datagrid-content"><strong>{{ r.full_name }}</strong></div></div>
+    <div class="datagrid-item"><div class="datagrid-title">{{ t("address") }}</div><div class="datagrid-content">{{ r.address or "—" }}</div></div>
+    <div class="datagrid-item"><div class="datagrid-title">{{ t("club") }}</div><div class="datagrid-content club-line">{% if r.club_logo_url %}<img src="{{ r.club_logo_url }}" alt="Logo skupiny">{% endif %}{{ r.club_name or "—" }}</div></div>
+    <div class="datagrid-item"><div class="datagrid-title">{{ t("member_since") }}</div><div class="datagrid-content">{{ r.member_since.year if r.member_since else "—" }}</div></div>
+    <div class="datagrid-item"><div class="datagrid-title">{{ t("fee") }}</div><div class="datagrid-content">{% if r.paid_until %}{{ t("paid_until") }} {{ r.paid_until|date }}{% else %}<span class="muted">{{ t("unpaid") }}</span>{% endif %}</div></div>
+  </div>
 </div>
 <p class="muted">{{ t("compare") }}</p>
 

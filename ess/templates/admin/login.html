@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Prihlásenie – eSS{% endblock %}
 {% block content %}
-<h1>Administrácia eSpeleoSociety</h1>
-<p>Prístup majú len administrátori SSS s udeleným prístupom.</p>
-<p><a href="{{ A }}/login"><button class="primary">Prihlásiť sa účtom Google</button></a></p>
+<div class="container-tight py-5">
+  <div class="card">
+    <div class="card-body p-4 p-md-5 text-center">
+      <img src="/static/logo-app.png" alt="" width="56" height="56" class="mb-3 rounded-circle">
+      <h1 class="h2">Administrácia eSpeleoSociety</h1>
+      <p class="text-secondary">Prístup majú len administrátori SSS s udeleným prístupom.</p>
+      <a class="btn btn-primary" href="{{ A }}/login">
+        <i class="ti ti-brand-google me-2"></i>Prihlásiť sa účtom Google
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}

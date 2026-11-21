@@ -201,3 +201,28 @@ def test_web_card_only(migrated_db, google, client):  # noqa: F811
     assert "Kartička SSS bola schválená" in r.text
     [mail] = mailer.sent
     assert mail.subject == "Kartička SSS" and "po zaplatení" in mail.text  # fee not paid yet
+
+
+# --- Tabler layout (PR #1) ------------------------------------------------------------------------------
+
+
+@pytest.mark.db
+def test_admin_layout_keeps_sidebar_visible(migrated_db, google, client):  # noqa: F811
+    """Tabler hides a vertical sidebar whose sibling is a horizontal navbar: the header must sit in the page wrapper."""
+    login(client, google)
+    page = client.get("/admin/members").text
+    aside, wrapper, header = page.index("<aside"), page.index('class="page-wrapper"'), page.index("<header")
+    assert aside < wrapper < header
+    for link in ('href="/admin/members"', 'href="/admin/clubs"', 'href="/admin/payments"', 'href="/admin/settings"'):
+        assert link in page
+    assert "role-badge" in page and "navbar-brand-autodark" not in page  # role visible on phones; logo not inverted
+
+
+@pytest.mark.db
+def test_card_download_forms_are_marked(migrated_db, google, client):  # noqa: F811
+    with migrated_db() as session:
+        member_id = _member(session, _club(session))
+        session.commit()
+    login(client, google)
+    page = client.get(f"/admin/members/{member_id}").text
+    assert re.search(r'action="/admin/members/[^"]+/card" data-download', page)

@@ -152,7 +152,7 @@ def test_certificate_types_add_and_remove(client, google, migrated_db):
     token = csrf(client)
     client.post("/admin/settings/certificate-types", data={"csrf_token": token, "code": "diver", "name": "Potápač"})
     page = client.get("/admin/settings").text
-    type_id = re.search(r'<span class="chip">Potápač\s*<form[^>]*certificate-types/([0-9a-f-]{36})/remove', page)
+    type_id = re.search(r'<span>Potápač</span>\s*<form[^>]*certificate-types/([0-9a-f-]{36})/remove', page)
     assert type_id
     client.post(f"/admin/settings/certificate-types/{type_id.group(1)}/remove", data={"csrf_token": token})
     assert "Potápač" not in client.get("/admin/settings").text

@@ -1,31 +1,88 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}Dokumenty{% endblock %}
 {% block body %}
-<h1>Dokumenty</h1>
-<p class="muted">Stanovy, rozhodnutia, výnimky a povolenia SSS. Zobrazujú sa na portáli a na overovacej stránke;
-po dátume platnosti sa skryjú. Samotný súbor musí byť zverejnený inde (odkaz https://).</p>
-<div class="table-wrap"><table class="stack">
-  <thead><tr><th>Názov</th><th>Platný do</th><th>Poradie</th><th></th></tr></thead>
-  <tbody>
-  {% for d in docs %}
-    <tr><td><a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a></td>
-      <td data-label="Platný do">{{ d.valid_until|date or "bez obmedzenia" }}</td><td data-label="Poradie">{{ d.sort_order }}</td>
-      <td><form class="inline" method="post" action="{{ A }}/documents/{{ d.id }}/delete" onsubmit="return confirm('Odstrániť dokument?')">
-        {% include "admin/_csrf.html" %}<button>Odstrániť</button></form></td></tr>
-  {% else %}
-    <tr><td colspan="4" class="muted">Žiadne dokumenty.</td></tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-<h2>Pridať dokument</h2>
-<form method="post" class="form">
-  {% include "admin/_csrf.html" %}
-  <div class="grid">
-    <label>Názov *<input name="title" required></label>
-    <label>Odkaz (https://…) *<input type="url" name="url" required pattern="https://.*"></label>
-    <label>Platný do<input type="date" name="valid_until"></label>
-    <label>Poradie<input type="number" name="sort_order" value="0"></label>
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Dokumenty</h2>
+    </div>
   </div>
-  <p><button class="primary">Pridať</button></p>
-</form>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-2 text-secondary small">
+    Stanovy, rozhodnutia, výnimky a povolenia SSS. Zobrazujú sa na portáli a na overovacej stránke;
+    po dátume platnosti sa skryjú. Samotný súbor musí byť zverejnený inde (odkaz https://).
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th>Názov</th>
+          <th>Platný do</th>
+          <th>Poradie</th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for d in docs %}
+        <tr>
+          <td>
+            <a href="{{ d.url }}" rel="noopener" target="_blank" class="fw-semibold text-reset text-decoration-none">
+              <i class="ti ti-file-text me-1"></i>{{ d.title }}
+            </a>
+          </td>
+          <td data-label="Platný do" class="text-secondary">{{ d.valid_until|date or "bez obmedzenia" }}</td>
+          <td data-label="Poradie" class="text-secondary">{{ d.sort_order }}</td>
+          <td class="text-end">
+            <form class="d-inline" method="post" action="{{ A }}/documents/{{ d.id }}/delete" onsubmit="return confirm('Odstrániť dokument?')">
+              {% include "admin/_csrf.html" %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="ti ti-trash me-1"></i>Odstrániť
+              </button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="text-center py-4 text-secondary">Žiadne dokumenty.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-plus me-2"></i>Pridať dokument</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% include "admin/_csrf.html" %}
+      <div class="col-12 col-md-6">
+        <label class="form-label">Názov *</label>
+        <input type="text" class="form-control" name="title" required>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">Odkaz (https://…) *</label>
+        <input type="url" class="form-control" name="url" required pattern="https://.*" placeholder="https://...">
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="form-label">Platný do</label>
+        <input type="date" class="form-control" name="valid_until">
+      </div>
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="form-label">Poradie</label>
+        <input type="number" class="form-control" name="sort_order" value="0">
+      </div>
+      <div class="col-12 col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="ti ti-plus me-1"></i>Pridať
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

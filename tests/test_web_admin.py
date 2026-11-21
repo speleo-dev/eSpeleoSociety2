@@ -213,7 +213,7 @@ def test_reject_activation_requires_reason(client, google, data):
     assert "Uveďte dôvod." in client.get("/admin/tasks").text
     client.post(url, data={"csrf_token": csrf(client), "reason": "Chýba prihláška"}, follow_redirects=False)
     done = client.get("/admin/tasks", params={"show": "done"}).text
-    assert "zamietnuté – Chýba prihláška" in done
+    assert re.search(r"zamietnuté</span>\s*<span[^>]*>– Chýba prihláška", done)
 
 
 def test_decision_keep_unaffiliated(client, google, data):
