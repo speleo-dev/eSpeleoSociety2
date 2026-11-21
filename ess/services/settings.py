@@ -28,6 +28,15 @@ def _iban(value: str) -> str:
     return iban
 
 
+def _email_or_empty(value: str) -> str:
+    """Empty or one plain e-mail address (e.g. a group mailbox)."""
+    from ess.mail import is_valid_address
+
+    if value and not is_valid_address(value):
+        raise ValueError(value)
+    return value
+
+
 def _background(value: str) -> str:
     return "transparent" if value.lower() == "transparent" else _colour(value)
 
@@ -41,6 +50,7 @@ _KNOWN: dict[str, type] = {
     "payment_iban": _iban,  # account for membership fees (PAYMe link)
     "payment_account_name": str,  # beneficiary name in the PAYMe link
     "renewal_window_days": int,  # payment link for the next year appears this many days before year end
+    "cave_alert_email": _email_or_empty,  # cave trip alerts when the club has no chair with an e-mail
     # eCP (phase 2): positive whole numbers
     "ecp_link_valid_hours": int,  # validity of one-time links in e-mails
     "ecp_application_expiry_days": int,  # unfinished application expires after
@@ -58,7 +68,7 @@ _KNOWN: dict[str, type] = {
 # Fee and payment settings: the administrator only (R50); eCP and portal settings: administrator or superadmin.
 # The yearly sticker (`sticker_*`) is changed by administrators only through `sticker` (yearly lock, R45).
 ADMIN_KEYS = {"fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
-              "payment_iban", "payment_account_name"}
+              "payment_iban", "payment_account_name", "cave_alert_email"}
 
 # Built-in defaults (also inserted by migrations 0008, 0009, 0013 and 0019).
 DEFAULTS = {
@@ -66,6 +76,7 @@ DEFAULTS = {
     "sticker_bg_color": "transparent",
     "renewal_window_days": "60",
     "payment_iban": "",
+    "cave_alert_email": "",
     "payment_account_name": "Slovenská speleologická spoločnosť",
     "ecp_link_valid_hours": "24",
     "ecp_application_expiry_days": "14",

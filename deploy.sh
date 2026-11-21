@@ -14,3 +14,7 @@ if [[ "${1:-}" == "migrate" ]]; then
     .venv/bin/alembic upgrade head
 fi
 gcloud run deploy ess --source . --project "$PROJECT" --region "$REGION"
+ENVIRONMENT=$(gcloud run services describe ess --project "$PROJECT" --region "$REGION" --format=json 2>/dev/null \
+  | python3 -c 'import json,sys; env=json.load(sys.stdin)["spec"]["template"]["spec"]["containers"][0].get("env",[]); print(next((e.get("value","") for e in env if e["name"]=="ESS_ENVIRONMENT"),""))' \
+  || true)
+echo "ESS_ENVIRONMENT=${ENVIRONMENT:-?}  (ostrá prevádzka: prod, pozri docs/gcp-setup.md krok 21)"

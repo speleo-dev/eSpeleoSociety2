@@ -63,7 +63,7 @@
       {% for c in summary %}
         <tr>
           <td>
-            <a href="?year={{ year }}&club={{ c.club_id or '' }}#clenovia" class="fw-semibold text-reset text-decoration-none">
+            <a href="?year={{ year }}&club={{ c.club_id or 'none' }}#clenovia" class="fw-semibold text-reset text-decoration-none">
               {{ c.club_name }}
             </a>
           </td>

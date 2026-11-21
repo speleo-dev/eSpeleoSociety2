@@ -7,11 +7,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.staticfiles import StaticFiles
 from pathlib import Path
 
 from ess.config import get_settings
 from ess.web import admin, admin_ecp, admin_members, admin_org, admin_payments, auth, portal, portal_chair, public
+from ess.web.headers import SecurityHeaders, static_app
 from ess.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -29,12 +29,14 @@ def _session_secret() -> str:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    # Interactive API docs only for local development: never on a public (https) deployment, whatever
+    # ESS_ENVIRONMENT says; the administration is never listed in them (include_in_schema=False below).
+    api_docs = settings.environment == "dev" and not (settings.public_base_url or "").startswith("https://")
     app = FastAPI(
         title="eSpeleoSociety",
-        # Interactive API docs only outside production.
-        docs_url="/docs" if settings.environment != "prod" else None,
+        docs_url="/docs" if api_docs else None,
         redoc_url=None,
-        openapi_url="/openapi.json" if settings.environment != "prod" else None,
+        openapi_url="/openapi.json" if api_docs else None,
     )
     app.add_middleware(
         SessionMiddleware,
@@ -45,13 +47,15 @@ def create_app() -> FastAPI:
         # Cookie only over HTTPS whenever the app is served over HTTPS (Cloud Run, production).
         https_only=settings.environment == "prod" or (settings.public_base_url or "").startswith("https://"),
     )
-    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+    https = settings.environment == "prod" or (settings.public_base_url or "").startswith("https://")
+    app.add_middleware(SecurityHeaders, hsts=https)  # outermost: also on error pages
+    app.mount("/static", static_app(Path(__file__).parent / "static"), name="static")
     # Administration under its own path (R48); specific routes (/members/new) before parametrised ones.
     admin_prefix = "/" + settings.admin_path
     if settings.environment == "prod" and settings.admin_path == "admin":
         logger.warning("ESS_ADMIN_PATH is not set - the administration is at the guessable /admin")
     for module in (auth, admin_members, admin_org, admin_ecp, admin_payments, admin):
-        app.include_router(module.router, prefix=admin_prefix)
+        app.include_router(module.router, prefix=admin_prefix, include_in_schema=False)  # never in /openapi.json
     app.include_router(public.router)
     app.include_router(public.verify_router)
     app.include_router(portal_chair.router)

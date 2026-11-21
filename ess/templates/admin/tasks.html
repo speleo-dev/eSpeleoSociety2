@@ -105,6 +105,12 @@
                 <input class="form-control form-control-sm w-100 w-sm-auto" name="note" required placeholder="Ako bolo vybavené" aria-label="Poznámka">
                 <button type="submit" class="btn btn-sm btn-outline-secondary w-100 w-sm-auto">Vybavené</button>
               </form>
+            {% elif t.task_type == T.CAVE_ALERT.value %}
+              <form class="d-inline-flex flex-wrap align-items-center gap-2 mb-1" method="post" action="{{ A }}/tasks/{{ t.id }}/resolve-cave">
+                <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
+                <input class="form-control form-control-sm w-100 w-sm-auto" name="note" required placeholder="Ako sa to vyriešilo" aria-label="Poznámka">
+                <button type="submit" class="btn btn-sm btn-outline-secondary w-100 w-sm-auto">Vybavené</button>
+              </form>
             {% elif t.task_type == T.ECP_ISSUE.value %}
               <a href="{{ A }}/ecp-applications/{{ t.context.application_id }}" class="btn btn-sm btn-primary w-100 w-sm-auto">Posúdiť žiadosť</a>
             {% endif %}

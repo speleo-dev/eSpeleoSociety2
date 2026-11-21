@@ -172,3 +172,14 @@ def list_tasks(session: Session, open_only: bool = True, task_type: str | None =
 
 def membership_of(session: Session, task: Task) -> Membership | None:
     return session.get(Membership, task.membership_id) if task.membership_id else None
+
+
+def resolve_cave_alert(session: Session, actor: Actor, task_id: uuid.UUID, note: str) -> None:
+    """The administrator closes a cave alert (e.g. the member is fine but forgot "Som vonku")."""
+    require_admin(actor)
+    task = session.get(Task, task_id)
+    if task is None or task.task_type != TaskType.CAVE_ALERT.value or task.status != TaskStatus.OPEN.value:
+        raise DomainError("task_not_open")
+    if not note.strip():
+        raise DomainError("note_required")
+    close_tasks(session, actor, TaskType.CAVE_ALERT, TaskStatus.DONE, "resolved", member_id=task.member_id, note=note)

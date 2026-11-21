@@ -23,3 +23,6 @@ def send(mailer: Mailer | None, mail: Mail) -> bool:
         return True
     except MailError:
         return False
+    except Exception as exc:  # noqa: BLE001 - one bad message must not stop the others
+        log.warning("E-mail not sent: %s", type(exc).__name__)
+        return False

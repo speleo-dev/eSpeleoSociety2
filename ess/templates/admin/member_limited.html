@@ -1,7 +1,7 @@
 {% extends "admin/_layout.html" %}
 {% block page_title %}{{ d.data.full_name() }}{% endblock %}
 {% block body %}
-{# Superadmin (R50): the member as other members see them, plus positions of the SSS board. #}
+{# Systemadmin (R50): the member as other members see them, plus positions of the SSS board. #}
 {% set back = A ~ "/members/" ~ d.member.id %}
 <h1>{{ d.data.full_name() }}</h1>
 <dl>

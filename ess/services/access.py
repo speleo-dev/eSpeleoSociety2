@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from ess.models import Club, ClubDelegation, PositionHolder
@@ -81,6 +81,12 @@ def require_system_admin(actor: Actor) -> None:
 def is_open_on(valid_from: date, valid_to: date | None, on: date) -> bool:
     """`valid_to` is exclusive: the first day the record no longer applies."""
     return valid_from <= on and (valid_to is None or on < valid_to)
+
+
+def position_held(on: date | None = None):
+    """SQL condition: the position is held on the day (a change entered for a future date is not shown yet)."""
+    on = on or date.today()
+    return and_(PositionHolder.valid_from <= on, or_(PositionHolder.valid_to.is_(None), PositionHolder.valid_to > on))
 
 
 def chaired_club_ids(session: Session, member_id: uuid.UUID, on: date | None = None) -> set[uuid.UUID]:

@@ -243,6 +243,15 @@ def log_out_everywhere(session: Session, actor: Actor, member_id: uuid.UUID) -> 
     return len(rows)
 
 
+def revoke_sessions(session: Session, member_id: uuid.UUID) -> int:
+    """End all portal sessions of a member (e.g. after the e-mail changed); passkeys stay."""
+    rows = session.scalars(select(MemberSession).where(MemberSession.member_id == member_id,
+                                                       MemberSession.revoked_at.is_(None))).all()
+    for row in rows:
+        row.revoked_at = _now()
+    return len(rows)
+
+
 def active_sessions(session: Session, member_id: uuid.UUID) -> int:
     return session.scalar(select(func.count()).select_from(MemberSession).where(
         MemberSession.member_id == member_id, MemberSession.revoked_at.is_(None),

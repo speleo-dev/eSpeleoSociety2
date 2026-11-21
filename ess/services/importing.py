@@ -20,7 +20,7 @@ from ess.security.crypto import normalize_for_index
 from ess.services import clubs as clubs_service
 from ess.services import members as members_service
 from ess.services import memberships
-from ess.services.access import Actor, DomainError, require_staff
+from ess.services.access import Actor, DomainError, require_admin
 from ess.services.members import MemberData
 
 CLUB_COLUMNS = ["kod", "nazov", "skratka", "cakatelia", "logo", "ulica", "psc", "obec", "krajina", "email", "telefon",
@@ -98,9 +98,9 @@ def _missing_columns(headers: list[str], required: list[str]) -> list[str]:
 # --- clubs ---------------------------------------------------------------------------------------------
 
 def _importer(actor: Actor) -> Actor:
-    """Both administrators and superadmins import (R50); the rows are written as a trusted import
-    (audit: actor type "system" with the importing person's id)."""
-    require_staff(actor)
+    """Only the administrator imports: an import writes the register, which the systemadmin never changes
+    (R50). The rows are written as a trusted import (audit: actor type "system" with the person's id)."""
+    require_admin(actor)
     return Actor(kind="system", id=actor.id)
 
 

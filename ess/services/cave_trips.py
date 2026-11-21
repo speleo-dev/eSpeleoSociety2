@@ -1,11 +1,15 @@
 """Cave trip reports (R41): the member says where they go, with whom and when they plan to be out.
 
 Without "Som vonku": 30 minutes after the planned return the member gets a reminder e-mail, 30 minutes
-later the chair of the member's primary club gets an alert e-mail. `check` runs every few minutes
-(Cloud Scheduler calls /internal/tick). E-mails go through the outbox (sent after commit).
+later the chair of the member's primary club gets an alert e-mail; without a chair (or the chair's
+e-mail) it goes to the address from the setting `cave_alert_email`. The alert also opens a task for the
+administrator. `check` runs every few minutes (Cloud Scheduler calls /internal/tick) and sends the
+e-mails itself: a reminder or alert is marked as sent only after it was really sent, otherwise the next
+run tries again. This is a help, not a guarantee: members must still leave word with someone outside.
 """
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -13,10 +17,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ess import audit
-from ess.models import CaveTrip, Club, Member, Membership
+from ess.mail import is_valid_address
+from ess.models import CaveTrip, Club, Member, Membership, TaskStatus, TaskType
 from ess.security import pii
-from ess.services import delegations, members, outbox
-from ess.services.access import DomainError
+from ess.services import delegations, members, outbox, settings, tasks
+from ess.services.access import SYSTEM, DomainError
 
 REMINDER_AFTER = timedelta(minutes=30)
 ALERT_AFTER = timedelta(minutes=60)  # after the planned return (30 min after the reminder)
@@ -71,7 +76,9 @@ def extend(session: Session, member_id: uuid.UUID, planned_return_at: datetime) 
     if planned_return_at <= _now() or planned_return_at > _now() + MAX_TRIP:
         raise DomainError("invalid_return_time")
     trip = view.trip
-    trip.planned_return_at, trip.reminder_sent_at = planned_return_at, None
+    # Reminder and alert start over: after a later return the chair is alerted again if needed.
+    trip.planned_return_at, trip.reminder_sent_at, trip.alert_sent_at = planned_return_at, None, None
+    _close_alert_task(session, member_id, "extended")
     audit.record(session, actor_type="member", actor_id=str(member_id), action="cave_trip.extend",
                  entity_type="cave_trip", entity_id=str(trip.id))
 
@@ -82,8 +89,13 @@ def finish(session: Session, member_id: uuid.UUID) -> None:
     if view is None:
         raise DomainError("trip_not_open")
     view.trip.returned_at = _now()
+    _close_alert_task(session, member_id, "returned")
     audit.record(session, actor_type="member", actor_id=str(member_id), action="cave_trip.finish",
                  entity_type="cave_trip", entity_id=str(view.trip.id))
+
+
+def _close_alert_task(session: Session, member_id: uuid.UUID, resolution: str) -> None:
+    tasks.close_tasks(session, SYSTEM, TaskType.CAVE_ALERT, TaskStatus.DONE, resolution, member_id=member_id)
 
 
 def _chair_of_primary_club(session: Session, member_id: uuid.UUID) -> tuple[Member | None, Club | None]:
@@ -99,14 +111,19 @@ def _chair_of_primary_club(session: Session, member_id: uuid.UUID) -> tuple[Memb
 class CheckResult:
     reminders: int = 0
     alerts: int = 0
-    no_chair: int = 0  # alerts that had nobody to go to
+    no_chair: int = 0  # alerts sent to the fallback address (no chair or no chair e-mail)
+    failed: int = 0  # reminders or alerts that could not be sent now; tried again next run
 
 
-def check(session: Session, now: datetime | None = None) -> CheckResult:
+Deliver = Callable[[outbox.QueuedMail], bool]  # sends one e-mail now; False when it was not sent
+
+
+def check(session: Session, deliver: Deliver, now: datetime | None = None) -> CheckResult:
     now = now or _now()
     result = CheckResult()
     trips = session.scalars(select(CaveTrip).where(CaveTrip.returned_at.is_(None),
                                                    CaveTrip.planned_return_at <= now - REMINDER_AFTER)).all()
+    fallback = (settings.get_setting(session, "cave_alert_email") or "").strip()
     for trip in trips:
         view = _view(trip)
         member = members.read_member(session.get(Member, trip.member_id))
@@ -114,23 +131,39 @@ def check(session: Session, now: datetime | None = None) -> CheckResult:
                    "cave": view.cave, "companions": view.companions, "planned": trip.planned_return_at,
                    "link_path": "/portal"}
         if trip.reminder_sent_at is None:
-            trip.reminder_sent_at = now
-            result.reminders += 1
-            if member.email:
-                outbox.queue(session, outbox.QueuedMail(to=member.email, subject="Ste už vonku z jaskyne?",
-                                                        template="cave_reminder", context=context))
-        elif trip.alert_sent_at is None and trip.planned_return_at <= now - ALERT_AFTER:
-            trip.alert_sent_at = now
-            chair, club = _chair_of_primary_club(session, trip.member_id)
-            chair_data = members.read_member(chair) if chair else None
-            if chair_data and chair_data.email:
-                result.alerts += 1
-                outbox.queue(session, outbox.QueuedMail(
-                    to=chair_data.email, subject=f"Člen sa nevrátil z jaskyne: {member.full_name()}",
-                    template="cave_alert", context={**context, "chair_name": chair_data.first_name,
-                                                    "club": club.name if club else ""}))
+            sent = not is_valid_address(member.email) or deliver(outbox.QueuedMail(
+                to=member.email, subject="Ste už vonku z jaskyne?", template="cave_reminder", context=context))
+            if sent:
+                trip.reminder_sent_at = now
+                result.reminders += 1
             else:
-                result.no_chair += 1
-            audit.record(session, actor_type="system", actor_id="system", action="cave_trip.alert",
-                         entity_type="cave_trip", entity_id=str(trip.id), details={"chair": bool(chair_data)})
+                result.failed += 1
+        if trip.alert_sent_at is None and trip.planned_return_at <= now - ALERT_AFTER:
+            _alert(session, trip, member, context, fallback, deliver, now, result)
     return result
+
+
+def _alert(session, trip, member, context, fallback, deliver, now, result) -> None:
+    chair, club = _chair_of_primary_club(session, trip.member_id)
+    chair_data = members.read_member(chair) if chair else None
+    # The administrator sees it in Požiadavky even when no e-mail can be sent (opened once per trip).
+    tasks.open_task(session, SYSTEM, TaskType.CAVE_ALERT, trip.member_id, club_id=club.id if club else None,
+                    context={"trip_id": str(trip.id)})
+    to_chair = chair_data is not None and is_valid_address(chair_data.email)
+    to = chair_data.email if to_chair else fallback
+    if not is_valid_address(to):
+        result.failed += 1  # nobody to send to: the task stays; tried again when an address is set
+        return
+    sent = deliver(outbox.QueuedMail(
+        to=to, subject=f"Člen sa nevrátil z jaskyne: {member.full_name()}", template="cave_alert",
+        context={**context, "chair_name": chair_data.first_name if to_chair else "",
+                 "club": club.name if club else "", "fallback": not to_chair}))
+    if not sent:
+        result.failed += 1
+        return
+    trip.alert_sent_at = now
+    result.alerts += 1
+    if not to_chair:
+        result.no_chair += 1
+    audit.record(session, actor_type="system", actor_id="system", action="cave_trip.alert",
+                 entity_type="cave_trip", entity_id=str(trip.id), details={"chair": to_chair})

@@ -86,8 +86,9 @@ def assign_position(
 
 
 def require_position_rights(actor: Actor, club_bound: bool) -> None:
-    """R50: positions of the SSS board (Výbor) – superadmin only; the club chair – administrator or superadmin."""
-    if not (actor.is_staff if club_bound else actor.is_system_admin):
+    """R50: positions of the SSS board (Výbor) – systemadmin; the club chair (club management rights,
+    part of the register) – administrator only."""
+    if not (actor.is_admin if club_bound else actor.is_system_admin):
         raise PermissionDenied("positions")
 
 

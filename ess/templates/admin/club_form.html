@@ -6,8 +6,8 @@
   <h2 class="page-title">{% if club and club.logo_url %}<img class="club-logo me-2" src="{{ club.logo_url }}" alt=""> {% endif %}{{ club.name if club else "Nová skupina" }}</h2>
 </div>
 {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
-{% set ro = not admin.is_admin %}{# superadmin: read only (R50) #}
-<form method="post" class="form card mb-3" action="{{ A ~ '/clubs/' ~ club.id if club else A ~ '/clubs/new' }}">
+{% set ro = not admin.is_admin %}{# systemadmin: read only (R50) #}
+<form {% if not ro %}method="post" action="{{ A ~ '/clubs/' ~ club.id if club else A ~ '/clubs/new' }}"{% endif %} class="form card mb-3">
   {% include "admin/_csrf.html" %}
   <div class="card-body">
     <fieldset {% if ro %}disabled{% endif %}>

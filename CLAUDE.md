@@ -63,12 +63,12 @@ Inventúra nastavení a funkcií pôvodnej aplikácie: [docs/old-app-inventory.m
 | Člen (s eCP) | len čítanie: vlastná identita, členovia vlastných skupín (obmedzene), skupiny, Výbor, dokumenty, notifikácie, zaplatené členské, hlásenie vstupu do jaskyne (R52) |
 | Predseda skupiny | + členovia vlastnej skupiny (všetky údaje), pridanie čakateľa/člena, pozastavenie/ukončenie, hromadná platba, kontakty skupiny |
 | Zástupca predsedu | práva predsedu namiesto neho, kým ho predseda neodvolá (R37); predseda vtedy len číta |
-| Administrátor (`admin`) | evidencia členov a skupín, predseda skupiny, členské, ročná známka, bankové výpisy, požiadavky, dokumenty, notifikácie, nastavenia členského a eCP, import; prihlásenie cez Google alebo eCP (R50, R51) |
-| Superadmin (`system_admin`) | systém: prístupy (rola admin), funkcie vo Výbore, nastavenia eCP, typy certifikátov, testovací e-mail, import, dokumenty, notifikácie; evidenciu nemení a členov vidí obmedzene; len z konfigurácie servera (R50) |
+| Administrátor (`admin`) | evidencia členov a skupín, predseda skupiny, členské, ročná známka, bankové výpisy, požiadavky, dokumenty, notifikácie, nastavenia členského, eCP a náhradnej adresy pre upozornenia z jaskyne, import; prihlásenie cez Google alebo eCP (R50, R51, R57) |
+| Systemadmin (`system_admin`, predtým superadmin) | systémová podpora: prístupy (rola admin), funkcie vo Výbore, nastavenia eCP, typy certifikátov, testovací e-mail, dokumenty, notifikácie; produkčné dáta (evidenciu, predsedu skupiny, import) nemení a členov vidí obmedzene; len z konfigurácie servera (R50, R57) |
 
 Člen nemá na portál prístup, kým nemá schválený eCP. Člen a predseda sa prihlasujú cez eCP
-(+ overenie e-mailu, potom passkey). Superadmini sú len v konfigurácii servera a prihlasujú sa Google účtom na tajnej
-adrese administrácie (R48). Administrátorov pridáva superadmin v aplikácii – s Google účtom (Prístupy) alebo
+(+ overenie e-mailu, potom passkey). Systemadmini (predtým superadmini) sú len v konfigurácii servera a prihlasujú sa Google účtom na tajnej
+adrese administrácie (R48). Administrátorov pridáva systemadmin v aplikácii – s Google účtom (Prístupy) alebo
 členovi s eCP (R51).
 
 ## Architektúra (cieľ)
@@ -93,7 +93,7 @@ adrese administrácie (R48). Administrátorov pridáva superadmin v aplikácii �
 - Žiadne tajomstvá, tokeny ani `.env` v repozitári. Konfigurácia len cez premenné prostredia / Secret Manager.
 - Osobné údaje (GDPR) sú v DB **šifrované na úrovni aplikácie**; kľúč je mimo DB. Vyhľadávanie cez
   blind index (HMAC), nie cez čitateľný text.
-- Osobné údaje nikdy do logov, chybových hlášok ani URL.
+- Osobné údaje nikdy do logov, chybových hlášok ani URL (vyhľadávanie podľa mena/e-mailu len cez POST).
 - E-mail nie je jedinečný (manželia ho zdieľajú) – člena nikdy neidentifikuj len podľa e-mailu.
 - Každá zmena dát sa zapisuje do auditného logu (kto, kedy, čo) v rovnakej transakcii.
 - Autorizácia sa kontroluje na serveri pri každej požiadavke (predseda vidí len svoju skupinu).
@@ -161,14 +161,14 @@ lokálnu DB bez SSL. Nikdy nenastavuj `ESS_TEST_DATABASE_URL` na produkčnú dat
 - `ess/models.py` – ORM modely (`docs/data-model.md`, fáza 2: `docs/data-model-ecp.md`, fáza 3: `docs/data-model-payments.md`, fáza 4: `docs/data-model-portal.md`)
 - `ess/services/` – biznis pravidlá a oprávnenia (`access.py` – kto čo smie; `members`, `memberships`,
   `positions`, `admin_access`, `settings`, `tasks` – požiadavky, `clubs`, `delegations` – zastupovanie predsedu, R37, `certificates`, `documents`,
-  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám; `portal_auth` – prihlásenie člena na portál, R38; `portal` – čo vidí člen na portáli; `ecp_notifications` – notifikácie do eCP, R41; `cave_trips` – hlásenie vstupu do jaskyne, R41). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
+  `importing` – CSV import, návod `docs/import.md`; `ecp_applications` – žiadosti o eCP, `ecp_issuance` – schválenie a vydanie eCP, `ecp_verification` – overovacia stránka a jednorazový QR, `ecp_state` – stav eCP podľa členstva, R25; `ecp_content` – „Platný do“ a ročná známka v eCP po zaplatení; `outbox` – e-maily odoslané až po commite; `sss_cards` – kartička SSS, R31; `payments` – členské, platobné referencie, PAYMe odkaz, hromadná platba, R35/R36; `bank_statements` – spracovanie výpisu a Požiadavky k platbám; `portal_auth` – prihlásenie člena na portál, R38; `portal` – čo vidí člen na portáli; `ecp_notifications` – notifikácie do eCP, R41; `cave_trips` – hlásenie vstupu do jaskyne, R41; upozornenia posiela priamo `/internal/tick` a označí ich až po odoslaní, R57). Zmeny dát rob len cez služby – kontrolujú oprávnenia a zapisujú audit.
 - `ess/services/directory.py` – čítanie pre obrazovky (zoznamy s dešifrovanými menami, málo DB dotazov)
 - `ess/web/` – webová vrstva: `auth.py` (Google prihlásenie, session, CSRF), `common.py` (spoločné pomocné
   funkcie), `admin.py` (prehľad, zoznamy, požiadavky), `admin_members.py` (formuláre a akcie nad členom),
   `admin_org.py` (skupiny, organizácia, prístupy, nastavenia, dokumenty), `admin_ecp.py` (posúdenie žiadostí
   o eCP), `admin_payments.py` (členské, platobné odkazy, hromadná platba, bankové výpisy), `mailing.py` (e-maily zo šablón `templates/email/`), `public.py` (verejné stránky –
   žiadosť o eCP; vlastná CSRF kontrola), `portal.py` (portál člena – prihlásenie z eCP, cookie `ess_member`), `portal_chair.py` (správa skupiny na portáli – predseda / zástupca), `templates.py` (Jinja2, slovenské
-  popisy a chybové hlášky). Každý POST formulár musí mať `csrf_token`. Konkrétne cesty (`/members/new`)
+  popisy a chybové hlášky), `headers.py` (bezpečnostné a cache hlavičky, komprimované statické súbory). Každý POST formulár musí mať `csrf_token`. Konkrétne cesty (`/members/new`)
   registruj pred parametrizovanými (`/members/{id}`).
 - `ess/templates/` – Jinja2 šablóny (vzhľad Tabler, R56; `ess/static/vendor/` – Tabler, ikony, HTMX, nemeniť ručne;
   `ess/static/ui.js` – stav „Ukladám…“, formuláre so sťahovaním súboru označ `data-download`); `migrations/` – Alembic migrácie

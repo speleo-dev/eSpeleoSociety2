@@ -10,6 +10,7 @@ from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from ess import audit
+from ess.mail import is_valid_address
 from ess.models import Club, Member, Membership, MembershipEndReason, MembershipStatus, PositionHolder
 from ess.security import pii
 from ess.services.access import Actor, DomainError, PermissionDenied, managed_club_ids, require_admin
@@ -85,8 +86,10 @@ def members_sharing_email(session: Session, member: Member) -> list[Member]:
 def _validate(data: MemberData) -> None:
     if not data.first_name.strip() or not data.last_name.strip():
         raise DomainError("name_required")
-    if data.email and "@" not in data.email:
-        raise DomainError("invalid_email")
+    if data.email:
+        data.email = data.email.strip()
+        if not is_valid_address(data.email):  # one plain address (no lists or header tricks)
+            raise DomainError("invalid_email")
     data.country = (data.country or "SK").strip().upper()
     if not re.fullmatch(r"[A-Z]{2}", data.country):
         raise DomainError("invalid_country")
@@ -168,12 +171,42 @@ def update_member(session: Session, actor: Actor, member_id: uuid.UUID, data: Me
         raise PermissionDenied("reduced_fee")
     before = read_member(member)
     _validate(data)
+    email_changed = (before.email or "").strip().lower() != (data.email or "").strip().lower()
+    if email_changed and not actor.is_admin and _email_locked_for_chair(session, actor, member):
+        raise DomainError("email_change_admin_only")
     _apply(member, data)
     _check_unique(session, member)
     changed = sorted(f.name for f in fields(MemberData) if getattr(before, f.name) != getattr(data, f.name))
     audit.record(session, actor_type=actor.audit_type, actor_id=actor.id, action="member.update",
                  entity_type="member", entity_id=str(member.id), details={"fields": changed})
+    if email_changed:
+        _after_email_change(session, member, before)
     return member
+
+
+def _email_locked_for_chair(session: Session, actor: Actor, member: Member) -> bool:
+    """The e-mail is the second factor of the portal login and receives the eCP. A chair may set it only for
+    a member of their own primary club who has no eCP and no administrative access; otherwise the
+    administrator changes it (protects against taking over someone's portal or eCP)."""
+    from ess.models import AdminUser, EcpPass
+
+    if session.scalar(select(EcpPass.id).where(EcpPass.member_id == member.id).limit(1)) is not None:
+        return True
+    if session.scalar(select(AdminUser.id).where(AdminUser.member_id == member.id).limit(1)) is not None:
+        return True
+    managed = managed_club_ids(session, uuid.UUID(actor.id))
+    primary = next((m for m in member.memberships if m.valid_to is None and m.is_primary), None)
+    return primary is None or primary.club_id not in managed
+
+
+def _after_email_change(session: Session, member: Member, before: MemberData) -> None:
+    """Old devices are signed out and the old address is told (a takeover would not go unnoticed)."""
+    from ess.services import outbox, portal_auth
+
+    portal_auth.revoke_sessions(session, member.id)
+    if is_valid_address(before.email):
+        outbox.queue(session, outbox.QueuedMail(to=before.email, subject="Zmena e-mailovej adresy v eSS",
+                                                template="email_changed", context={"first_name": before.first_name}))
 
 
 def find_by_card_number(session: Session, card_number: str) -> Member | None:

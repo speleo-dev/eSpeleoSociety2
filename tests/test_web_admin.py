@@ -107,7 +107,7 @@ def test_login_redirects_to_google(client, google):
 def test_super_admin_login_and_logout(client, google):
     assert login(client, google, email=SUPER_EMAIL).headers["location"] == "/admin"
     page = client.get("/admin")
-    assert page.status_code == 200 and "role-system_admin" in page.text and "superadmin" in page.text
+    assert page.status_code == 200 and "role-system_admin" in page.text and "systemadmin" in page.text
     assert client.post("/admin/logout", data={"csrf_token": csrf(client)}, follow_redirects=False).status_code == 303
     assert client.get("/admin").status_code == 401
 
@@ -135,9 +135,16 @@ def test_revoked_admin_loses_access_immediately(client, google, migrated_db):
 
 def test_member_list_detail_and_search(client, google, data):
     login(client, google)
-    listing = client.get("/admin/members", params={"q": "podhradska"})
+    listing = client.post("/admin/members", data={"csrf_token": csrf(client), "q": "podhradska"},
+                          headers={"HX-Request": "true"})
     assert "/static/icons/pending_activation.png" in listing.text
     assert "Podhradská Bohuslava" in listing.text and "Zoskupiny" not in listing.text
+    assert "podhradska" not in listing.headers["HX-Push-Url"]  # search text never in the URL
+    both = client.post("/admin/members", data={"csrf_token": csrf(client), "q": "Podhradská Bohuslava"})
+    assert "Podhradská Bohuslava" in both.text  # the list order (Priezvisko Meno) is found too
+    assert client.get("/admin/members", params={"q": "podhradska"}).status_code == 200  # GET ignores q
+    assert client.post("/admin/members", data={"q": "x"}).status_code in (401, 403)  # CSRF required
+    assert client.get("/admin/members", params={"club": "not-a-uuid", "status": "x"}).status_code == 200
     detail = client.get(f"/admin/members/{data['member_id']}")
     assert "b@example.org" in detail.text and "čaká na aktiváciu" in detail.text
     assert client.get(f"/admin/members/{uuid.uuid4()}").status_code == 200  # "not found" page

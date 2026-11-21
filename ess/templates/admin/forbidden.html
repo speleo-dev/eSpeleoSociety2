@@ -7,7 +7,7 @@
       <h2 class="card-title mb-0">Nemáte oprávnenie</h2>
     </div>
     <p>{% if admin and admin.is_system_admin %}Túto časť spravuje administrátor (evidencia členov, skupín a členského).
-       {% else %}Túto stránku môže otvoriť len superadmin.{% endif %}</p>
+       {% else %}Túto stránku môže otvoriť len systemadmin.{% endif %}</p>
     <a class="btn btn-outline-secondary" href="{{ A }}">Prehľad</a>
   </div>
 </div>

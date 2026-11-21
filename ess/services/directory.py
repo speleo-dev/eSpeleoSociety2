@@ -25,6 +25,7 @@ from ess.models import (
     PositionHolder,
 )
 from ess.security.crypto import normalize_for_index
+from ess.services.access import position_held
 from ess.services.members import MemberData, SssStatus, members_sharing_email, read_member
 
 
@@ -69,7 +70,7 @@ def list_members(
         open_by_member[m.member_id].append(m)
     had_any = set(session.scalars(select(Membership.member_id).distinct()))
     chairs = set(session.scalars(select(PositionHolder.member_id).where(
-        PositionHolder.position_code == "club_chair", PositionHolder.valid_to.is_(None))))
+        PositionHolder.position_code == "club_chair", position_held())))
     with_ecp = ecp_holders(session)
 
     needle = normalize_for_index(query) if query else None
@@ -82,7 +83,9 @@ def list_members(
             continue
         data = read_member(member)
         if needle:
-            haystack = normalize_for_index(f"{data.first_name} {data.last_name} {data.email or ''} {data.card_number or ''}")
+            # both orders: the list shows "Priezvisko Meno", people also type "Meno Priezvisko"
+            haystack = normalize_for_index(f"{data.first_name} {data.last_name} {data.first_name} "
+                                           f"{data.email or ''} {data.card_number or ''}")
             if needle not in haystack:
                 continue
         rows.append(
@@ -226,7 +229,7 @@ def clubs_overview(session: Session) -> list[ClubRow]:
         for club_id, member in session.execute(
             select(PositionHolder.club_id, Member)
             .join(Member, Member.id == PositionHolder.member_id)
-            .where(PositionHolder.position_code == "club_chair", PositionHolder.valid_to.is_(None))
+            .where(PositionHolder.position_code == "club_chair", position_held())
         )
     }
     rows = [
@@ -279,7 +282,7 @@ def current_positions(session: Session) -> list[HolderRow]:
         .join(OrgPosition, OrgPosition.code == PositionHolder.position_code)
         .join(Member, Member.id == PositionHolder.member_id)
         .outerjoin(Club, Club.id == PositionHolder.club_id)
-        .where(PositionHolder.valid_to.is_(None))
+        .where(position_held())
     ).all()
     result = []
     for holder, position, member, club in rows:

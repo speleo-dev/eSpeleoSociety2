@@ -1,0 +1,9 @@
+Dobrý deň {{ first_name }},
+
+v informačnom systéme eSS Slovenskej speleologickej spoločnosti bola zmenená vaša e-mailová adresa.
+Táto adresa sa už na prihlásenie ani na správy z eSS nepoužíva a z portálu eSS sme vás odhlásili.
+
+Ak ste o zmenu nežiadali, kontaktujte predsedu svojej skupiny alebo napíšte na ess@sss.sk.
+
+S pozdravom
+Slovenská speleologická spoločnosť

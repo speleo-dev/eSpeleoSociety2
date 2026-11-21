@@ -18,6 +18,7 @@ from ess.storage import MediaStore, get_media_store
 from ess.web.auth import verify_csrf
 from ess.web.common import Admin, RegisterAdmin, Db, act, error_text, forbidden, parse_date, render
 from ess.web.paths import A
+from ess.web.admin_payments import csv_cell
 
 Store = Annotated[MediaStore | None, Depends(get_media_store)]
 Mailer_ = Annotated[Mailer | None, Depends(get_mailer)]
@@ -25,7 +26,7 @@ Mailer_ = Annotated[Mailer | None, Depends(get_mailer)]
 router = APIRouter()  # mounted under the admin path (R48)
 
 SETTING_KEYS = ("fee_amount", "reduced_fee_amount", "reduced_fee_age", "fee_currency", "renewal_window_days",
-                "payment_iban", "payment_account_name",
+                "payment_iban", "payment_account_name", "cave_alert_email",
                 "ecp_link_valid_hours", "ecp_application_expiry_days", "ecp_qr_grace_minutes", "ecp_qr_daily_limit",
                 "portal_max_devices")
 
@@ -318,12 +319,12 @@ MAX_IMPORT_BYTES = 2 * 1024 * 1024
 
 
 @router.get("/import")
-def import_page(request: Request, admin: Admin, session: Db):
+def import_page(request: Request, admin: RegisterAdmin, session: Db):
     return render(request, "admin/import.html", admin, session, result=None, kind=None)
 
 
 @router.post("/import/{kind}", dependencies=[Depends(verify_csrf)])
-async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
+async def import_upload(request: Request, kind: str, admin: RegisterAdmin, session: Db):
     if kind not in ("clubs", "members"):
         return render(request, "admin/not_found.html", admin, session)
     form = await request.form()
@@ -350,7 +351,7 @@ async def import_upload(request: Request, kind: str, admin: Admin, session: Db):
 
 
 @router.get("/import/template/{kind}.csv")
-def import_template(request: Request, kind: str, admin: Admin, session: Db):
+def import_template(request: Request, kind: str, admin: RegisterAdmin, session: Db):
     if kind not in ("clubs", "members"):
         kind = "members"
     name = "vzor_skupiny.csv" if kind == "clubs" else "vzor_clenovia.csv"
@@ -359,12 +360,12 @@ def import_template(request: Request, kind: str, admin: Admin, session: Db):
 
 
 @router.get("/import/club-codes.csv")
-def club_codes(request: Request, admin: Admin, session: Db):
+def club_codes(request: Request, admin: RegisterAdmin, session: Db):
     """Current clubs with their codes - for the person preparing the member list."""
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
     writer.writerow(["kod", "nazov"])
     for club in directory.active_clubs(session):
-        writer.writerow([club.code or "", club.name])
+        writer.writerow([csv_cell(club.code or ""), csv_cell(club.name)])
     return Response("﻿" + out.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": 'attachment; filename="kody_skupin.csv"'})

@@ -27,7 +27,7 @@ _LABELS = [
     (SssStatus.EXPELLED, "vylúčený zo SSS"),
     (SssStatus.NEVER, "bez členstva"),
     (AdminRole.ADMIN, "administrátor"),
-    (AdminRole.SYSTEM_ADMIN, "superadmin"),
+    (AdminRole.SYSTEM_ADMIN, "systemadmin"),
 ]
 
 ERRORS = {
@@ -95,7 +95,7 @@ ERRORS = {
     "certificate_type_exists": "Tento typ certifikátu už existuje.",
     "super_admin_is_configured": "Tento účet je hlavný systémový administrátor (nastavené na serveri).",
     "cannot_revoke_self": "Nemôžete odobrať prístup sebe.",
-    "system_admin": "Túto akciu môže vykonať len superadmin.",
+    "system_admin": "Túto akciu môže vykonať len systemadmin.",
     "invalid_value": "Neplatná hodnota.",
     "already_expelled": "Člen už je vylúčený.",
     "member_edit": "Na úpravu údajov tohto člena nemáte oprávnenie.",
@@ -109,6 +109,7 @@ ERRORS = {
     "member_not_payable": "Niektorý z vybraných členov už má zaplatené alebo je v inej hromadnej platbe.",
     "reference_not_open": "Platobný odkaz už nie je otvorený (je zaplatený alebo zrušený).",
     "note_required": "Doplňte poznámku.",
+    "email_change_admin_only": "E-mail tohto člena môže zmeniť len administrátor (člen má eCP alebo je v inej skupine). Napíšte na ess@sss.sk.",
     "club_has_no_chair": "Skupina nemá zadaného predsedu.",
     "club_chair": "Túto akciu môže vykonať len predseda skupiny.",
     "club_already_delegated": "Skupinu už spravuje zástupca – najprv prevezmite správu.",
@@ -155,6 +156,7 @@ TASK_LABELS = {
     "ecp_issue": "Žiadosť o eCP / kartičku",
     "payment_unmatched": "Nespárovaná platba",
     "payment_overpaid": "Preplatok",
+    "cave_alert": "Nevrátil sa z jaskyne",
 }
 
 RESOLUTION_LABELS = {
@@ -168,6 +170,8 @@ RESOLUTION_LABELS = {
     "sss_ended": "členstvo v SSS ukončené",
     "approved": "eCP vydaný",
     "expelled": "vylúčený zo SSS",
+    "returned": "člen potvrdil návrat",
+    "extended": "člen predĺžil návrat",
 }
 
 
@@ -193,6 +197,9 @@ def task_description(task) -> str:
         if (task.context or {}).get("card_only"):
             return "Žiadosť len o kartičku SSS (bez eCP). Skontrolujte údaje a schváľte alebo zamietnite."
         return "Žiadosť o eCP s fotkou. Skontrolujte fotku a schváľte alebo zamietnite."
+    if task.task_type == "cave_alert":
+        return ("Člen nepotvrdil návrat z jaskyne ani hodinu po plánovanom čase. Upozornenie išlo predsedovi skupiny "
+                "(inak na náhradnú adresu z nastavení). Overte, či je člen v poriadku; po potvrdení návratu sa zavrie samo.")
     ctx = task.context or {}
     amount = money(Decimal(ctx["amount"])) if ctx.get("amount") else ""
     if task.task_type == "payment_unmatched":

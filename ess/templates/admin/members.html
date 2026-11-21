@@ -9,8 +9,8 @@
     <div class="col">
       <h2 class="page-title">Členovia</h2>
     </div>
+    <div class="col-auto ms-auto d-print-none" id="members-actions">{# refreshed with the results: the club filter changes the button #}
     {% if admin.is_admin %}
-    <div class="col-auto ms-auto d-print-none">
       <div class="btn-list">
         {% if club %}
         <a href="{{ A }}/members/new?club={{ club }}" class="btn btn-primary d-inline-flex align-items-center">
@@ -22,19 +22,21 @@
         </a>
         {% endif %}
       </div>
-    </div>
     {% endif %}
+    </div>
   </div>
 </div>
 
 <!-- Filters Card -->
 <div class="card mb-3">
   <div class="card-body">
-    <form class="filters row g-2 align-items-center" method="get"
-          hx-get="{{ A }}/members"
+    {# POST: the search text (name, e-mail, card number) must not end up in the URL, history or logs #}
+    <form class="filters row g-2 align-items-center" method="post" action="{{ A }}/members" id="members-filter"
+          hx-post="{{ A }}/members"
           hx-trigger="submit, input changed delay:300ms from:#member-search, change delay:300ms"
-          hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML"
-          hx-push-url="true" hx-indicator="#members-loading">
+          hx-target="#members-results" hx-select="#members-results" hx-select-oob="#members-actions" hx-swap="outerHTML"
+          hx-indicator="#members-loading">
+      <input type="hidden" name="csrf_token" value="{{ admin.csrf_token }}">
       <div class="col-12 col-md-4">
         <div class="input-icon">
           <span class="input-icon-addon">
@@ -143,24 +145,12 @@
     </p>
     <ul class="pagination m-0 ms-auto">
       <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-        {% if page > 1 %}
-        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}" tabindex="-1" aria-disabled="true"
-           hx-get="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page - 1 }}" hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML" hx-push-url="true">
-          <i class="ti ti-chevron-left me-1"></i>predchádzajúca
-        </a>
-        {% else %}
-        <span class="page-link"><i class="ti ti-chevron-left me-1"></i>predchádzajúca</span>
-        {% endif %}
+        <button type="submit" form="members-filter" name="page" value="{{ page - 1 }}" class="page-link"
+                {% if page <= 1 %}disabled{% endif %}><i class="ti ti-chevron-left me-1"></i>predchádzajúca</button>
       </li>
       <li class="page-item {% if page >= pages %}disabled{% endif %}">
-        {% if page < pages %}
-        <a class="page-link" href="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}"
-           hx-get="?q={{ q|urlencode }}&club={{ club }}&status={{ status }}&page={{ page + 1 }}" hx-target="#members-results" hx-select="#members-results" hx-swap="outerHTML" hx-push-url="true">
-          ďalšia<i class="ti ti-chevron-right ms-1"></i>
-        </a>
-        {% else %}
-        <span class="page-link">ďalšia<i class="ti ti-chevron-right ms-1"></i></span>
-        {% endif %}
+        <button type="submit" form="members-filter" name="page" value="{{ page + 1 }}" class="page-link"
+                {% if page >= pages %}disabled{% endif %}>ďalšia<i class="ti ti-chevron-right ms-1"></i></button>
       </li>
     </ul>
   </div>

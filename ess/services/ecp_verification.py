@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from ess import audit
 from ess.models import Club, Document, EcpPass, EcpPassState, Member, Membership, PositionHolder, VerificationToken
 from ess.services import documents, members, settings
-from ess.services.access import PUBLIC
+from ess.services.access import PUBLIC, position_held
 from ess.services.ecp_issuance import hash_token, new_verification_token
 from ess.wallet import WalletClient, WalletError
 
@@ -79,7 +79,7 @@ def _contacts(session: Session, club: Club | None) -> list[Contact]:
         if code == "club_chair" and club_id is None:
             continue
         query = select(Member).join(PositionHolder, PositionHolder.member_id == Member.id).where(
-            PositionHolder.position_code == code, PositionHolder.valid_to.is_(None))
+            PositionHolder.position_code == code, position_held())
         if club_id:
             query = query.where(PositionHolder.club_id == club_id)
         holder = session.scalar(query)

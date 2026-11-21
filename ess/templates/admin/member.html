@@ -467,7 +467,7 @@
           <strong>{{ p.name }}</strong>{% if p.club_name %} <span class="text-secondary">({{ p.club_name }})</span>{% endif %}:
           <span class="text-secondary ms-1">{{ p.valid_from|date }} – {{ p.valid_to|date or "doteraz" }}</span>
         </div>
-        {% if not p.valid_to and (admin.is_system_admin or p.club_name) %}
+        {% if not p.valid_to and ((p.club_name and admin.is_admin) or (not p.club_name and admin.is_system_admin)) %}
         <form class="d-inline member-inline-action" method="post" action="{{ A }}/positions/{{ p.id }}/end" onsubmit="return confirm('Ukončiť funkciu?')">
           {% include "admin/_csrf.html" %}
           <input type="hidden" name="back" value="{{ back }}">
@@ -509,7 +509,7 @@
           </div>
           <div class="col-12">
             {% if not admin.is_system_admin %}
-            <div class="small text-secondary">Funkcie vo Výbore SSS prideľuje superadmin; administrátor zadáva predsedu skupiny.</div>
+            <div class="small text-secondary">Funkcie vo Výbore SSS prideľuje systemadmin; administrátor zadáva predsedu skupiny.</div>
             {% endif %}
             <div class="small text-secondary">Pri funkciách, ktoré môže zastávať len jeden človek (predseda SSS, predseda skupiny…), sa predchádzajúcemu držiteľovi funkcia ukončí k tomuto dátumu.</div>
           </div>

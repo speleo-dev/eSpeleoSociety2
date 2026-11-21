@@ -12,12 +12,15 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from ess.config import get_settings
+from ess.mail import get_mailer
 from ess.db import get_session
 from ess.models import Member
 from ess.services import outbox, passkeys, portal_auth
 from ess.services.access import Actor, DomainError, PermissionDenied
 from ess.web.auth import csrf_token
-from ess.web.common import after_commit, base_url
+from ess.web.common import after_commit, base_url, dependency
+from ess.web.mailing import render_mail
+from ess.web.mailing import send as send_mail
 from ess.web.public import verify_public_csrf
 from ess.web.templates import ERRORS, templates
 
@@ -498,7 +501,16 @@ def scheduler_tick(request: Request, session: Db):
     given = request.headers.get("x-ess-scheduler-token", "")
     if not token or not secrets.compare_digest(given, token):
         raise HTTPException(status_code=404)
-    result = cave_trips.check(session)
+    mailer = dependency(request, get_mailer)
+
+    def deliver(item) -> bool:
+        """Cave reminders and alerts are sent right away: a trip is marked only after a successful send."""
+        context = dict(item.context)
+        context["link"] = base_url(request) + context.pop("link_path", "/portal")
+        return send_mail(mailer, render_mail(item.to, item.subject, item.template, **context))
+
+    result = cave_trips.check(session, deliver)
     session.commit()
     after_commit(request, session)
-    return JSONResponse({"reminders": result.reminders, "alerts": result.alerts, "no_chair": result.no_chair})
+    return JSONResponse({"reminders": result.reminders, "alerts": result.alerts, "no_chair": result.no_chair,
+                         "failed": result.failed})

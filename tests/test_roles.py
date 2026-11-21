@@ -1,9 +1,9 @@
-"""R50: what the administrator and the superadmin may do."""
+"""R50: what the administrator and the systemadmin (formerly "superadmin") may do."""
 
 import pytest
 
 from ess.models import CertificateType
-from ess.services import certificates, clubs, documents, importing
+from ess.services import certificates, clubs, documents, importing, positions
 from ess.services.access import Actor, PermissionDenied
 from tests.test_ecp_application import _club, _member
 from tests.test_web_admin import client, csrf, google, login  # noqa: F401 (fixtures)
@@ -20,8 +20,14 @@ def test_superadmin_runs_the_system_but_not_the_register(session):
     certificates.deactivate_certificate_type(session, ADMIN, cert_type.id)
     assert not session.get(CertificateType, cert_type.id).active
     documents.save_document(session, SUPER, "Stanovy", "https://example.org/s.pdf", None)
-    result = importing.import_clubs(session, SUPER, "kod;nazov\nJS-X;JS Importovaná\n".encode(), dry_run=False)
-    assert result.ok
+    with pytest.raises(PermissionDenied):  # an import writes the register: administrator only
+        importing.import_clubs(session, SUPER, "kod;nazov\nJS-X;JS Importovaná\n".encode(), dry_run=False)
+    assert importing.import_clubs(session, ADMIN, "kod;nazov\nJS-X;JS Importovaná\n".encode(), dry_run=False).ok
+    club_id = _club(session)
+    member_id = _member(session, club_id)
+    with pytest.raises(PermissionDenied):  # the club chair gives club management rights: administrator only
+        positions.assign_position(session, SUPER, "club_chair", member_id, club_id)
+    positions.assign_position(session, SUPER, "sss_chair", member_id)  # Výbor: systemadmin
 
 
 def test_superadmin_sees_member_limited(migrated_db, google, client):  # noqa: F811
@@ -78,7 +84,7 @@ def test_admin_role_badge(client, google):  # noqa: F811
     login(client, google)
     assert 'role-badge role-admin">Administrátor<' in client.get("/admin").text
     login(client, google, email="super@example.org")
-    assert 'role-badge role-system_admin">Superadmin<' in client.get("/admin").text
+    assert 'role-badge role-system_admin">Systemadmin<' in client.get("/admin").text
 
 
 # --- R53: devices, switching roles, link for a computer ---------------------------------------------------
@@ -110,7 +116,7 @@ def test_superadmin_logs_member_out_and_switches_to_ecp_admin(migrated_db, googl
 
     login(client, google, email="super@example.org")  # Google session wins …
     page = client.get("/admin").text
-    assert "Superadmin" in page and 'href="/admin/ecp"' in page
+    assert "Systemadmin" in page and 'href="/admin/ecp"' in page
     r = client.get("/admin/ecp")  # … until the member switches to the eCP administrator
     assert 'role-badge role-admin">Administrátor<' in r.text
 

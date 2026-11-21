@@ -280,6 +280,7 @@ class TaskType(str, enum.Enum):
     ECP_ISSUE = "ecp_issue"  # submitted eCP application waiting for approval
     PAYMENT_UNMATCHED = "payment_unmatched"  # bank payment with an unknown reference (no member)
     PAYMENT_OVERPAID = "payment_overpaid"  # more was paid than owed: refund or gift
+    CAVE_ALERT = "cave_alert"  # a member did not confirm the return from a cave (R41)
 
 
 class TaskStatus(str, enum.Enum):

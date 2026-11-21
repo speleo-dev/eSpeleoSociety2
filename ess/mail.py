@@ -5,6 +5,7 @@ without the address.
 """
 
 import logging
+import re
 import smtplib
 import ssl
 from dataclasses import dataclass
@@ -16,6 +17,14 @@ from typing import Protocol
 from ess.config import get_settings
 
 log = logging.getLogger(__name__)
+
+# One plain address: no display name, no list separators, no spaces or control characters (header injection).
+_ADDRESS = re.compile(r"[^@\s,;<>\"'()\[\]\\]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+")
+
+
+def is_valid_address(address: str | None) -> bool:
+    """True for a single plain e-mail address that is safe to put in the To header."""
+    return bool(address) and len(address) <= 254 and _ADDRESS.fullmatch(address) is not None
 
 
 @dataclass(frozen=True)
@@ -55,6 +64,12 @@ class SmtpMailer:
         return msg
 
     def send(self, mail: Mail) -> None:
+        if not is_valid_address(mail.to):
+            raise MailError("invalid recipient")
+        try:
+            message = self._message(mail)
+        except (ValueError, TypeError) as exc:  # e.g. a line break in the subject
+            raise MailError(type(exc).__name__) from None
         context = ssl.create_default_context()
         try:
             if self.port == 465:
@@ -64,7 +79,7 @@ class SmtpMailer:
                 smtp.starttls(context=context)
             with smtp:
                 smtp.login(self.user, self.password)
-                smtp.send_message(self._message(mail))
+                smtp.send_message(message)
         except (OSError, smtplib.SMTPException) as exc:
             # The SMTP reply code helps diagnose (e.g. 535 = wrong password); no address or message text.
             code = getattr(exc, "smtp_code", None)
@@ -78,8 +93,11 @@ class MemoryMailer:
 
     def __init__(self):
         self.sent: list[Mail] = []
+        self.fail = False  # tests: simulate an SMTP outage
 
     def send(self, mail: Mail) -> None:
+        if self.fail or not is_valid_address(mail.to):
+            raise MailError("not sent")
         self.sent.append(mail)
 
 

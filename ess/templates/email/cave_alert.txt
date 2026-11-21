@@ -1,7 +1,9 @@
-Dobrý deň {{ chair_name }},
+Dobrý deň{% if chair_name %} {{ chair_name }}{% endif %},
 
-člen vašej skupiny {{ full_name }} nahlásil na portáli eSS vstup do jaskyne a nepotvrdil návrat.
-
+{% if fallback %}člen {{ full_name }}{% if club %} (skupina {{ club }}){% endif %} nahlásil na portáli eSS vstup do jaskyne a nepotvrdil návrat.
+Jeho skupina nemá v eSS predsedu s e-mailom, preto upozornenie posielame na túto adresu.
+{% else %}člen vašej skupiny {{ full_name }} nahlásil na portáli eSS vstup do jaskyne a nepotvrdil návrat.
+{% endif %}
 Jaskyňa: {{ cave }}
 Spolulezci: {{ companions or "neuvedení" }}
 Plánovaný návrat: {{ planned|local_time }}

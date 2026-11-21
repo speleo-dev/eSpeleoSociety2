@@ -275,6 +275,7 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     a prideľuje im **funkcie vo Výbore** (aj predsedu skupiny); skupiny len číta; Výbor, Dokumenty (mení),
     Notifikácie (posiela), Nastavenia – eCP, typy certifikátov (pridať/odobrať), testovací e-mail, Import, Prístupy
     (udeľuje rolu administrátora). Nevidí Členské, Ročnú známku, Bankové výpisy ani Požiadavky a nemení evidenciu.
+    *Upravené v R57:* premenovaný na **Systemadmin**, predsedu skupiny ani import už nerobí.
   - **Superadmini sú len v konfigurácii servera** (`ESS_SUPER_ADMIN_EMAILS`); v aplikácii sa udeľuje len rola
     administrátora. Staršie záznamy s rolou superadmin v aplikácii fungujú ako administrátor.
   - „Organizačná štruktúra“ sa volá **Výbor**. Import zapisuje údaje ako dôveryhodný import (audit: typ „system“,
@@ -324,6 +325,27 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
   v prehliadači). Zoznam členov sa filtruje pri písaní (HTMX). `static/ui.js` pri odoslaní formulára zablokuje
   tlačidlá („Ukladám…“), nie pri zrušenom potvrdení a pri formulároch so sťahovaním súboru (`data-download`).
   Portál a verejné stránky majú zatiaľ nový len rámec stránky; obsah ich obrazoviek sa doladí neskôr.
+- **R57** – **Opravy po auditoch (2026-11-21)** – dva externé audity a vlastný bezpečnostný audit:
+  - **Upozornenia z jaskyne (R41):** `/internal/tick` posiela pripomienku aj upozornenie hneď a čas odoslania
+    zapíše až po úspechu; pri chybe SMTP to skúsi znova o 5 minút. Upozornenie otvorí aj Požiadavku
+    „Nevrátil sa z jaskyne“ (zavrie sa po „Som vonku“, predĺžení alebo ručne). Bez predsedu s e-mailom ide upozornenie
+    na **náhradnú adresu z Nastavení** (`cave_alert_email`, napr. skupinová adresa). Predĺženie návratu vynuluje
+    pripomienku aj upozornenie. Na portáli je upozornenie, že funkcia nenahrádza dohodu s niekým na povrchu.
+  - **E-maily:** jedna čistá adresa (žiadne zoznamy, mená v `<>` ani riadkové zlomy); zlá adresa nezastaví ostatné.
+  - **Vyhľadávanie členov** ide cez POST – meno, e-mail ani číslo preukazu nie sú v URL, histórii ani logoch;
+    v adrese ostáva skupina, stav a strana. Hľadá sa „Meno Priezvisko“ aj „Priezvisko Meno“.
+  - **Predseda skupiny** smie zmeniť e-mail len členovi svojej primárnej skupiny bez eCP a bez prístupu
+    administrátora; inak len administrátor. Po zmene e-mailu sa člen odhlási z portálu a stará adresa dostane správu.
+  - **Systemadmin** (predtým superadmin, kód `system_admin`, premenná `ESS_SUPER_ADMIN_EMAILS` ostáva) je
+    systémová podpora a **nemení produkčné dáta**: nezadáva predsedu skupiny a nerobí import (len administrátor);
+    nepovolené tlačidlá nevidí.
+  - Prehľady (Výbor, skupiny, overovacia stránka) ukazujú funkciu až od dátumu platnosti.
+  - Hlavičky: stránky `Cache-Control: no-store`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, HSTS a čiastočná
+    CSP (`frame-ancestors`, `form-action`, `base-uri`, `object-src`); úplná CSP neskôr (inline skripty).
+    Statické súbory komprimované (gzip) a cacheované; stránky sa nekomprimujú (BREACH).
+  - API dokumentácia (`/docs`) len pri lokálnom vývoji, administrácia v nej nikdy nie je. Ostrú prevádzku zapína
+    `ESS_ENVIRONMENT=prod` (`docs/gcp-setup.md` krok 21).
+  - Export CSV chránený proti vzorcom Excelu; „bez skupiny“ v Členskom sa dá otvoriť; odkaz „Preskočiť na obsah“.
 - V eCP bol odkaz na web SSS dvakrát (z triedy preukazu aj z objektu) – objekt ho už nepridáva.
 
 ## 4. Architektúra

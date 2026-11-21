@@ -509,6 +509,20 @@ Adresu pošli ostatným administrátorom súkromne (nie do verejných skupín). 
 tajomstva (`printf 'sprava-%s' "$(openssl rand -hex 12)" | gcloud secrets versions add ess-admin-path --data-file=-`),
 zopakuj b) a c).
 
+## 21. Prechod do ostrej prevádzky (pred prvými skutočnými členmi)
+
+Počas testovania beží služba s `ESS_ENVIRONMENT=dev` (dajú sa mazať a nahrávať testovacie dáta, krok 12 a 19).
+Pred nahratím skutočných členov prepni službu do produkčného režimu – potom nástroje na testovacie dáta
+odmietnu bežať a aplikácia bez `ESS_SESSION_SECRET` ani nenaštartuje:
+
+```bash
+gcloud run services update ess --region europe-west3 --project espeleosociety --update-env-vars ESS_ENVIRONMENT=prod
+```
+
+`./deploy.sh` nastavenie prostredia nemení (premenné služby ostávajú) a na konci vypíše aktuálnu hodnotu.
+V administrácii → Nastavenia → **Vstup do jaskyne** zadaj náhradnú adresu pre upozornenia (napr. skupinovú
+adresu záchranárov), aby upozornenie prišlo aj členom skupín bez predsedu s e-mailom.
+
 ## Neskôr
 
 - Automatické nasadenie z GitHubu cez GitHub Actions (Workload Identity Federation, bez kľúčov v súboroch).

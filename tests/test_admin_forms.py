@@ -144,7 +144,8 @@ def test_roles_in_settings_access_and_menu(client, google, migrated_db):
     client.post("/admin/access", data={"csrf_token": token, "email": "druhy@example.org", "name": "Druhý", "role": "admin"})
     page = client.get("/admin/access").text
     assert "druhy@example.org" in page and "Kancelária" in page and "super@example.org" in page
-    assert client.get("/admin/import").status_code == 200
+    assert client.get("/admin/import").status_code == 403  # an import writes the register: administrator only
+    assert 'href="/admin/import"' not in page and "Systemadmin" in page  # renamed from "superadmin"
 
 
 def test_certificate_types_add_and_remove(client, google, migrated_db):

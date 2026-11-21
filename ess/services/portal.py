@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from ess.models import Club, Fee, Member, Membership, MembershipStatus
 from ess.security.crypto import normalize_for_index
 from ess.services import delegations, documents, ecp_content, members
-from ess.services.access import DomainError, managed_club_ids
+from ess.services.access import DomainError, managed_club_ids, position_held
 from ess.services.members import MemberData
 
 
@@ -121,7 +121,7 @@ def clubs_info(session: Session, member: Member) -> list[ClubInfo]:
     managed = managed_club_ids(session, member.id)
     chairs = dict(session.execute(select(PositionHolder.club_id, Member).join(Member, Member.id == PositionHolder.member_id)
                                   .where(PositionHolder.position_code == "club_chair",
-                                         PositionHolder.valid_to.is_(None))).all())
+                                         position_held())).all())
     clubs = session.scalars(select(Club).where(Club.active, Club.is_unaffiliated.is_(False))).all()
     rows = [ClubInfo(c, members.read_member(chairs[c.id]).full_name() if c.id in chairs else None, c.id in own,
                      c.id in managed) for c in clubs]

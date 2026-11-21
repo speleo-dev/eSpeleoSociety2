@@ -45,14 +45,14 @@ def payments_page(request: Request, admin: RegisterAdmin, session: Db, year: int
 
     years = _overview_years(session)
     year = year if year in years else years[0]
-    club_id = _club_id(club)
+    active, club_id = _club_filter(club)
     rows = payments.overview(session, admin.actor, year)
     due_year = max(payments.payment_years(session))
     return render(request, "admin/payments.html", admin, session, due_year=due_year,
                   sticker_published=sticker.is_published(session, due_year),
                   pending=ecp_content.pending_count(session), year=year, years=years, club=club,
                   summary=payments.summarize(rows),
-                  rows=[r for r in rows if club_id and r.club_id == club_id] if club else [],
+                  rows=[r for r in rows if r.club_id == club_id] if active else [],
                   paid_total=sum((r.amount for r in rows if r.paid_at), Decimal("0")),
                   paid_count=sum(1 for r in rows if r.paid_at), total_count=len(rows))
 
@@ -63,25 +63,38 @@ def _overview_years(session) -> list[int]:
     return list(range(newest, newest - 5, -1))
 
 
-def _club_id(value: str) -> uuid.UUID | None:
+NO_CLUB = "none"  # filter value for members without an open membership ("bez skupiny")
+
+
+def _club_filter(value: str) -> tuple[bool, uuid.UUID | None]:
+    """(filter active, club id); "none" selects members without a club."""
+    if value == NO_CLUB:
+        return True, None
     try:
-        return uuid.UUID(value) if value else None
+        return (True, uuid.UUID(value)) if value else (False, None)
     except ValueError:
-        return None
+        return False, None
+
+
+def csv_cell(value) -> str:
+    """Spreadsheet-safe text: a leading = + - @ (or tab / CR) would make Excel run it as a formula."""
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
 
 
 @router.get("/payments/export.csv")
 def payments_export(request: Request, admin: RegisterAdmin, session: Db, year: int, club: str = ""):
     """Fee overview of a year for a spreadsheet (personal data: administrators only, not logged)."""
-    club_id = _club_id(club)
-    rows = [r for r in payments.overview(session, admin.actor, year) if not club_id or r.club_id == club_id]
+    active, club_id = _club_filter(club)
+    rows = [r for r in payments.overview(session, admin.actor, year) if not active or r.club_id == club_id]
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
     writer.writerow(["Skupina", "Priezvisko", "Meno", "Číslo preukazu", "Suma", "Zľavnené", "Zaplatené", "Spôsob"])
     for r in rows:
-        writer.writerow([r.club_name, r.last_name, r.first_name, r.card_number or "", f"{r.amount:.2f}".replace(".", ","),
-                         "áno" if r.reduced else "", r.paid_at.strftime("%d.%m.%Y") if r.paid_at else "",
-                         FEE_METHOD_LABELS.get(r.method, "")])
+        writer.writerow([csv_cell(v) for v in (
+            r.club_name, r.last_name, r.first_name, r.card_number or "", f"{r.amount:.2f}".replace(".", ","),
+            "áno" if r.reduced else "", r.paid_at.strftime("%d.%m.%Y") if r.paid_at else "",
+            FEE_METHOD_LABELS.get(r.method, ""))])
     return Response("\ufeff" + out.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="clenske_{year}.csv"',
                              "Cache-Control": "no-store"})

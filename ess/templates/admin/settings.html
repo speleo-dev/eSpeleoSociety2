@@ -9,7 +9,7 @@
   </div>
 </div>
 
-{% set can_edit = True %}{% set sa = admin.is_system_admin %}{# R50: fees – admin; eCP – both; test mail – superadmin #}
+{% set can_edit = True %}{% set sa = admin.is_system_admin %}{# R50: fees – admin; eCP – both; test mail – systemadmin #}
 <form method="post" id="settings-form">
   {% include "admin/_csrf.html" %}
   <fieldset disabled id="settings-fields">
@@ -52,6 +52,21 @@
       </div>
       <div class="card-footer py-2 text-secondary small">
         IBAN a názov príjemcu sa použijú v platobnom odkaze PAYMe; referencia platiteľa sa doplní sama.
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-alert-triangle me-2"></i>Vstup do jaskyne</h3>
+      </div>
+      <div class="card-body">
+        <label class="form-label">Náhradná adresa pre upozornenia</label>
+        <input class="form-control" type="email" name="cave_alert_email" value="{{ values.cave_alert_email }}" autocomplete="off"
+               placeholder="napr. skupinová adresa záchranárov">
+      </div>
+      <div class="card-footer py-2 text-secondary small">
+        Sem príde upozornenie „člen sa nevrátil z jaskyne“, ak jeho skupina nemá predsedu s e-mailom.
+        Môže to byť skupinová adresa, ktorá ho rozpošle viacerým ľuďom.
       </div>
     </div>
     {% endif %}
