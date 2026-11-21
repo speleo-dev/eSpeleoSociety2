@@ -241,11 +241,17 @@
     <div class="page-header d-print-none">
       <div class="container-xl">
         {% block back %}
+        {# "Späť" only on pages opened from a list (detail, form); the main menu pages do not need it #}
+        {% set main_pages = [A, A ~ "/members", A ~ "/clubs", A ~ "/organization", A ~ "/payments", A ~ "/sticker",
+                             A ~ "/statements", A ~ "/tasks", A ~ "/documents", A ~ "/notifications", A ~ "/settings",
+                             A ~ "/import", A ~ "/access"] %}
+        {% if not request or request.url.path.rstrip("/") not in main_pages %}
         <div class="mb-2">
           <a href="{{ A }}" class="btn btn-outline-secondary btn-sm" onclick="if (history.length > 1) { history.back(); return false; }">
             <i class="ti ti-arrow-left me-1"></i>Späť
           </a>
         </div>
+        {% endif %}
         {% endblock %}
       </div>
     </div>

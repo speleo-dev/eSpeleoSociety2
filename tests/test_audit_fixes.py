@@ -140,3 +140,13 @@ def test_members_page_refreshes_new_member_button(migrated_db, google, client): 
 
 def test_index_has_no_button_inside_link(client):  # noqa: F811
     assert "<a href=\"/ecp/apply\"><button" not in client.get("/").text
+
+
+def test_back_button_only_on_sub_pages(migrated_db, google, client):  # noqa: F811
+    with migrated_db() as s:
+        member_id = _member(s, _club(s))
+        s.commit()
+    login(client, google)
+    for path in ("/admin/members", "/admin/clubs", "/admin/payments", "/admin/settings"):
+        assert "ti-arrow-left me-1\"></i>Späť" not in client.get(path).text, path
+    assert "ti-arrow-left me-1\"></i>Späť" in client.get(f"/admin/members/{member_id}").text

@@ -52,12 +52,16 @@
 {% endblock %}
 {% block content %}
   {% block back %}
+  {# "Späť" only on pages opened from a list; not on the pages of the main menu #}
+  {% if not request or request.url.path.rstrip("/") not in ["/portal", "/portal/members", "/portal/clubs", "/portal/board",
+                                                            "/portal/documents", "/portal/notifications"] %}
   <div class="mb-3">
     <a class="btn btn-outline-secondary btn-sm" href="/portal"
        onclick="if (history.length > 1) { history.back(); return false; }">
       <i class="ti ti-arrow-left me-1"></i>Späť
     </a>
   </div>
+  {% endif %}
   {% endblock %}
   {% block portal %}{% endblock %}
 {% endblock %}
