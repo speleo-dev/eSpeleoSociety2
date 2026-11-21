@@ -338,7 +338,9 @@ Cieľom je digitalizovať správu SSS a nahradiť preukaz elektronickým.
     administrátora; inak len administrátor. Po zmene e-mailu sa člen odhlási z portálu a stará adresa dostane správu.
   - **Systemadmin** (predtým superadmin, kód `system_admin`, premenná `ESS_SUPER_ADMIN_EMAILS` ostáva) je
     systémová podpora a **nemení produkčné dáta**: nezadáva predsedu skupiny a nerobí import (len administrátor);
-    nepovolené tlačidlá nevidí.
+    nepovolené tlačidlá nevidí. **Princíp:** systemadmin rozdeľuje práva a obsah (Prístupy, funkcie vo Výbore,
+    Dokumenty, notifikácie), ale nevytvára ani nemení evidenciu – napr. môže zmeniť predsedu SSS, no nemôže ho
+    založiť ako člena SSS (Lad'o, 2026-11-21).
   - Prehľady (Výbor, skupiny, overovacia stránka) ukazujú funkciu až od dátumu platnosti.
   - Hlavičky: stránky `Cache-Control: no-store`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, HSTS a čiastočná
     CSP (`frame-ancestors`, `form-action`, `base-uri`, `object-src`); úplná CSP neskôr (inline skripty).
